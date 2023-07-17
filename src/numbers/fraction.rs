@@ -208,7 +208,7 @@ marco_rules! from_primitive_unsigned_ints! {
                     Fraction::NaN
                 }
                 else {
-                    Fraction::new_unchecked(numerator,1);
+                    Fraction::new_unchecked(value,1);
                 }
             }
         }
@@ -275,6 +275,24 @@ mod tests {
         if let Fraction::TopHeavy(numerator, denominator) = result {
             assert_eq!(numerator,1);
             assert_eq!(denominator,8);
+        } else {
+            assert!(false, "Expected top-heavy fraction");
+        }
+    }
+
+    #[test]
+    fn divide() {
+        // Create fractions
+        let fraction1 = Fraction::new(2,4);
+        let fraction2 = Fraction::new(5,4);
+
+        // Add fractions
+        let result = fraction1 * fraction2;
+
+        // Verify the result
+        if let Fraction::TopHeavy(numerator, denominator) = result {
+            assert_eq!(numerator,10);
+            assert_eq!(denominator,16);
         } else {
             assert!(false, "Expected top-heavy fraction");
         }
