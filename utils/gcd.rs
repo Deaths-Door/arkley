@@ -3,22 +3,23 @@ use crate::utils::{Zero};
 /// Represents the GCD (Greatest Common Divisor) trait.
 /// This trait provides a method to calculate the GCD between two values of the same type.
 // by default uses Euclidean algorithm to calculate gcd (Greastes...) but for primitive numbers eg u8 .. i32...f64 Steins alogirthm is used
-pub trait Gcd : Zero + std::ops::Rem<Output = Self> + Copy {
+pub trait Gcd<T,O> where T : Zero + std::ops::Rem<Output = O> , O : Gcd<T> {//: Zero + std::ops::Rem<Output = Self> + Copy {
     /// Calculates the Greatest Common Divisor (GCD) between `self` and `other`.
     ///
     /// For primitive number types like `u8`, `i32`, `f64` etc, the Stein's algorithm is used
     /// to optimize the computation. For other types, the Euclidean algorithm is used by default if no custom implementation is given.
     /// TODO IMPLEMENT STEINS ALGORITHM 
-    fn gcd(&self, other: &Self) -> Self {
+    fn gcd(self, other: T) -> Self {
         if other.is_zero() {
-            *self 
+            self 
         }
         else {
-            (*other % *self).gcd(self)
+            (other % self).gcd(self)
         }
     }
 }
 
+/*
 macro_rules! steins_algorithm {
     ($T : ty) => {
         impl Gcd for $T {
@@ -73,15 +74,7 @@ steins_algorithm!(i8);
 steins_algorithm!(i16);
 steins_algorithm!(i32);
 steins_algorithm!(i64);
-
-steins_algorithm!(u8);
-steins_algorithm!(u16);
-steins_algorithm!(u32);
-steins_algorithm!(u64);
-
-steins_algorithm!(f32);
-steins_algorithm!(f64);
-
+*/
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -2,8 +2,8 @@ use crate::utils::{Zero,Lcm};
 
 use std::ops::{
     Add,
-    Sub,
-    Mul,
+    //Sub,
+    //Mul,
     Div,
 };
 
@@ -32,7 +32,7 @@ pub enum Fraction<N, D> {
     TopHeavy(N, D),
 }
 
-impl<N,D> for Fraction<N,D> {
+impl<N,D> Fraction<N,D> {
     /// Constructs a new `Fraction` instance with the given numerator and denominator.
     ///
     /// # Safety
@@ -40,7 +40,7 @@ impl<N,D> for Fraction<N,D> {
     /// This method does not perform any validation or simplification of the fraction.
     /// It assumes that the numerator and denominator are valid and correctly provided.
     pub const fn new_unchecked(numerator : N,denominator : D) -> Self  {
-        Fraction::TopHeavy(numerator,denomator)
+        Fraction::TopHeavy(numerator,denominator)
     }
 
     /// Returns an option containing a reference to the numerator of the fraction.
@@ -72,28 +72,13 @@ impl<N,D> for Fraction<N,D> {
     /// If the current fraction is in the `Fraction::TopHeavy` variant, this method swaps the
     /// numerator and denominator to create the inverse fraction. For other variant types, it returns
     /// `NaN` for `NaN`, swaps `PositiveInfinity` to `NegativeInfinity`, and vice versa.
-    pub const fn to_inverse(&self) -> Self {
+    pub const fn to_inverse(&self) -> Fraction<D,N> {
         match self {
-            Fraction::TopHeavy(numerator,denomator) => Fraction::new_unchecked(denomator,numerator),
-            Fraction::NaN => None,
-            Fraction::PositiveInfinity => NegativeInfinity,
-            Fraction::NegativeInfinity => PositiveInfinity,
+            Fraction::TopHeavy(numerator,denomator) => Fraction::new_unchecked(*denomator,*numerator),
+            Fraction::NaN => Fraction::NaN,
+            Fraction::PositiveInfinity => Fraction::NegativeInfinity,
+            Fraction::NegativeInfinity => Fraction::PositiveInfinity,
         }
-    }
-
-    /// Returns a self that represents the inverse of the current fraction.
-    ///
-    /// If the current fraction is in the `Fraction::TopHeavy` variant, this method swaps the
-    /// numerator and denominator to create the inverse fraction. For other variant types, it returns
-    /// `NaN` for `NaN`, swaps `PositiveInfinity` to `NegativeInfinity`, and vice versa.
-    pub const fn as_inverse(mut self) -> Self {
-        self = match self {
-            Fraction::TopHeavy(numerator,denomator) => Fraction::new_unchecked(denomator,numerator),
-            Fraction::NaN => None,
-            Fraction::PositiveInfinity => NegativeInfinity,
-            Fraction::NegativeInfinity => PositiveInfinity,
-        }
-        self
     }
 }
 
@@ -127,6 +112,32 @@ impl<N,D> Fraction<N,D> where N : Zero + PartialOrd, D : Zero + PartialOrd {
     }
 }
 
+/*ca
+impl<N1, D1,N2, D2,N3> Add<Fraction<N2,D2>> for Fraction<N1, D1> where  N1 : Add<N2,Output = N3>,
+                                                                        D1 : Lcm + PartialEq<D2>,
+                                                                        D2 : Into<D3>,
+                                                                        {    
+    type Output = Fraction<N3,D2>;
+
+    fn add(self, other: Fraction<N2,D2>) -> Self::Output {
+        match (self,other) {
+            (Fraction::TopHeavy(self_numerator , self_denominator),Fraction::TopHeavy(other_numerator , other_denominator)) => {                
+                if self_denominator == other_denominator {
+                    return Fraction::TopHeavy(self_numerator + other_numerator,self_denominator.into());
+                }
+
+                let denominator = self_denominator.lcm(&other_denominator.into());
+                let numerator = self_numerator * (denominator / self_denominator) + other_numerator * (denominator / other_denominator);
+
+                Fraction::TopHeavy(numerator,denominator)
+            }
+            (Fraction::NaN,_) | (_,Fraction::NaN) => Fraction::NaN,
+            (Fraction::PositiveInfinity,_) | (_,Fraction::PositiveInfinity) => Fraction::PositiveInfinity,
+            (Fraction::NegativeInfinity,_) | (_,Fraction::NegativeInfinity) => Fraction::NegativeInfinity,    
+        }
+    }
+}*/
+/*
 impl<N,D> Add for Fraction<N, D> where N : Add<Output = N> + Mul<Output = N>, D : Lcm + Mul + Into<N> {
     type Output = Self;
 
@@ -220,7 +231,7 @@ from_primitive_unsigned_ints!(u16);
 from_primitive_unsigned_ints!(u32);
 from_primitive_unsigned_ints!(u64);
 
-
+*/
 /// TODO TEST ALL METHODS
 #[cfg(test)]
 mod tests {

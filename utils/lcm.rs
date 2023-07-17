@@ -27,14 +27,6 @@ impl_lcm!(i16);
 impl_lcm!(i32);
 impl_lcm!(i64);
 
-impl_lcm!(u8);
-impl_lcm!(u16);
-impl_lcm!(u32);
-impl_lcm!(u64);
-
-impl_lcm!(f32);
-impl_lcm!(f64);
-
 #[cfg(test)]
 mod tests {
     use super::*;

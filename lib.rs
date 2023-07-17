@@ -25,5 +25,3 @@
 pub mod utils;
 /// TODO 
 pub mod numbers;
-/// TODO 
-mod describe;

@@ -32,8 +32,8 @@ impl_zero!(u16,0);
 impl_zero!(u32,0);
 impl_zero!(u64,0);
 
-impl_zero!(f32,0);
-impl_zero!(f64,0);
+impl_zero!(f32,0.0);
+impl_zero!(f64,0.0);
 
 
 #[cfg(test)]
