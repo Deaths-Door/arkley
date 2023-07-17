@@ -1,32 +1,29 @@
-use crate::utils::{Zero};
-
+use crate::utils::Zero;
 /// Represents the GCD (Greatest Common Divisor) trait.
 /// This trait provides a method to calculate the GCD between two values of the same type.
-// by default uses Euclidean algorithm to calculate gcd (Greastes...) but for primitive numbers eg u8 .. i32...f64 Steins alogirthm is used
-pub trait Gcd<T,O> where T : Zero + std::ops::Rem<Output = O> , O : Gcd<T> {//: Zero + std::ops::Rem<Output = Self> + Copy {
+// by default uses Euclidean algorithm to calculate GCD (or HCF) but for primitive numbers eg u8 .. i32...f64 Steins alogirthm is used
+pub trait Gcd : Zero + std::ops::Rem<Output = Self> + Sized + Copy {
     /// Calculates the Greatest Common Divisor (GCD) between `self` and `other`.
     ///
-    /// For primitive number types like `u8`, `i32`, `f64` etc, the Stein's algorithm is used
+    /// For primitive number types like `i32` etc, the Stein's algorithm is used
     /// to optimize the computation. For other types, the Euclidean algorithm is used by default if no custom implementation is given.
     /// TODO IMPLEMENT STEINS ALGORITHM 
-    fn gcd(self, other: T) -> Self {
+    fn gcd(self, other: Self) -> Self {        
         if other.is_zero() {
-            self 
-        }
-        else {
+            self
+        } else {
             (other % self).gcd(self)
         }
     }
 }
 
-/*
 macro_rules! steins_algorithm {
     ($T : ty) => {
         impl Gcd for $T {
-            fn gcd(&self,other : &Self) -> Self {
+            fn gcd(self,other : Self) -> Self {
                 // Use Stein's algorithm
-                let mut m = *self;
-                let mut n = *other;
+                let mut m = self;
+                let mut n = other;
                 if m == 0 || n == 0 {
                     return (m | n).abs();
                 }
@@ -74,7 +71,7 @@ steins_algorithm!(i8);
 steins_algorithm!(i16);
 steins_algorithm!(i32);
 steins_algorithm!(i64);
-*/
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -83,7 +80,7 @@ mod tests {
     fn test_gcd_i8() {
         let a: i8 = 15;
         let b: i8 = 25;
-        let gcd_result = a.gcd(&b);
+        let gcd_result = a.gcd(b);
         assert_eq!(gcd_result, 5);
     }
 
@@ -91,7 +88,7 @@ mod tests {
     fn test_gcd_i16() {
         let a: i16 = 30;
         let b: i16 = 45;
-        let gcd_result = a.gcd(&b);
+        let gcd_result = a.gcd(b);
         assert_eq!(gcd_result, 15);
     }
 
@@ -99,7 +96,7 @@ mod tests {
     fn test_gcd_i32() {
         let a: i32 = 80;
         let b: i32 = 120;
-        let gcd_result = a.gcd(&b);
+        let gcd_result = a.gcd(b);
         assert_eq!(gcd_result, 40);
     }
 
@@ -107,7 +104,7 @@ mod tests {
     fn test_gcd_i64() {
         let a: i64 = 105;
         let b: i64 = 140;
-        let gcd_result = a.gcd(&b);
+        let gcd_result = a.gcd(b);
         assert_eq!(gcd_result, 35);
     }
 }

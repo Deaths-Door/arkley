@@ -1,11 +1,6 @@
-use crate::utils::{Zero,Lcm};
+use std::ops::{Add,Sub,Mul,Div};
 
-use std::ops::{
-    Add,
-    //Sub,
-    //Mul,
-    Div,
-};
+use crate::utils::{Zero,Lcm,Gcd};
 
 /// The `Fraction` struct represents a fraction with a numerator and denominator.
 ///
@@ -20,7 +15,7 @@ use std::ops::{
 /// The `Fraction` struct can be used to perform arithmetic operations on fractions,
 /// such as addition, subtraction, multiplication, and division.
 /// It also supports comparison operations, simplification, conversion to other types and other mathematical operations.
-#[derive(Debug)]
+#[derive(Debug,PartialEq)]
 pub enum Fraction<N, D> {
     /// Represents an undefined or "Not a Number" fraction.
     NaN,
@@ -38,7 +33,8 @@ impl<N,D> Fraction<N,D> {
     /// # Safety
     ///
     /// This method does not perform any validation or simplification of the fraction.
-    /// It assumes that the numerator and denominator are valid and correctly provided.
+    /// It assumes that the numerator and denominator are valid and correctly provided. 
+    /// If these conditions are not method then operations like Eq maybe not function correctly so use this at your own risk
     pub const fn new_unchecked(numerator : N,denominator : D) -> Self  {
         Fraction::TopHeavy(numerator,denominator)
     }
@@ -66,7 +62,9 @@ impl<N,D> Fraction<N,D> {
             Fraction::NegativeInfinity => None,
         }
     }
+}
 
+impl<N,D> Fraction<N,D> where N : Copy , D : Copy {
     /// Returns a new `Fraction` instance that represents the inverse of the current fraction.
     ///
     /// If the current fraction is in the `Fraction::TopHeavy` variant, this method swaps the
@@ -82,7 +80,7 @@ impl<N,D> Fraction<N,D> {
     }
 }
 
-impl<N,D> Fraction<N,D> where N : Zero + PartialOrd, D : Zero + PartialOrd { 
+impl<N,D> Fraction<N,D> where N : Zero + Gcd + PartialOrd + Div<Output = N>, D : Zero + Div<N, Output = D> + Into<N> + Copy { 
     /// Creates a new fraction with the given numerator and denominator.
     ///
     /// # Arguments
@@ -96,7 +94,8 @@ impl<N,D> Fraction<N,D> where N : Zero + PartialOrd, D : Zero + PartialOrd {
     ///
     pub fn new(numerator : N,denominator : D) -> Self {
         if !denominator.is_zero(){
-            return Fraction::TopHeavy(numerator,denominator);
+            let gcd : N = numerator.gcd(denominator.into());
+            return Fraction::TopHeavy(numerator / gcd,denominator / gcd);
         };
 
         if numerator.is_zero() {
@@ -112,32 +111,6 @@ impl<N,D> Fraction<N,D> where N : Zero + PartialOrd, D : Zero + PartialOrd {
     }
 }
 
-/*ca
-impl<N1, D1,N2, D2,N3> Add<Fraction<N2,D2>> for Fraction<N1, D1> where  N1 : Add<N2,Output = N3>,
-                                                                        D1 : Lcm + PartialEq<D2>,
-                                                                        D2 : Into<D3>,
-                                                                        {    
-    type Output = Fraction<N3,D2>;
-
-    fn add(self, other: Fraction<N2,D2>) -> Self::Output {
-        match (self,other) {
-            (Fraction::TopHeavy(self_numerator , self_denominator),Fraction::TopHeavy(other_numerator , other_denominator)) => {                
-                if self_denominator == other_denominator {
-                    return Fraction::TopHeavy(self_numerator + other_numerator,self_denominator.into());
-                }
-
-                let denominator = self_denominator.lcm(&other_denominator.into());
-                let numerator = self_numerator * (denominator / self_denominator) + other_numerator * (denominator / other_denominator);
-
-                Fraction::TopHeavy(numerator,denominator)
-            }
-            (Fraction::NaN,_) | (_,Fraction::NaN) => Fraction::NaN,
-            (Fraction::PositiveInfinity,_) | (_,Fraction::PositiveInfinity) => Fraction::PositiveInfinity,
-            (Fraction::NegativeInfinity,_) | (_,Fraction::NegativeInfinity) => Fraction::NegativeInfinity,    
-        }
-    }
-}*/
-/*
 impl<N,D> Add for Fraction<N, D> where N : Add<Output = N> + Mul<Output = N>, D : Lcm + Mul + Into<N> {
     type Output = Self;
 
@@ -148,7 +121,7 @@ impl<N,D> Add for Fraction<N, D> where N : Add<Output = N> + Mul<Output = N>, D 
                     return Fraction::TopHeavy(self_numerator + other_numerator,self_denominator);
                 }
 
-                let denominator = self_denominator.lcm(&other_denominator);
+                let denominator = self_denominator.lcm(other_denominator);
                 let numerator = self_numerator * (denominator / self_denominator).into() + other_numerator * (denominator / other_denominator).into();
 
                 Fraction::TopHeavy(numerator,denominator)
@@ -169,7 +142,7 @@ impl<N,D> Sub for Fraction<N,D> where N : Sub<Output = N> + Mul<Output = N>, D :
                     return Fraction::TopHeavy(self_numerator - other_numerator,self_denominator);
                 }
 
-                let denominator = self_denominator.lcm(&other_denominator);
+                let denominator = self_denominator.lcm(other_denominator);
                 let numerator = self_numerator * (denominator / self_denominator).into() - other_numerator * (denominator / other_denominator).into();
 
                 Fraction::TopHeavy(numerator,denominator)
@@ -182,19 +155,16 @@ impl<N,D> Sub for Fraction<N,D> where N : Sub<Output = N> + Mul<Output = N>, D :
     }
 }
 
-impl<N,D> Mul for Fraction<N,D> where N : Mul<Output = N>,D : Lcm + Into<N> {
+impl<N,D> Mul for Fraction<N,D> where N : Gcd + Mul<Output = N> + Div<Output = N>, D : Mul<Output = D> + Div<N,Output = D> + Into<N> + Copy{//where N : Mul<Output = N>,D : Lcm + Into<N> {
     type Output = Self;
     fn mul(self,other : Self) -> Self {
         match (self,other) {
             (Fraction::TopHeavy(self_numerator , self_denominator),Fraction::TopHeavy(other_numerator , other_denominator)) => { 
-                let lcm : D = self_denominator.lcm(&other_denominator);
-                
-                let factor_self = lcm / self_denominator;
-                let factor_other = lcm / other_denominator;
-                
-                let numerator : N = self_numerator * factor_self.into() * other_numerator * factor_other.into();
-        
-                Fraction::TopHeavy(numerator,lcm)
+                let numerator : N = self_numerator * other_numerator;
+                let denominator : D = self_denominator * other_denominator;
+
+                let gcd : N = numerator.gcd(denominator.into());
+                return Fraction::TopHeavy(numerator / gcd,denominator / gcd);
             }
             (Fraction::NaN,_) | (_,Fraction::NaN) => Fraction::NaN,
             (Fraction::PositiveInfinity,_) | (_,Fraction::PositiveInfinity) => Fraction::PositiveInfinity,
@@ -204,35 +174,13 @@ impl<N,D> Mul for Fraction<N,D> where N : Mul<Output = N>,D : Lcm + Into<N> {
     }
 }
 
-impl<N,D> Div for Fraction<N,D> where Rhs : Mul<Output = Self> {
+impl<N,D> Div for Fraction<N,D> where Self : Mul<Output = Self> ,N : Copy , D : Copy, Fraction<N, D>: From<Fraction<D, N>>{
     type Output = Self;
     fn div(self,other : Self) -> Self {
-        self * other.to_inverse()
+        self * other.to_inverse().into()
     }
 }
 
-marco_rules! from_primitive_unsigned_ints! {
-    ($T : ty) => {
-        impl From<$T> for Fraction<$T,u8>{
-            fn from(value : $T) -> Self {
-                if value == 0 {
-                    Fraction::NaN
-                }
-                else {
-                    Fraction::new_unchecked(value,1);
-                }
-            }
-        }
-    }  
-};
-
-from_primitive_unsigned_ints!(u8);
-from_primitive_unsigned_ints!(u16);
-from_primitive_unsigned_ints!(u32);
-from_primitive_unsigned_ints!(u64);
-
-*/
-/// TODO TEST ALL METHODS
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -294,18 +242,32 @@ mod tests {
     #[test]
     fn divide() {
         // Create fractions
-        let fraction1 = Fraction::new(2,4);
-        let fraction2 = Fraction::new(5,4);
+        let fraction1 = Fraction::new(1,1);
+        let fraction2 = Fraction::new(1,2);
 
         // Add fractions
-        let result = fraction1 * fraction2;
+        let result = fraction1 / fraction2;
 
         // Verify the result
         if let Fraction::TopHeavy(numerator, denominator) = result {
-            assert_eq!(numerator,10);
-            assert_eq!(denominator,16);
+            assert_eq!(numerator,2);
+            assert_eq!(denominator,1);
         } else {
             assert!(false, "Expected top-heavy fraction");
         }
+    }
+
+    #[test]
+    fn test_fraction_equality() {
+        let fraction1: Fraction<i32, i32> = Fraction::new(2, 4);
+        let fraction2: Fraction<i32, i32> = Fraction::new(1, 2);
+        let fraction3: Fraction<i32, i32> = Fraction::new(4, 8);
+        let fraction4: Fraction<i32, i32> = Fraction::NaN;
+
+        assert_eq!(fraction1, fraction2);  // Fractions with equivalent values should be equal
+        assert_eq!(fraction1, fraction3);  // Fractions with equivalent values should be equal
+        assert_ne!(fraction1, fraction4);  // Different variants should not be equal
+        assert_ne!(fraction2, fraction4);  // Different variants should not be equal
+        assert_ne!(fraction3, fraction4);  // Different variants should not be equal
     }
 }
