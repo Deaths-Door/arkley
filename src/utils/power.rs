@@ -53,7 +53,7 @@ mod tests {
 
     #[test]
     fn test_power_i16() {
-        ///assert_eq!(2_i16.to_the_power_of(3_i8), 8_i16);
+        //assert_eq!(2_i16.to_the_power_of(3_i8), 8_i16);
         assert_eq!(3_i16.to_the_power_of(2_i16), 9_i16);
         //assert_eq!(4_i16.to_the_power_of(2_i32), 16_i16);
      //   assert_eq!(2_i16.to_the_power_of(3_i64), 8_i16);

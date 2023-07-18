@@ -1,6 +1,6 @@
-use std::ops::{Add,Sub,Mul,Div};
+use std::ops::{Add,Sub,Mul,Div,Neg,Rem,AddAssign,SubAssign,MulAssign,DivAssign};
 
-use crate::utils::{Lcm,Gcd,Zero,Numeric};
+use crate::utils::{Lcm,Gcd,Zero,Numeric,Abs,Power};
 
 /// The `Fraction` struct represents a fraction with a numerator and denominator.
 ///
@@ -127,6 +127,28 @@ impl<N,D> Fraction<N,D> where N : Zero + Gcd + PartialOrd + Div<Output = N>, D :
         }
     }
 }
+/*
+impl<N,D> Numeric for Fraction<N,D> where Self : Abs + Lcm + Zero + Power<Self> + Add<Self> +  Sub<Self> + Mul<Self> +  Div<Self> + Neg {}
+
+impl<N,D> Abs for Fraction<N,D> where N : Abs , D : Abs {
+    fn absolute(&self) -> Self {
+        match self {
+            Fraction::TopHeavy(numerator,denominator) => Fraction::new_unchecked(numerator.absolute(),denominator.absolute()),
+            Fraction::NaN => Fraction::NaN,
+            _ => Fraction::PositiveInfinity,
+        }
+    }
+}
+
+impl<N,D> Gcd for Fraction<N,D> where Self : Zero + Rem<Output = Self> + Sized + Copy  {}
+impl<N,D> Lcm for Fraction<N,D> where Self : Gcd + Div<Output = Self> + Mul<Output = Self>  {}
+
+impl<N,D>  Zero for Fraction<N,D> where Self : PartialEq + Sized , u8 : Into<N> + Into<D> {
+    const ZERO : Self = Fraction::new_unchecked(0.if into(),1.into());
+    fn is_zero(&self) -> bool {
+        *self == Self::ZERO
+    }
+}*/
 
 impl<N,D> std::fmt::Display for Fraction<N,D> where N : Numeric + std::fmt::Display, D : Numeric + std::fmt::Display{
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -205,6 +227,44 @@ impl<N,D> Div for Fraction<N,D> where Self : Mul<Output = Self> ,N : Copy , D : 
     type Output = Self;
     fn div(self,other : Self) -> Self {
         self * other.to_inverse().into()
+    }
+}
+
+
+impl<N,D> AddAssign for Fraction<N,D> where Self : Add<Self,Output = Self> + Copy {
+    fn add_assign(&mut self, other: Self) {
+        *self = *self + other;
+    }
+}
+
+impl<N,D> SubAssign for Fraction<N,D> where Self : Sub<Self,Output = Self> + Copy  {
+    fn sub_assign(&mut self, other: Self) {
+        *self = *self - other;
+    }
+}
+
+impl<N,D> MulAssign for Fraction<N,D> where Self : Mul<Self,Output = Self> + Copy  {
+    fn mul_assign(&mut self, other: Self) {
+        *self = *self * other;
+    }
+}
+
+impl<N,D> DivAssign for Fraction<N,D> where Self : Div<Self,Output = Self> + Copy  {
+    fn div_assign(&mut self, other: Self) {
+        *self = *self / other;
+    }
+}
+
+impl<N,D> Neg for Fraction<N,D> where N : Neg<Output = N> , D : Copy{
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        match self {
+            Fraction::TopHeavy(numerator,denominator) => Fraction::new_unchecked(-numerator,denominator),
+            Fraction::NaN => Fraction::NaN,
+            Fraction::PositiveInfinity => Fraction::NegativeInfinity,
+            Fraction::NegativeInfinity => Fraction::PositiveInfinity,
+        }
     }
 }
 
