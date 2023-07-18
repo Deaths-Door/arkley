@@ -1,5 +1,5 @@
 mod fraction;
-mod decimal
+mod standardform;
 
 pub use self::fraction::*;
-pub use self::decimal::*;
+pub use self::standardform::*;

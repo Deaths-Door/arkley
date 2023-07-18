@@ -1,6 +1,6 @@
 /// Trait for types that represent a zero value.
 pub trait Zero : PartialEq + Sized {
-    /// The zero value for the implementing type.2
+    /// The zero value for the implementing type.
     const ZERO : Self;
 
     /// Checks if the value is zero.
@@ -8,33 +8,30 @@ pub trait Zero : PartialEq + Sized {
     /// # Returns
     ///
     /// `true` if the value is zero, `false` otherwise.
-    #[inline(always)]
     fn is_zero(&self) -> bool {
         *self == Self::ZERO
     }
 }
 
 macro_rules! impl_zero {
-    ($T : ty,$v : expr) => { 
-        impl Zero for $T {
-            const ZERO : Self = $v;
-        }
-    }
+    ($($t:ty => $v : expr)*) => {
+        $(
+            impl Zero for $t {
+                const ZERO : Self = $v;
+            }
+        )*
+    };
 }
 
-impl_zero!(i8,0);
-impl_zero!(i16,0);
-impl_zero!(i32,0);
-impl_zero!(i64,0);
+impl_zero!(
+    i8 => 0
+    i16 => 0
+    i32 => 0
+    i64 => 0
 
-impl_zero!(u8,0);
-impl_zero!(u16,0);
-impl_zero!(u32,0);
-impl_zero!(u64,0);
-
-impl_zero!(f32,0.0);
-impl_zero!(f64,0.0);
-
+    f32 => 0.0
+    f64 => 0.0
+);
 
 #[cfg(test)]
 mod tests {

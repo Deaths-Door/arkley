@@ -1,6 +1,6 @@
 use std::ops::{Add,Sub,Mul,Div};
 
-use crate::utils::{Zero,Lcm,Gcd};
+use crate::utils::{Lcm,Gcd,Zero,Numeric};
 
 /// The `Fraction` struct represents a fraction with a numerator and denominator.
 ///
@@ -64,6 +64,23 @@ impl<N,D> Fraction<N,D> {
     }
 }
 
+impl<N,D> Fraction<N,D> where N : Div<D> + Copy , D : Copy , f64: From<<N as Div<D>>::Output>{
+    
+    /// Converts the fraction to a decimal representation (`f64`).
+    ///
+    /// # Returns
+    ///
+    /// The decimal representation of the fraction as an `f64`.
+    pub fn as_f64(&self) -> f64 {
+        match self {
+            Fraction::TopHeavy(numerator,denominator) => (*numerator / *denominator).into(),
+            Fraction::NaN => f64::NAN,
+            Fraction::PositiveInfinity => f64::INFINITY,
+            Fraction::NegativeInfinity => f64::NEG_INFINITY,
+        }
+    }
+}
+
 impl<N,D> Fraction<N,D> where N : Copy , D : Copy {
     /// Returns a new `Fraction` instance that represents the inverse of the current fraction.
     ///
@@ -93,7 +110,7 @@ impl<N,D> Fraction<N,D> where N : Zero + Gcd + PartialOrd + Div<Output = N>, D :
     /// A new `Fraction` instance based on the provided numerator and denominator.
     ///
     pub fn new(numerator : N,denominator : D) -> Self {
-        if !denominator.is_zero(){
+        if !denominator.is_zero() {
             let gcd : N = numerator.gcd(denominator.into());
             return Fraction::TopHeavy(numerator / gcd,denominator / gcd);
         };
@@ -102,7 +119,7 @@ impl<N,D> Fraction<N,D> where N : Zero + Gcd + PartialOrd + Div<Output = N>, D :
             return Fraction::NaN;
         }
 
-        if numerator > N::ZERO {
+        if numerator >= N::ZERO {
             Fraction::PositiveInfinity
         }
         else {
@@ -111,7 +128,18 @@ impl<N,D> Fraction<N,D> where N : Zero + Gcd + PartialOrd + Div<Output = N>, D :
     }
 }
 
-impl<N,D> Add for Fraction<N, D> where N : Add<Output = N> + Mul<Output = N>, D : Lcm + Mul + Into<N> {
+impl<N,D> std::fmt::Display for Fraction<N,D> where N : Numeric + std::fmt::Display, D : Numeric + std::fmt::Display{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Fraction::TopHeavy(numerator,denominator) => write!(f,"{}/{}",numerator,denominator),
+            Fraction::NaN => write!(f,"{}","NaN"),
+            Fraction::PositiveInfinity => write!(f,"{}","∞"),
+            Fraction::NegativeInfinity => write!(f,"{}","-∞"),
+        }
+    }
+}
+
+impl<N,D> Add for Fraction<N, D> where N : Add<Output = N> + Mul<Output = N>, D : Lcm + Mul + PartialEq + Into<N> {
     type Output = Self;
 
     fn add(self, other: Self) -> Self::Output {
@@ -133,7 +161,7 @@ impl<N,D> Add for Fraction<N, D> where N : Add<Output = N> + Mul<Output = N>, D 
     }
 }
 
-impl<N,D> Sub for Fraction<N,D> where N : Sub<Output = N> + Mul<Output = N>, D : Lcm + Into<N>  {
+impl<N,D> Sub for Fraction<N,D> where N : Sub<Output = N> + Mul<Output = N>, D : Lcm + PartialEq + Into<N>  {
     type Output = Self;
     fn sub(self, other: Self) -> Self::Output {
         match (self,other) {
@@ -168,8 +196,7 @@ impl<N,D> Mul for Fraction<N,D> where N : Gcd + Mul<Output = N> + Div<Output = N
             }
             (Fraction::NaN,_) | (_,Fraction::NaN) => Fraction::NaN,
             (Fraction::PositiveInfinity,_) | (_,Fraction::PositiveInfinity) => Fraction::PositiveInfinity,
-            (Fraction::NegativeInfinity,_) | (_,Fraction::NegativeInfinity) => Fraction::NegativeInfinity,
-            
+            (Fraction::NegativeInfinity,_) | (_,Fraction::NegativeInfinity) => Fraction::NegativeInfinity,   
         }
     }
 }
@@ -180,6 +207,20 @@ impl<N,D> Div for Fraction<N,D> where Self : Mul<Output = Self> ,N : Copy , D : 
         self * other.to_inverse().into()
     }
 }
+
+macro_rules! from_ints {
+    ($($t:ty),*) => {
+        $(
+            impl From<$t> for Fraction<$t,u8> {
+                fn from(value: $t) -> Self {
+                    Fraction::TopHeavy(value, 1)
+                }
+            }
+        )*
+    }
+}
+
+from_ints!(u8, i8, u16, i16, u32, i32, u64, i64, f32, f64);
 
 #[cfg(test)]
 mod tests {

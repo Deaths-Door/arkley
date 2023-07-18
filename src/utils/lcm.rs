@@ -17,15 +17,15 @@ pub trait Lcm: Gcd + std::ops::Div<Output = Self> + std::ops::Mul<Output = Self>
 }
 
 macro_rules! impl_lcm {
-    ($T : ty) => { 
-        impl Lcm for $T {}
+    ($($t:ty),*) => { 
+        $(
+            impl Lcm for $t {}
+
+        )*
     }
 }
 
-impl_lcm!(i8);
-impl_lcm!(i16);
-impl_lcm!(i32);
-impl_lcm!(i64);
+impl_lcm!(i8,i16,i32,i64);
 
 #[cfg(test)]
 mod tests {

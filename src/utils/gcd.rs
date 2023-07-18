@@ -9,7 +9,7 @@ pub trait Gcd : Zero + std::ops::Rem<Output = Self> + Sized + Copy {
     /// to optimize the computation. For other types, the Euclidean algorithm is used by default if no custom implementation is given.
     /// TODO IMPLEMENT STEINS ALGORITHM 
     fn gcd(self, other: Self) -> Self {        
-        if other.is_zero() {
+        if other.is_zero() { 
             self
         } else {
             (other % self).gcd(self)
@@ -18,59 +18,58 @@ pub trait Gcd : Zero + std::ops::Rem<Output = Self> + Sized + Copy {
 }
 
 macro_rules! steins_algorithm {
-    ($T : ty) => {
-        impl Gcd for $T {
-            fn gcd(self,other : Self) -> Self {
-                // Use Stein's algorithm
-                let mut m = self;
-                let mut n = other;
-                if m == 0 || n == 0 {
-                    return (m | n).abs();
-                }
-
-                // find common factors of 2
-                let shift = (m | n).trailing_zeros();
-
-                // The algorithm needs positive numbers, but the minimum value
-                // can't be represented as a positive one.
-                // It's also a power of two, so the gcd can be
-                // calculated by bitshifting in that case
-
-                // Assuming two's complement, the number created by the shift
-                // is positive for all numbers except gcd = abs(min value)
-                // The call to .abs() causes a panic in debug mode
-                if m == Self::MIN || n == Self::MIN {
-                    return ((1 << shift) as Self).abs();
-                }
-
-                // guaranteed to be positive now, rest like unsigned algorithm
-                m = m.abs();
-                n = n.abs();
-
-                // divide n and m by 2 until odd
-                m >>= m.trailing_zeros();
-                n >>= n.trailing_zeros();
-
-                while m != n {
-                    if m > n {
-                        m -= n;
-                        m >>= m.trailing_zeros();
-                    } else {
-                        n -= m;
-                        n >>= n.trailing_zeros();
+    ($($t:ty),*) => {
+        $(
+            impl Gcd for $t {
+                fn gcd(self,other : Self) -> Self {
+                    // Use Stein's algorithm
+                    let mut m = self;
+                    let mut n = other;
+                    if m == 0 || n == 0 {
+                        return (m | n).abs();
                     }
+    
+                    // find common factors of 2
+                    let shift = (m | n).trailing_zeros();
+    
+                    // The algorithm needs positive numbers, but the minimum value
+                    // can't be represented as a positive one.
+                    // It's also a power of two, so the gcd can be
+                    // calculated by bitshifting in that case
+    
+                    // Assuming two's complement, the number created by the shift
+                    // is positive for all numbers except gcd = abs(min value)
+                    // The call to .abs() causes a panic in debug mode
+                    if m == Self::MIN || n == Self::MIN {
+                        return ((1 << shift) as Self).abs();
+                    }
+    
+                    // guaranteed to be positive now, rest like unsigned algorithm
+                    m = m.abs();
+                    n = n.abs();
+    
+                    // divide n and m by 2 until odd
+                    m >>= m.trailing_zeros();
+                    n >>= n.trailing_zeros();
+    
+                    while m != n {
+                        if m > n {
+                            m -= n;
+                            m >>= m.trailing_zeros();
+                        } else {
+                            n -= m;
+                            n >>= n.trailing_zeros();
+                        }
+                    }
+                    m << shift
                 }
-                m << shift
             }
-        }
+        )*
     }
 }
 
 
-steins_algorithm!(i8);
-steins_algorithm!(i16);
-steins_algorithm!(i32);
-steins_algorithm!(i64);
+steins_algorithm!(i8,i16,i32,i64);
 
 #[cfg(test)]
 mod tests {
