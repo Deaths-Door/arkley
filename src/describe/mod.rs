@@ -4,6 +4,7 @@ pub use self::numeric_describe::*;
 
 /// Represents different levels of filtering for numeric descriptions.
 /// Can be used to control the level of details in the description.
+#[derive(PartialEq, PartialOrd)]
 pub enum FilterLevel {
     /// Basic level of filtering suitable for beginners.
     Beginner,
@@ -22,11 +23,21 @@ pub struct SubStep {
     pub latex: String,
 }
 
+impl SubStep {
+    const fn new(info: String,latex: String) -> Self {
+        Self { info , latex }
+    }
+}
 
 /// Represents a step in the description operations.
 /// A step can consist of multiple substeps to provide detailed explanations.
 pub struct Step(Vec<SubStep>);
 
+impl Default for Step {
+    fn default() -> Self {
+        Self(Vec::new())
+    }
+}
 
 /// Represents a method or operation.
 /// It can be a series of steps with substeps to describe the operation in detail.
