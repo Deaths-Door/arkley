@@ -34,6 +34,9 @@ pub mod utils;
 /// This module provides several structs and enums that represent common mathematical numbers such as fractions, standard form, and decimals,
 pub mod numbers;
 
-mod describe;
-
-pub use self::describe::*;
+/// The `describe` module provides functionalities for describing operations and filtering levels.
+///
+/// This module contains several components, including the `FilterLevel` enum that represents different
+/// levels of filtering for numeric descriptions. It also includes the `SubStep` and `Step` structs, which
+/// are used to construct detailed descriptions of numeric operations.
+pub mod describe;

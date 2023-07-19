@@ -14,4 +14,4 @@ macro_rules! impl_numeric {
     };
 }
 
-impl_numeric!(i8, i16, i32, i64);
+impl_numeric!(i8, i16, i32, i64,f32,f64);

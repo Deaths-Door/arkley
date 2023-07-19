@@ -16,29 +16,38 @@ pub trait Power<Rhs>{
 }
 
 macro_rules! impl_power {
-    ($($base:ty => ($( $exp:ty => $output:ty ),*)),*) => {
+    (signed; $($t : ty),*) => {
         $(
-            $(
-                /// # [deprecated(note = "Reimplement this for signed ints as it does try_into().unwrap() which may panic")]
-                impl Power<$exp> for $base {
-                    type Output = $output;
+            impl Power<$t> for $t {
+                type Output = $t;
 
-                    fn to_the_power_of(self, other: $exp) -> Self::Output {
-                        self.pow(other as u32).try_into().unwrap()
+                    fn to_the_power_of(self, other: $t) -> Self::Output {
+                        self.pow(other as u32)
                     }
-                }
-            )*
+            }
+        )*
+    };
+    (float; $($t : ty),*) => {
+        $(
+            impl Power<$t> for $t {
+                type Output = $t;
+
+                    fn to_the_power_of(self, other: $t) -> Self::Output {
+                        self.powf(other)
+                    }
+            }
         )*
     };
 }
 
-impl_power!(
-    i8 => (i8 => i8, i16 => i16, i32 => i32),
+impl_power!(signed; i8,i16,i32,i64);
+impl_power!(float; f32,f64);
+
+//,f32,f64
+    /*i8 => (i8 => i8, i16 => i16, i32 => i32),
     i16 => (i8 => i8, i16 => i16, i32 => i32),
     i32 => (i8 => i8, i16 => i16, i32 => i32),
-    i64 => (i8 => i64,i16 => i64,i32 => i64,i64 => i64)
-);
-
+    i64 => (i8 => i64,i16 => i64,i32 => i64,i64 => i64)*/
 #[cfg(test)]
 mod tests {
     use super::*;
