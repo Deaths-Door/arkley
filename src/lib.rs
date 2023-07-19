@@ -33,3 +33,7 @@ pub mod utils;
 ///
 /// This module provides several structs and enums that represent common mathematical numbers such as fractions, standard form, and decimals,
 pub mod numbers;
+
+mod describe;
+
+pub use self::describe::*;

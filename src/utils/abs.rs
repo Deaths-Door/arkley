@@ -9,6 +9,15 @@ pub trait Abs {
 }
 
 macro_rules! impl_abs {
+    (unsigned; $($t:ty),*) => {
+        $(
+            impl Abs for $t {
+                fn absolute(&self) -> Self {
+                    *self
+                }
+            }
+        )*
+    };
     ($($t:ty),*) => {
         $(
             impl Abs for $t {
@@ -17,9 +26,10 @@ macro_rules! impl_abs {
                 }
             }
         )*
-    };
+    }
 }
 
+impl_abs!(unsigned; u8,u16,u32,u64);
 impl_abs!(i8,i16,i32,i64,f32,f64);
 
 #[cfg(test)]

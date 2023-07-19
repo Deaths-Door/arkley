@@ -17,8 +17,8 @@ pub trait Gcd : Zero + std::ops::Rem<Output = Self> + Sized + Copy {
     }
 }
 
-macro_rules! steins_algorithm {
-    ($($t:ty),*) => {
+macro_rules! impl_gcd {
+    (signed; $($t:ty),*) => {
         $(
             impl Gcd for $t {
                 fn gcd(self,other : Self) -> Self {
@@ -47,11 +47,11 @@ macro_rules! steins_algorithm {
                     // guaranteed to be positive now, rest like unsigned algorithm
                     m = m.abs();
                     n = n.abs();
-    
+
                     // divide n and m by 2 until odd
                     m >>= m.trailing_zeros();
                     n >>= n.trailing_zeros();
-    
+
                     while m != n {
                         if m > n {
                             m -= n;
@@ -65,11 +65,47 @@ macro_rules! steins_algorithm {
                 }
             }
         )*
+    };
+    (unsigned; $($t:ty),*) => {
+        $(
+            impl Gcd for $t {
+                fn gcd(self,other : Self) -> Self {
+                    let mut m = self;
+                    let mut n = other;
+
+                    // find common factors of 2
+                    let shift = (m | n).trailing_zeros();
+
+                    // divide n and m by 2 until odd
+                    m >>= m.trailing_zeros();
+                    n >>= n.trailing_zeros();
+
+                    while m != n {
+                        if m > n {
+                            m -= n;
+                            m >>= m.trailing_zeros();
+                        } else {
+                            n -= m;
+                            n >>= n.trailing_zeros();
+                        }
+                    }
+                    m << shift
+                }
+            }
+        )*
+    };
+    (float; $($t:ty),*) => {
+        $(
+            impl Gcd for $t {}
+        )* 
     }
 }
 
 
-steins_algorithm!(i8,i16,i32,i64);
+impl_gcd!(signed; i8,i16,i32,i64);
+impl_gcd!(unsigned; u8,u16,u32,u64);
+impl_gcd!(float; f32,f64);
+
 
 #[cfg(test)]
 mod tests {
