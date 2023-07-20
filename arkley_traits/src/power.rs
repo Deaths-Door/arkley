@@ -21,9 +21,9 @@ macro_rules! impl_power {
             impl Power<$t> for $t {
                 type Output = $t;
 
-                    fn to_the_power_of(self, other: $t) -> Self::Output {
-                        self.pow(other as u32)
-                    }
+                fn to_the_power_of(self, other: $t) -> Self::Output {
+                    self.pow(other as u32)
+                }
             }
         )*
     };
@@ -32,9 +32,9 @@ macro_rules! impl_power {
             impl Power<$t> for $t {
                 type Output = $t;
 
-                    fn to_the_power_of(self, other: $t) -> Self::Output {
-                        self.powf(other)
-                    }
+                fn to_the_power_of(self, other: $t) -> Self::Output {
+                    self.powf(other)
+                }
             }
         )*
     };

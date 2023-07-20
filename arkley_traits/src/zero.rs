@@ -1,9 +1,5 @@
 /// Trait for types that represent a zero value.
 pub trait Zero : PartialEq + Sized {
-    /// The zero value for the implementing type.
-    #[deprecated(note="use zero() instead")]
-    const ZERO : Self;
-
     /// Checks if the value is zero.
     ///
     /// # Returns
@@ -21,8 +17,6 @@ macro_rules! impl_zero {
     ($($t:ty => $v : expr)*) => {
         $(
             impl Zero for $t {
-                const ZERO : Self = $v;
-
                 fn zero() -> Self {
                     $v
                 }

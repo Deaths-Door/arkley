@@ -5,3 +5,7 @@ version = 3
 [[package]]
 name = "arkley"
 version = "0.1.0"
+
+[[package]]
+name = "arkley_traits"
+version = "0.1.0"

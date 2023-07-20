@@ -1,4 +1,4 @@
-use crate::utils::Zero;
+use crate::Zero;
 /// Represents the GCD (Greatest Common Divisor) trait.
 /// This trait provides a method to calculate the GCD between two values of the same type.
 // by default uses Euclidean algorithm to calculate GCD (or HCF) but for primitive numbers eg u8 .. i32...f64 Steins alogirthm is used

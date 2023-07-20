@@ -1,4 +1,4 @@
-use crate::utils::Gcd;
+use crate::Gcd;
 
 /// Trait for calculating the Least Common Multiple (LCM).
 pub trait Lcm: Gcd + std::ops::Div<Output = Self> + std::ops::Mul<Output = Self> {

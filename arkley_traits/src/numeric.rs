@@ -1,6 +1,6 @@
 use std::ops::{Add,Sub,Mul,Div,Neg};
 
-use super::{Abs,Lcm,Power,Zero,Log};
+use crate::{Abs,Lcm,Power,Zero,Log};
 
 /// The `Numeric` trait represents types that can be used as numeric values.
 /// Used to restrict the types N and D in the Decimal struct and other related structures, you can use the Numeric trait as a generic type constraint.
