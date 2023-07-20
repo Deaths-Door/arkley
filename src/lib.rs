@@ -21,18 +21,6 @@
         overflowing_literals,
 )]
 
-/// `Utilities` module for common mathematical operations.
-///
-/// This module provides several traits and utility functions for common mathematical operations,
-/// such as calculating the least common multiple (LCM) and greatest common divisor (GCD) of values.
-/// These utilities can be used across different parts of the calculator to perform various
-/// mathematical calculations.
-pub mod utils;
-
-/// `Numbers` module provides various number representations and calculations.
-///
-/// This module provides several structs and enums that represent common mathematical numbers such as fractions, standard form, and decimals,
-pub mod numbers;
 
 /// The `describe` module provides functionalities for describing operations and filtering levels.
 ///
