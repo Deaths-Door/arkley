@@ -1,6 +1,6 @@
 use std::ops::{Add,Sub,Mul,Div,Neg,Rem,AddAssign,SubAssign,MulAssign,DivAssign};
 
-use crate::utils::{Lcm,Gcd,Zero,Numeric,Abs,Power};
+use crate::utils::{Lcm,Gcd,Zero,Numeric,Abs,Power,Log};
 
 /// The `Fraction` struct represents a fraction with a numerator and denominator.
 ///
@@ -127,18 +127,19 @@ impl<N,D> Fraction<N,D> where N : Zero + Gcd + PartialOrd + Div<Output = N>, D :
         }
     }
 }
-/*
-impl<N,D> Numeric for Fraction<N,D> where Self : Abs + Lcm + Zero + Power<Self> + Add<Self> +  Sub<Self> + Mul<Self> +  Div<Self> + Neg {}
 
-impl<N,D> Abs for Fraction<N,D> where N : Abs , D : Abs {
-    fn absolute(&self) -> Self {
+impl<N,D> Abs for Fraction<N,D> where N : Abs , D : Abs  {
+    fn absolute(self) -> Self {
         match self {
-            Fraction::TopHeavy(numerator,denominator) => Fraction::new_unchecked(numerator.absolute(),denominator.absolute()),
+            Fraction::TopHeavy(numerator,denominator) => Fraction::new_unchecked(numerator.absolute(),denominator),
             Fraction::NaN => Fraction::NaN,
             _ => Fraction::PositiveInfinity,
         }
     }
 }
+/*
+impl<N,D> Numeric for Fraction<N,D> where Self : Abs + Lcm + Zero + Power<Self> + Add<Self> +  Sub<Self> + Mul<Self> +  Div<Self> + Neg {}
+
 
 impl<N,D> Gcd for Fraction<N,D> where Self : Zero + Rem<Output = Self> + Sized + Copy  {}
 impl<N,D> Lcm for Fraction<N,D> where Self : Gcd + Div<Output = Self> + Mul<Output = Self>  {}
@@ -149,6 +150,20 @@ impl<N,D>  Zero for Fraction<N,D> where Self : PartialEq + Sized , u8 : Into<N> 
         *self == Self::ZERO
     }
 }*/
+
+
+impl<N,D> Neg for Fraction<N,D> where N : Numeric , D : Numeric {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        match self {
+            Fraction::TopHeavy(numerator,denominator) => Fraction::new_unchecked(-numerator,denominator),
+            Fraction::NaN => Fraction::NaN,
+            Fraction::PositiveInfinity => Fraction::NegativeInfinity,
+            Fraction::NegativeInfinity => Fraction::PositiveInfinity,
+        }
+    }
+}
 
 impl<N,D> std::fmt::Display for Fraction<N,D> where N : Numeric + std::fmt::Display, D : Numeric + std::fmt::Display{
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -255,7 +270,8 @@ impl<N,D> DivAssign for Fraction<N,D> where Self : Div<Self,Output = Self> + Cop
     }
 }
 
-impl<N,D> Neg for Fraction<N,D> where N : Neg<Output = N> , D : Copy{
+/*
+impl<N,D> Neg for Fraction<N,D> where N : Neg<Output = N> , D : Copy {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
@@ -266,7 +282,7 @@ impl<N,D> Neg for Fraction<N,D> where N : Neg<Output = N> , D : Copy{
             Fraction::NegativeInfinity => Fraction::PositiveInfinity,
         }
     }
-}
+}*/
 
 macro_rules! from_ints {
     ($($t:ty),*) => {
@@ -280,7 +296,7 @@ macro_rules! from_ints {
     }
 }
 
-from_ints!(u8, i8, u16, i16, u32, i32, u64, i64, f32, f64);
+from_ints!(u8, i8, u16, i16, u32, i32, u64, i64);
 
 #[cfg(test)]
 mod tests {

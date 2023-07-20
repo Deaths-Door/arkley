@@ -5,15 +5,15 @@ pub trait Abs {
     /// # Returns
     ///
     /// The absolute value of `self`.
-    fn absolute(&self) -> Self;
+    fn absolute(self) -> Self;
 }
 
 macro_rules! impl_abs {
     (unsigned; $($t:ty),*) => {
         $(
             impl Abs for $t {
-                fn absolute(&self) -> Self {
-                    *self
+                fn absolute(self) -> Self {
+                    self
                 }
             }
         )*
@@ -21,7 +21,7 @@ macro_rules! impl_abs {
     ($($t:ty),*) => {
         $(
             impl Abs for $t {
-                fn absolute(&self) -> Self {
+                fn absolute(self) -> Self {
                     self.abs()
                 }
             }
