@@ -7,5 +7,12 @@ name = "arkley"
 version = "0.1.0"
 
 [[package]]
+name = "arkley_numerics"
+version = "0.1.0"
+dependencies = [
+ "arkley_traits",
+]
+
+[[package]]
 name = "arkley_traits"
 version = "0.1.0"

@@ -6,5 +6,5 @@ edition = "2021"
 [workspace]
 members = [
     "arkley_traits",
-    "arkley-numerics"
+    "arkley_numerics"
 ]
