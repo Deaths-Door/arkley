@@ -32,69 +32,79 @@ impl DescribeNumeric for f64 {
         }
 
         let mut step = Step::default();
+        let mut substeps : Vec<SubStep> = Vec::new();
 
         match operation {
             NumericOperation::Addition => {
                 let (_columns,paired) = generate_column(&mut [*self,other],"+");
                 let point_index = _columns[0].find('.').unwrap();
                 let columns = _columns.join("\n");
-                let substep = SubStep::new(B_NUMERIC_OP_ANFANG.to_string(),_columns.join("\n"));
-                step.add_substep(substep); 
                 
                 let mut carries : Vec<u32> = Vec::new();
                 let mut carries_str = String::new();
+                
+                let mut sum_str = String::new();
 
-                let mut substeps : Vec<SubStep> = Vec::new();
+                let padding = _columns[_columns.len() - 2].len();
 
                 for (index,list) in paired.iter().enumerate() {
-                    if index == point_index || list.iter().all(Option::is_none) {
+                    if index == point_index {
+                        sum_str += ".";
                         continue;
-                    }
-                    let mut c_sum = 0;
-                    let numbers : Vec<String> = list.iter().map(|item| {
-                        let n = item.unwrap_or(0);
-                        c_sum += n;
-                        n.to_string()
-                    }).collect();
-                
-    
-                    let c_rem = c_sum % 10;
-                    carries.push(c_rem);
-                    
-                    let info = {
-                        let optional = match carries.get(carries.len() - 1) {
-                            None => String::new(),
-                            Some(n) if *n == 0 => String::new(),
-                            Some(n) => {
-                                format!("+ {} (carried forward)",n)
-                            }
-                        };
-    
-                        format!("Sum : {} {} = {}",numbers.join(" + "),optional,c_sum) 
                     };
                     
-                    let maths = format!("{:>padding$}\n{}\n{:>padding$}",
-                        carries_str,
-                        columns,
-                        c_rem,
-                        padding = numbers[0].len()
-                    );
+                    if list.iter().all(Option::is_none) {
+                        continue;
+                    }
 
-                    carries_str += " ";
-                    carries_str += &c_rem.to_string();
-                    
-                    let substep = SubStep::new(info,maths);
+                    let mut info = String::from("Sum : ");
+
+                    let mut c_sum = 0;
+
+                    for item in list {
+                        let cn = item.unwrap_or(0);
+                        c_sum += cn;
+                        info += &format!("{} +",cn);
+                    };
+
+                    let carry = carries.last().unwrap_or(&0);
+                    c_sum += carry;
+
+                    if carry != &0 {
+                        info += &format!("{} (carried forward)",carry);
+                    };
+
+                    info += &format!(" = {}",c_sum);
+
+                    let c_rem = c_sum % 10;
+
+                    sum_str += &c_rem.to_string();
+
+                    if c_sum >= 10 {
+                        info += &format!("\n Since sum is greater than 10 we carry 1 forward");
+                        carries.push(c_rem);
+                    };
+
+                    let c_div = c_sum / 10;
+
+                    carries_str.insert_str(0,&format!(" {}",c_div)); 
+                
+                    let latex = format!("{:>p$}\n{columns}\n{:>p$}",carries_str,sum_str,p = padding);
+
+                    let substep = SubStep::new(info,latex);
                     substeps.push(substep);
-                }
+                };
 
-                substeps.reverse();
-                step.add_substeps(substeps);
+                let substep = SubStep::new(B_NUMERIC_OP_ANFANG.to_string(),_columns.join("\n"));
+                step.add_substep(substep); 
+             //   substeps.reverse();
             },
             NumericOperation::Subtraction => todo!("NOT DONE YET"),
             NumericOperation::Multiplication => todo!("NOT DONE YET"),
             NumericOperation::Division => todo!("NOT DONE YET"),
             NumericOperation::Power => todo!("NOT DONE YET"),
         };
+        step.add_substeps(substeps);
 
         Some(step)
     }
@@ -160,7 +170,7 @@ mod tests {
     // Create a test function for the `describe_numeric` method
     #[test]
     fn test_describe_numeric_addition() {
-        let step = 2.5.describe_numeric(FilterLevel::Beginner, NumericOperation::Addition, 3.5).unwrap();
+        let step = 26.5.describe_numeric(FilterLevel::Beginner, NumericOperation::Addition, 3.5).unwrap();
         for substep in &step.0 {
             println!("Info: {}", substep.info);
             println!("Maths:\n{}", substep.latex);
