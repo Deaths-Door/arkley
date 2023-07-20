@@ -39,6 +39,16 @@ impl Default for Step {
     }
 }
 
+impl Step {
+    fn add_substep(&mut self,substep : SubStep) {
+        self.0.push(substep);
+    }
+
+    fn add_substeps(&mut self,substeps :Vec<SubStep>) {
+        self.0.extend(substeps)
+    }
+}
+
 /// Represents a method or operation.
 /// It can be a series of steps with substeps to describe the operation in detail.
 pub struct Method(Vec<Step>);
