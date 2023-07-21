@@ -112,22 +112,25 @@ impl From<f64> for Fraction<i64,i64> {
     }
 }
 
-impl<N,D> TryFrom<&str> for Fraction<N,D> where N : Numeric , D : Numeric {
+impl<'a,N,D> TryFrom<&'a str> for Fraction<N,D> where N : Numeric + From<&'a str>, D : Numeric + From<&'a str>, Fraction<N, D>: From<f64>{
     type Error = ();
 
-    fn from(s: &str) -> Self {
-        match s {
-            "NaN" => Ok(Fraction::NaN),
-            "∞" | "+∞" | "inf" | "infinity" | "+inf" => Ok(Fraction::PositiveInfinity),
-            "-∞" | "-inf" | "-infinity" => Ok(Fraction::NegativeInfinity),
-            _ => match s.find('/') {
-                None => Err(()),
-                Some(index) => {
-                    let numerator = N::try_from(&s[..index]).map_err(|_| ())?;
-                    let denominator = D::try_from(&s[index + 1..]).map_err(|_| ())?;
-                    Ok(Fraction::Fraction(numerator, denominator))
-                }
-            },
+    fn try_from(s: &'a str) -> Result<Self,Self::Error> {
+        match s.parse::<f64>() {
+            Ok(float) => Ok(float.into()),
+            Err(_) => match s {
+                "NaN" => Ok(Fraction::NaN),
+                "∞" | "+∞" | "inf" | "infinity" | "+inf" => Ok(Fraction::PositiveInfinity),
+                "-∞" | "-inf" | "-infinity" => Ok(Fraction::NegativeInfinity),
+                _ => match s.find('/') {
+                    None => Err(()),
+                    Some(index) => {
+                        let numerator = N::try_from(&s[..index]).map_err(|_| ())?;
+                        let denominator = D::try_from(&s[index + 1..]).map_err(|_| ())?;
+                        Ok(Fraction::new_unchecked(numerator, denominator))
+                    }
+                },
+            }
         }
     }
 }
