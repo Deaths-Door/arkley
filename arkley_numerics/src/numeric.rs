@@ -8,19 +8,6 @@ use arkley_describe::{
     FilterLevel
 };
 
-/// An enumeration representing different numeric operations
-#[derive(PartialEq)]
-pub enum NumericOperation {
-    /// +
-    Addition,
-    /// -
-    Subtraction,
-    /// *
-    Multiplication,
-    /// /
-    Division,
-}
-
 /// A wrapper trait that combines the numeric operations and description functionality.
 pub trait Numeric<Rhs = Self> : Describe<NumericOperation,Output = Step> {
     /// Describes the numeric operation and generates a step-by-step explanation.
@@ -37,7 +24,6 @@ pub trait Numeric<Rhs = Self> : Describe<NumericOperation,Output = Step> {
     /// # Returns
     ///
     /// An `Option<Step>` containing the step-by-step description of the numeric operation.
-    ///
     fn describe_numeric(&self,other : Self,filter_level : Option<FilterLevel>,operation : NumericOperation) -> Option<Step> {
         self.describe(other,filter_level,operation)
     }

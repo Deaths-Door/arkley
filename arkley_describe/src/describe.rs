@@ -1,4 +1,4 @@
-use crate::FilterLevel;
+use crate::{FilterLevel,Operation,Step};
 
 /// Represents a generic trait for describing operations.
 /// The associated type `Output` specifies the return type of the `describe` method.
@@ -23,22 +23,23 @@ pub trait Describe<T,Rhs = Self> : Sized {
     /// An `Option<Self::Output>` representing the description of the operation as a `Step`.
     /// If the operation can be described successfully or is described at all, the method returns `Some(step)`,
     /// otherwise, it returns `None`
-    fn describe(&self,other : Rhs,filter_level : Option<FilterLevel>,operation: NumericOperation) -> Option<Self::Output>;
+    fn describe(&self,other : Rhs,filter_level : Option<FilterLevel>,operation: Operation) -> Option<Self::Output>;
 }
 
 impl Describe<f64> for f64 {
     type Output = Step;
 
-    fn describe(&self,other : f64,filter_level : Option<FilterLevel>,operation: NumericOperation) -> Option<Self::Output> {
+    fn describe(&self,other : f64,filter_level : Option<FilterLevel>,operation: Operation) -> Option<Self::Output> {
         match filter_level.map(|level| level > FilterLevel::Intermediate).unwrap_or(true) {
             false => None,
             true => {
                 match operation {
-                    NumericOperation::Multiplication => todo!("NOT DONE YET"),
-                    NumericOperation::Division => todo!("NOT DONE YET"),
-                    _ => {
-
-                    }
+                    Operation::Multiplication => todo!("NOT DONE YET"),
+                    Operation::Division => todo!("NOT DONE YET"),
+                    Operation::Addition | Operation::Subtraction => {
+                        todo!("..")
+                    },
+                    _ => todo!("...")
                 }
             }
         }

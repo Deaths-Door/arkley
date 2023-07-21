@@ -20,9 +20,11 @@ mod step;
 mod method;
 mod filter;
 mod describe;
+mod operations;
 
 pub use self::substep::*;
 pub use self::step::*;
 pub use self::method::*;
 pub use self::filter::*;
 pub use self::describe::*;
+pub use self::operations::*;
