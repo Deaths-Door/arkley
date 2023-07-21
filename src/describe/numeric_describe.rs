@@ -23,8 +23,6 @@ pub trait DescribeNumeric<Rhs = Self> : /*Numeric*/ {
     fn describe_numeric(&self,filter_level : FilterLevel,operation : NumericOperation,other: &Rhs) -> Option<Step>;
 }
 
-static B_NUMERIC_OP_ANFANG: &str = "Start from the rightmost column (ones place) and add the digits:";
-
 impl DescribeNumeric for f64 {
     fn describe_numeric(&self,filter_level : FilterLevel,operation : NumericOperation,other: &f64) -> Option<Step> {
         if filter_level == FilterLevel::Intermediate {

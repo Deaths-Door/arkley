@@ -1,6 +1,3 @@
-
-use crate::Numeric;
-
 /// Approximates the fractional representation of a floating-point number with a given tolerance.
 ///
 /// The function uses the continued fraction algorithm to find the closest rational approximation
@@ -112,6 +109,7 @@ impl From<f64> for Fraction<i64,i64> {
     }
 }
 
+/*
 impl<'a,N,D> TryFrom<&'a str> for Fraction<N,D> where N : Numeric + From<&'a str>, D : Numeric + From<&'a str>, Fraction<N, D>: From<f64>{
     type Error = ();
 
@@ -133,6 +131,6 @@ impl<'a,N,D> TryFrom<&'a str> for Fraction<N,D> where N : Numeric + From<&'a str
             }
         }
     }
-}
+}*/
 
 from_ints!(u8, i8, u16, i16, u32, i32, u64, i64);

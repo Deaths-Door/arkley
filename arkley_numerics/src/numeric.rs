@@ -1,14 +1,48 @@
-use std::ops::{Add,Sub,Mul,Div,Neg};
+//use std::ops::{Add,Sub,Mul,Div,Neg};
 
 //use arkley_traits::{Abs,Lcm,Power,Zero,Log};
 
+use arkley_describe::{
+    Describe,
+    Step,
+    FilterLevel
+};
 
-pub trait Numeric
+/// An enumeration representing different numeric operations
+#[derive(PartialEq)]
+pub enum NumericOperation {
+    /// +
+    Addition,
+    /// -
+    Subtraction,
+    /// *
+    Multiplication,
+    /// /
+    Division,
+}
+
+/// A wrapper trait that combines the numeric operations and description functionality.
+pub trait Numeric<Rhs = Self> : Describe<NumericOperation,Output = Step> {
+    /// Describes the numeric operation and generates a step-by-step explanation.
+    ///
+    /// This method takes another numeric value `other`, an optional `filter_level` to control
+    /// the level of detail in the description, and the `operation` to be performed.
+    ///
+    /// # Parameters
+    ///
+    /// - `other`: Another numeric value of the same type to perform the operation with.
+    /// - `filter_level`: An optional `FilterLevel` to control the level of detail in the description.
+    /// - `operation`: The `NumericOperation` to be performed, such as addition, subtraction, etc.
+    ///
+    /// # Returns
+    ///
+    /// An `Option<Step>` containing the step-by-step description of the numeric operation.
+    ///
+    fn describe_numeric(&self,other : Self,filter_level : Option<FilterLevel>,operation : NumericOperation) -> Option<Step> {
+        self.describe(other,filter_level,operation)
+    }
+}
 /*
-// The `Numeric` trait represents types that can be used as numeric values.
-// Used to restrict the types N and D in the Decimal struct and other related structures, you can use the Numeric trait as a generic type constraint.
-pub trait Numeric : Abs + Lcm + Zero + Power<Self> + Add<Self> +  Sub<Self> + Mul<Self> +  Div<Self> + Neg<Output = Self> + Log {}
-
 macro_rules! impl_numeric {
     ($($t:ty),*) => {
         $(

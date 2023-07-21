@@ -15,10 +15,14 @@
         overflowing_literals,
 )]
 
-mod numeric;
 mod standardform;
 mod fraction;
 
-pub use self::numeric::*;
 pub use self::standardform::*;
 pub use self::fraction::*;
+
+#[cfg(feature = "describe")]
+mod numeric;
+
+#[cfg(feature = "describe")]
+pub use self::numeric::*;
