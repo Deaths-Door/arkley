@@ -1,4 +1,4 @@
-use crate::utils::Numeric;
+//use crate::Numeric;
 
 use super::{FilterLevel,SubStep,Step};
 
@@ -18,7 +18,7 @@ pub enum NumericOperation {
 }
 
 /// The `DescribeNumeric` trait describes numeric math structs (e.g., decimal fractions, etc.)
-pub trait DescribeNumeric<Rhs = Self> : Numeric {
+pub trait DescribeNumeric<Rhs = Self> : /*Numeric*/ {
     /// Describe the numeric value as a string representation
     fn describe_numeric(&self,filter_level : FilterLevel,operation : NumericOperation,other: Rhs) -> Option<Step>;
 }
