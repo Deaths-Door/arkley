@@ -7,5 +7,6 @@ edition = "2021"
 members = [
     "arkley_traits",
     "arkley_numerics",
-    "arkley_algebra"
+    "arkley_algebra",
+    "arkley-describe"
 ]
