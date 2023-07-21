@@ -51,4 +51,22 @@ impl Step {
 
 /// Represents a method or operation.
 /// It can be a series of steps with substeps to describe the operation in detail.
-pub struct Method(Vec<Step>);
+pub struct Method {
+    /// Name of the method or operation.
+    name: String,
+    /// Steps of the method.
+    steps: Vec<Step>,
+}
+
+impl Method {
+    pub const fn new(name: String) -> Self {
+        Self {
+            name,
+            steps: Vec::new(),
+        }
+    }
+
+    pub fn add_step(&mut self, step: Step) {
+        self.steps.push(step);
+    }
+}

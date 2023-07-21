@@ -8,5 +8,5 @@ members = [
     "arkley_traits",
     "arkley_numerics",
     "arkley_algebra",
-    "arkley-describe"
+    "arkley_describe"
 ]

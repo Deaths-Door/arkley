@@ -11,7 +11,7 @@ use arkley_traits::{Power,Gcd,Lcm,Zero};
 ///
 /// The `Standardform` struct holds the significand (mantissa) of the number
 /// and an exponent that determines the power of 10 by which the significand should be multiplied.
-/// 'Note' : TODO implement Numeric for it
+/// 'Note' : TODO implement Numeric for it and see if fraction or decimal is needed for it to retain precision
 #[derive(Debug,PartialEq,Clone,Copy)]
 pub struct StandardForm  {
     mantissa : f64,

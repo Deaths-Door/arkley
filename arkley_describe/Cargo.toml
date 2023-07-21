@@ -1,5 +1,5 @@
 [package]
-name = "arkley-describe"
+name = "arkley_describe"
 version = "0.1.0"
 edition = "2021"
 
