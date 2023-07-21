@@ -3,7 +3,7 @@
 #![forbid(
         missing_docs,
         unsafe_code,
-        unused_imports,
+       // unused_imports,
         unused_variables,
         unused_mut,
         unused_results,
@@ -20,9 +20,3 @@ mod fraction;
 
 pub use self::standardform::*;
 pub use self::fraction::*;
-
-#[cfg(feature = "describe")]
-mod numeric;
-
-#[cfg(feature = "describe")]
-pub use self::numeric::*;

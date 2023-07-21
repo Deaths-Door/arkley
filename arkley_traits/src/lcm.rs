@@ -1,7 +1,8 @@
 use crate::Gcd;
 
 /// Trait for calculating the Least Common Multiple (LCM).
-pub trait Lcm: Gcd + std::ops::Div<Output = Self> + std::ops::Mul<Output = Self> {
+/// `TODO` : maybe add Rhs and output to make it more like add etc methods
+pub trait Lcm /*<Rhs = Self> {*/ : Gcd/*<Rhs>*/ + std::ops::Div<Output = Self> + std::ops::Mul<Output = Self> {
     /// Calculates the Least Common Multiple (LCM) between `self` and `other`.
     ///
     /// # Parameters
@@ -11,7 +12,7 @@ pub trait Lcm: Gcd + std::ops::Div<Output = Self> + std::ops::Mul<Output = Self>
     /// # Returns
     ///
     /// The calculated LCM of `self` and `other`.
-    fn lcm(self, other: Self) -> Self {
+    fn lcm(self, other: /*Rhs*/Self) -> Self {
         self / self.gcd(other) * other
     }
 }

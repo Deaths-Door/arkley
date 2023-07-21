@@ -26,7 +26,7 @@ impl StandardForm {
         instance
     }
 
-    fn in_range(&self) -> bool {
+    const fn in_range(&self) -> bool {
         (self.mantissa >= 1.0 && self.mantissa <= 10.0) || (self.mantissa >= -10.0  && self.mantissa <= -1.0)
     }
 
@@ -76,16 +76,16 @@ impl StandardForm {
         self.to_engineering_notation().parse()
     }
 }
-
+/*
 impl Zero for StandardForm {
     fn zero() -> Self {
         // COULD BE USING LAZY_STATIC INSTEAD
         StandardForm::new(0.0,0)
     }
-}
-
+}*/
+/*
 impl Gcd for StandardForm {}
-impl Lcm for StandardForm {}
+impl Lcm for StandardForm {}*/
 //impl Numeric for StandardForm {}
 
 impl std::fmt::Display for StandardForm {

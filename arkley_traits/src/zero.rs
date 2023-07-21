@@ -6,20 +6,18 @@ pub trait Zero : PartialEq + Sized {
     ///
     /// `true` if the value is zero, `false` otherwise.
     fn is_zero(&self) -> bool {
-        *self == Self::zero()
+        *self == Self::ZERO
     }
 
     /// The zero value for the implementing type.
-    fn zero() -> Self;
+    const ZERO : Self;
 }
 
 macro_rules! impl_zero {
     ($($t:ty => $v : expr)*) => {
         $(
             impl Zero for $t {
-                fn zero() -> Self {
-                    $v
-                }
+                const ZERO : Self = $v;
             }
         )*
     };

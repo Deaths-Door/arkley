@@ -23,7 +23,7 @@ pub trait Describe<T,Rhs = Self> : Sized {
     /// An `Option<Self::Output>` representing the description of the operation as a `Step`.
     /// If the operation can be described successfully or is described at all, the method returns `Some(step)`,
     /// otherwise, it returns `None`
-    fn describe(&self,other : Rhs,filter_level : Option<FilterLevel>,additional_args: T) -> Option<Self::Output>;
+    fn describe(&self,other : Rhs,filter_level : Option<FilterLevel>,operation: NumericOperation) -> Option<Self::Output>;
 }
 
 impl Describe<f64> for f64 {
