@@ -1,14 +1,14 @@
 use crate::Zero;
 /// Represents the GCD (Greatest Common Divisor) trait.
 /// This trait provides a method to calculate the GCD between two values of the same type.
-// by default uses Euclidean algorithm to calculate GCD (or HCF) but for primitive numbers eg u8 .. i32...f64 Steins alogirthm is used
+/// by default uses Euclidean algorithm to calculate GCD (or HCF) but for primitive numbers eg u8 .. i32...f64 Steins alogirthm is used
 pub trait Gcd : Zero + std::ops::Rem<Output = Self> + Sized + Copy {
     /// Calculates the Greatest Common Divisor (GCD) between `self` and `other`.
     ///
     /// For primitive number types like `i32` etc, the Stein's algorithm is used
     /// to optimize the computation. For other types, the Euclidean algorithm is used by default if no custom implementation is given.
-    /// TODO IMPLEMENT STEINS ALGORITHM 
-    fn gcd(self, other: Self) -> Self {        
+    /// 'Note' : Find a way to make default implementation copyless
+    fn gcd(self, other: Self) -> Self {  
         if other.is_zero() { 
             self
         } else {

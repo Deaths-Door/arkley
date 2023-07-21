@@ -97,37 +97,6 @@ impl<N,D> Fraction<N,D> where N : Copy , D : Copy {
     }
 }
 
-impl<N,D> Fraction<N,D> where N : Zero + Gcd + PartialOrd + Div<Output = N>, D : Zero + Div<N, Output = D> + Into<N> + Copy { 
-    /// Creates a new fraction with the given numerator and denominator.
-    ///
-    /// # Arguments
-    ///
-    /// * `numerator` - The numerator of the fraction.
-    /// * `denominator` - The denominator of the fraction.
-    ///
-    /// # Returns
-    ///
-    /// A new `Fraction` instance based on the provided numerator and denominator.
-    ///
-    pub fn new(numerator : N,denominator : D) -> Self {
-        if !denominator.is_zero() {
-            let gcd : N = numerator.gcd(denominator.into());
-            return Fraction::TopHeavy(numerator / gcd,denominator / gcd);
-        };
-
-        if numerator.is_zero() {
-            return Fraction::NaN;
-        }
-
-        if numerator >= N::ZERO {
-            Fraction::PositiveInfinity
-        }
-        else {
-            Fraction::NegativeInfinity
-        }
-    }
-}
-
 impl<N,D> Abs for Fraction<N,D> where N : Abs , D : Abs  {
     fn absolute(self) -> Self {
         match self {
@@ -283,20 +252,6 @@ impl<N,D> Neg for Fraction<N,D> where N : Neg<Output = N> , D : Copy {
         }
     }
 }*/
-
-macro_rules! from_ints {
-    ($($t:ty),*) => {
-        $(
-            impl From<$t> for Fraction<$t,u8> {
-                fn from(value: $t) -> Self {
-                    Fraction::TopHeavy(value, 1)
-                }
-            }
-        )*
-    }
-}
-
-from_ints!(u8, i8, u16, i16, u32, i32, u64, i64);
 
 #[cfg(test)]
 mod tests {
