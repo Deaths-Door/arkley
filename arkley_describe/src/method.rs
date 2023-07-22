@@ -2,6 +2,7 @@ use crate::Step;
 
 /// Represents a method or operation.
 /// It can be a series of steps with substeps to describe the operation in detail.
+#[derive(Debug)]
 pub struct Method {
     /// Name of the method or operation.
     name: String,

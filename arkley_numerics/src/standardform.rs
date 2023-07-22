@@ -1,32 +1,33 @@
-use std::ops::{Add,Sub,Mul,Div,Rem,AddAssign,SubAssign,MulAssign,DivAssign};
+/*use std::ops::{Add,Sub,Mul,Div,Rem,AddAssign,SubAssign,MulAssign,DivAssign};
 
 use std::cmp::{max,min};
 use std::num::ParseFloatError;
 
 use arkley_traits::{Power,Gcd,Lcm,Zero};
-
+*/
+/*
 //use crate::Numeric;
 
 /// Represents a number in standard form.
 ///
-/// The `Standardform` struct holds the significand (mantissa) of the number
+/// The `Standardform` struct holds the significand (mantissa) of the number (using a underlying fraction for zero precision loss)
 /// and an exponent that determines the power of 10 by which the significand should be multiplied.
 /// 'Note' : TODO implement Numeric for it and see if fraction or decimal is needed for it to retain precision
 #[derive(Debug,PartialEq,Clone,Copy)]
 pub struct StandardForm  {
-    mantissa : f64,
+    mantissa : Fraction<i8,i8>,
     exponent : i8
 }
 
-impl StandardForm {
-    /// Creates a new instance of StandardForm with the given mantissa and exponent
-    pub fn new(mantissa : f64,exponent : i8) -> Self {
+impl StandardForm {*/
+ /*   /// Creates a new instance of StandardForm with the given mantissa and exponent
+    pub fn new(mantissa : Fraction<i8,i8>,exponent : i8) -> Self {
         let mut instance = Self { mantissa , exponent };
         instance.adjust();
         instance
     }
 
-    const fn in_range(&self) -> bool {
+    fn in_range(&self) -> bool {
         (self.mantissa >= 1.0 && self.mantissa <= 10.0) || (self.mantissa >= -10.0  && self.mantissa <= -1.0)
     }
 
@@ -47,10 +48,10 @@ impl StandardForm {
             }   
         };
     }
-
-
+*/
+/*
     /// Returns a reference to the StandardForm representing the significand (mantissa) of the number.
-    pub const fn mantissa(&self) -> &f64 {
+    pub const fn mantissa(&self) -> &Fraction<i8,i8> {
         &self.mantissa
     }
 
@@ -75,19 +76,9 @@ impl StandardForm {
     pub fn as_decimal(&self) -> Result<f64, ParseFloatError>{
         self.to_engineering_notation().parse()
     }
-}
+//}
+*/
 /*
-impl Zero for StandardForm {
-    fn zero() -> Self {
-        // COULD BE USING LAZY_STATIC INSTEAD
-        StandardForm::new(0.0,0)
-    }
-}*/
-/*
-impl Gcd for StandardForm {}
-impl Lcm for StandardForm {}*/
-//impl Numeric for StandardForm {}
-
 impl std::fmt::Display for StandardForm {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         if self.exponent > 4 {
@@ -97,6 +88,7 @@ impl std::fmt::Display for StandardForm {
         write!(f,"{}",(self.mantissa * 10.0).to_the_power_of(self.exponent as f64))
     }
 }
+
 
 macro_rules! from_primitives {
     ($($t : ty),*) =>{
@@ -313,7 +305,8 @@ operation_primitives!(add => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
 operation_primitives!(sub => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
 operation_primitives!(mul => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
 operation_primitives!(div => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
-
+*/
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -446,4 +439,4 @@ mod tests {
         assert_eq!(a.mantissa, 21.0);
         assert_eq!(a.exponent, 1);
     }
-}
+}*/

@@ -2,6 +2,7 @@ use crate::SubStep;
 
 /// Represents a step in the description operations.
 /// A step can consist of multiple substeps to provide detailed explanations.
+#[derive(Debug)]
 pub struct Step(String,Vec<SubStep>);
 
 impl Step {

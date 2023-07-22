@@ -157,6 +157,32 @@ impl<N,D> Fraction<N,D> where N : Div<D> , f64: TryFrom<<N as Div<D>>::Output> {
     }
 }
 
+impl<N,D> std::fmt::Display for Fraction<N,D> where N : std::fmt::Display , D : std::fmt::Display{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Fraction::TopHeavy(numerator,denominator) => {
+                let ns = numerator.to_string();
+                let ds = denominator.to_string();
+
+                let nr = ns.parse::<f64>();
+                let dr = ds.parse::<f64>();
+
+                let string = match (nr,dr) {
+                    (Ok(_),Ok(_)) => format!("{}/{}",ns,ds),
+                    (Ok(_),Err(_)) => format!("{}/({})",ns,ds),
+                    (Err(_),Ok(_)) => format!("({})/{}",ns,ds),
+                    _ => format!("({})/({})",ns,ds)
+                };
+
+                write!(f,"{}",string)
+            },
+            Fraction::NaN => write!(f,"NaN"),
+            Fraction::PositiveInfinity => write!(f,"+∞"),
+            Fraction::NegativeInfinity => write!(f,"-∞"),
+        }
+    }
+}
+
 impl<N,D> Neg for Fraction<N,D> where N : Neg<Output = N> {
     type Output = Self;
 
@@ -292,11 +318,55 @@ macro_rules! from_ints {
     }
 }
 
+from_ints!(u8, i8, u16, i16, u32, i32, u64, i64);
+
 impl From<f64> for Fraction<i64,i64> {
     fn from(value: f64) -> Self {
         from_f64(value,1.0e-10)
     }
 }
+
+macro_rules! operation_primitives {
+    ($($t : ty),*) => {
+        $(
+            impl<N,D> Add<$t> for Fraction<N,D> where Self :  Add<Self,Output = Self> , $t : Into<Self> {
+                type Output = Self;
+                fn add(self, other: $t) -> Self {
+                    let rhs : Self = other.into();
+                    self + rhs
+                }
+            }
+
+            impl<N,D> Sub<$t> for Fraction<N,D> where  Self : From<$t> + Sub<Self,Output = Self>{
+                type Output = Self;
+                fn sub(self, other: $t) -> Self {
+                    let rhs : Self = other.into();
+                    self - rhs
+                }
+            }
+
+            
+            impl<N,D> Mul<$t> for Fraction<N,D> where Self: From<$t> + Mul<Self,Output = Self>{
+                type Output = Self;
+                fn mul(self, other: $t) -> Self {
+                    let rhs : Self = other.into();
+                    self * rhs
+                }
+            }
+
+            impl<N,D> Div<$t> for Fraction<N,D> where Self : From<$t> + Div<Self,Output = Self> {
+                type Output = Self;
+
+                fn div(self, other: $t) -> Self {
+                    let rhs : Self = other.into();
+                    self / rhs
+                }
+            }
+        )*
+    };
+}
+
+operation_primitives!(u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
 
 /*
 impl<'a,N,D> TryFrom<&'a str> for Fraction<N,D> where N : Numeric + From<&'a str>, D : Numeric + From<&'a str>, Fraction<N, D>: From<f64>{
@@ -321,9 +391,6 @@ impl<'a,N,D> TryFrom<&'a str> for Fraction<N,D> where N : Numeric + From<&'a str
         }
     }
 }*/
-
-from_ints!(u8, i8, u16, i16, u32, i32, u64, i64);
-
 
 #[cfg(test)]
 mod tests {
@@ -414,4 +481,30 @@ mod tests {
         assert_ne!(fraction2, fraction4);  // Different variants should not be equal
         assert_ne!(fraction3, fraction4);  // Different variants should not be equal
     }
+
+    #[test]
+    fn test_from_f64() {
+        // Test cases and expected results as Fraction values
+        let test_cases = [
+            (0.25, Fraction::new(1, 4), 1e-8),
+            (0.333333, Fraction::new(1, 3), 1e-8),
+            (0.5, Fraction::new(1, 2), 1e-8),
+            (0.75, Fraction::new(3, 4), 1e-8),
+            (1.0, Fraction::new(1, 1), 1e-8),
+            (1.25, Fraction::new(5, 4), 1e-8),
+            (1.5, Fraction::new(3, 2), 1e-8),
+            (1.75, Fraction::new(7, 4), 1e-8),
+            (2.0, Fraction::new(2, 1), 1e-8),
+            (2.25, Fraction::new(9, 4), 1e-8),
+            (2.5, Fraction::new(5, 2), 1e-8),
+            (2.75, Fraction::new(11, 4), 1e-8),
+            (3.0, Fraction::new(3, 1), 1e-8),
+        ];
+    
+        for (input, expected_output, tolerance) in test_cases.iter() {
+            let result = from_f64(*input, *tolerance);
+            assert_eq!(result, *expected_output);
+        }
+    }
+    
 }
