@@ -1,16 +1,33 @@
 use crate::Decimal;
 
+use std::num::ParseFloatError;
+
 /// Represents a number in standard form.
 ///
 /// The `Standardform` struct holds the significand (mantissa) of the number (using a underlying fraction for zero precision loss)
 /// and an exponent that determines the power of 10 by which the significand should be multiplied.
 /// 'Note' : TODO use Decimal<i8,i8> when and if possible to reduce memory usage
+/// `Note` : TODO restrict decimal to be positive always
 pub struct StandardForm  {
     mantissa : Decimal,
     exponent : i8
 }
 
 impl StandardForm {
+    /// Creates a new instance of StandardForm with the given mantissa and exponent
+    pub fn new(mantissa : Decimal,exponent : i8) -> Self {
+        let mut instance = Self { mantissa , exponent };
+        instance.adjust();
+        instance
+    }
+    
+    fn adjust(&mut self) {
+        todo!("IMPLEMENT THIS RIGHT NOWs")
+        //if self.mantissa >= 1 && self.mantissa <= 10 {
+            //..
+        //}
+    }
+
     /// Returns a reference to the StandardForm representing the significand (mantissa) of the number.
     pub const fn mantissa(&self) -> &Decimal {
         &self.mantissa
@@ -38,6 +55,17 @@ impl StandardForm {
         self.to_engineering_notation().parse()
     }
 }
+
+impl std::fmt::Display for StandardForm {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        if self.exponent > 4 {
+            return write!(f,"{}",self.to_scientific_notation());
+        };
+
+        write!(f,"{}",(self.mantissa * 10.0).to_the_power_of(self.exponent as f64))
+    }
+}
+
 
 /*use std::ops::{Add,Sub,Mul,Div,Rem,AddAssign,SubAssign,MulAssign,DivAssign};
 
@@ -91,46 +119,6 @@ impl StandardForm {*/
     }
 */
 /*
-    /// Returns a reference to the StandardForm representing the significand (mantissa) of the number.
-    pub const fn mantissa(&self) -> &Fraction<i8,i8> {
-        &self.mantissa
-    }
-
-    /// Returns the exponent that determines the power of 10 by which the significand should be multiplied.
-    pub const fn exponent(&self) -> &i8 {
-        &self.exponent
-    }
-
-    /// Returns the string representation of the number in scientific notation.
-    pub fn to_scientific_notation(&self) -> String {
-        format!("{}e{}", self.mantissa, self.exponent)
-    }
-        
-    /// Returns the string representation of the number in engineering notation.
-    pub fn to_engineering_notation(&self) -> String {
-        format!("{}*10^{}", self.mantissa, self.exponent)
-    }
-
-    /// Converts the `StandardForm` into a decimal floating-point number in base 10.
-    /// If successful, it returns the decimal value as an `f64`.
-    /// If parsing fails, it returns a `ParseFloatError`.
-    pub fn as_decimal(&self) -> Result<f64, ParseFloatError>{
-        self.to_engineering_notation().parse()
-    }
-//}
-*/
-/*
-impl std::fmt::Display for StandardForm {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        if self.exponent > 4 {
-            return write!(f,"{}",self.to_scientific_notation());
-        };
-
-        write!(f,"{}",(self.mantissa * 10.0).to_the_power_of(self.exponent as f64))
-    }
-}
-
-
 macro_rules! from_primitives {
     ($($t : ty),*) =>{
         $(

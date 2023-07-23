@@ -4,6 +4,8 @@ use super::Fraction;
 
 /// Represents a decimal number as a fraction of two integers.
 /// The `Decimal` struct wraps a `Fraction<i16, i16>` to represent decimal numbers with zero precision loss for structs like [super::StandardForm]
+/// `Note` : TODO IMPLMENT IT SO THAT DECIMAL<int,int> where int is i8 .. i64 
+#[derive(Debug,PartialEq)]
 pub struct Decimal(Fraction<i16,i16>);
 
 impl Decimal {
