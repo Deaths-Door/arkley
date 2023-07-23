@@ -1,6 +1,6 @@
-use std::ops::{Add,Sub,Mul,Div,Neg,AddAssign,SubAssign,MulAssign,DivAssign};
+use std::ops::{Add,Sub,Mul,Div,Rem,Neg,AddAssign,SubAssign,MulAssign,DivAssign};
 
-use arkley_traits::{Gcd,Zero,Lcm};
+use arkley_traits::{Gcd,Zero,Lcm,Abs,Power};
 
 /// Approximates the fractional representation of a floating-point number with a given tolerance.
 ///
@@ -126,7 +126,8 @@ impl<N,D> Fraction<N,D> {
 }
 
 impl<N,D> Fraction<N,D> where N : Zero + Gcd + Div<N,Output = N> + Neg<Output = N> + PartialOrd,
-D : Zero + Div<N,Output = D> + Neg<Output = D> + PartialOrd + Into<N> + Copy { /// Creates a new fraction with the given numerator and denominator.
+D : Zero + Div<N,Output = D> + Neg<Output = D> + PartialOrd + Into<N> + Copy { 
+    /// Creates a new fraction with the given numerator and denominator.
     ///
     /// # Arguments
     ///
@@ -146,7 +147,7 @@ D : Zero + Div<N,Output = D> + Neg<Output = D> + PartialOrd + Into<N> + Copy { /
             return Fraction::NaN;
         }
 
-        if numerator > N::ZERO {
+        if numerator > N::zero() {
             Fraction::PositiveInfinity
         }
         else {
@@ -170,13 +171,13 @@ impl<N,D> Fraction<N,D> where N : Zero + Gcd + Div<N,Output = N> + Neg<Output = 
     /// The reduced `Fraction` with the provided numerator and denominator.
     pub fn new_unchecked_reduced(numerator : N,denominator : D) -> Fraction<N,D> {
         let gcd = numerator.gcd(denominator.into());
-        let n = if denominator < D::ZERO {
+        let n = if denominator < D::zero() {
             -numerator / gcd
         } else {
             numerator / gcd
         };
 
-        let d = if denominator < D::ZERO {
+        let d = if denominator < D::zero() {
             -denominator / gcd
         } else {
             denominator / gcd
@@ -185,15 +186,42 @@ impl<N,D> Fraction<N,D> where N : Zero + Gcd + Div<N,Output = N> + Neg<Output = 
     }
 }
 
-impl<N,D> Fraction<N,D> where N : TryInto<f64>, D : TryInto<f64> { // N : Div<D> + Into<f64> , f64: TryFrom<<N as Div<D>>::Output> + Into<f64> {
-    /// Converts the fraction to its decimal representation (`f64`).
-    ///
-    /// # Returns
-    ///
-    /// - `Ok(value)`: If the conversion is successful, returns the decimal representation as `f64`.
-    /// - `Err(err)`: If an error occurs during the conversion, returns the actual error.
-    ///
-    pub fn to_f64(self) -> Result<f64,()>/*Result<f64,<f64 as TryFrom<<N as Div<D>>::Output>>::Error>*/ {
+impl<N,D> Abs for Fraction<N,D> where N : Abs {
+    // Required method
+    fn absolute(self) -> Self {
+        match self {
+            Fraction::TopHeavy(numerator,denominator) => Fraction::new_unchecked(numerator.absolute(),denominator),
+            Fraction::NaN => Fraction::NaN,
+            Fraction::PositiveInfinity | Fraction::NegativeInfinity  => Fraction::PositiveInfinity,
+        }   
+    }
+}
+
+impl<N,D> Zero for Fraction<N,D> where N : PartialEq + Sized + From<u8> , D : PartialEq + Sized + From<u8> {
+    fn zero() -> Self {
+        Fraction::new_unchecked(0_u8.into(),1_u8.into())
+    }
+}
+
+impl<N, D> Rem for Fraction<N, D> where N : Rem<N,Output = N>  {
+    type Output = Self;
+
+    fn rem(self, other: Self) -> Self::Output {
+        match (self,other) {
+            (Fraction::TopHeavy(n1,d1),Fraction::TopHeavy(n2,_)) => {
+                Fraction::new_unchecked(n1 % n2,d1)
+            },
+            _ => Fraction::NaN
+        }
+    }
+}
+
+impl<N,D> Gcd for Fraction<N,D> where Self : Zero + Rem<Output = Self> + Sized + Copy {}
+impl<N,D> Lcm for Fraction<N,D> where Self : Gcd + Div<Output = Self> + Mul<Output = Self> {}
+/*
+impl<'a, N, D> TryInto<f64> for &'a Fraction<N, D> where f64: From<N> {
+    type Error = (<f64 as TryInto<<N as TryInto<f64>>::Error>>::Error);
+    fn try_into(self) -> Result<f64, Self::Error> {
         match self {
             Fraction::TopHeavy(numerator,denominator) => {
                 let n : f64 = numerator.try_into().map_err(|_| ())?;
@@ -206,6 +234,29 @@ impl<N,D> Fraction<N,D> where N : TryInto<f64>, D : TryInto<f64> { // N : Div<D>
         }
     }
 }
+*/
+/*
+impl<N,D> Fraction<N,D> where N : TryInto<f64>, D : TryInto<f64> { // N : Div<D> + Into<f64> , f64: TryFrom<<N as Div<D>>::Output> + Into<f64> {
+    /// Converts the fraction to its decimal representation (`f64`).
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(value)`: If the conversion is successful, returns the decimal representation as `f64`.
+    /// - `Err(err)`: If an error occurs during the conversion, returns the actual error.
+    ///
+    pub fn as_f64(self) -> Result<f64,()>/*Result<f64,<f64 as TryFrom<<N as Div<D>>::Output>>::Error>*/ {
+        match self {
+            Fraction::TopHeavy(numerator,denominator) => {
+                let n : f64 = numerator.try_into().map_err(|_| ())?;
+                let d : f64 = denominator.try_into().map_err(|_| ())?;
+                Ok(n / d)
+            } ,
+            Fraction::NaN => Ok(f64::NAN),
+            Fraction::PositiveInfinity => Ok(f64::INFINITY),
+            Fraction::NegativeInfinity => Ok(f64::NEG_INFINITY),
+        }
+    }
+}*/
 
 impl<N,D> std::fmt::Display for Fraction<N,D> where N : std::fmt::Display , D : std::fmt::Display{
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -423,6 +474,15 @@ impl<'a,N,D> TryFrom<&'a str> for Fraction<N,D> where N : Numeric + From<&'a str
     }
 }*/
 
+/*
+impl<N,D> PartialEq<f64> for Fraction<N,D> where Self : Copy , D : TryInto<f64> , N : TryInto<f64> {
+    fn eq(&self, other: &f64) -> bool {
+        match self.as_f64() {
+            Err(_) => false,
+            Ok(value) => (value - *other).abs() < f64::EPSILON
+        }
+    }
+}*/
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -478,6 +538,11 @@ fn test_new_fraction() {
     // Test case 7: Create a new fraction with a negative numerator and zero denominator
     let fraction7 = Fraction::new(-3, 0);
     assert_eq!(fraction7, Fraction::NegativeInfinity);
+
+    let fraction8 = Fraction::new(10, 4);
+    assert_eq!(fraction8,Fraction::TopHeavy(5, 2));
+    let fraction9 = Fraction::new(3, 4);
+    assert_eq!(fraction9,Fraction::TopHeavy(3, 4));
 }
 
     #[test]
@@ -606,4 +671,62 @@ fn test_new_fraction() {
         assert_ne!(fraction1,result);
         assert_eq!(result,Fraction::new(-1.0,2.0));
     }
+
+    #[test]
+    fn test_abs() {
+        let fraction1 = Fraction::new(-1, 2);
+        let abs_fraction1 = fraction1.absolute();
+        assert_eq!(abs_fraction1, Fraction::new(1, 2));
+
+        let fraction2 = Fraction::new(3, 4);
+        let abs_fraction2 = fraction2.absolute();
+        assert_eq!(abs_fraction2, fraction2); // Absolute value of a positive fraction is the fraction itself
+    }
+
+    #[test]
+    fn test_zero_trait() {
+        let fraction1 = Fraction::new(0, 7);
+        let fraction2 = Fraction::new(3, 1);
+        let fraction3 = Fraction::new(4, 0);
+
+        assert!(fraction1.is_zero());
+        assert!(!fraction2.is_zero());
+        assert!(!fraction3.is_zero()); // Fractions with a denominator of zero are not considered zero
+    }
+    #[test]
+    fn test_rem() {
+        let fraction1 = Fraction::TopHeavy(10, 4);
+        let fraction2 = Fraction::TopHeavy(3, 4);
+        let remainder = fraction1 % fraction2;
+        assert_eq!(remainder, Fraction::new(1, 4));
+    }
+
+    /*#[test]
+    fn test_gcd() {
+        let fraction1 = Fraction::new(4, 6);
+        let fraction2 = Fraction::new(3, 9);
+        let gcd_result = fraction1.gcd(fraction2);
+        assert_eq!(gcd_result, Fraction::new(1, 3));
+    }
+
+    #[test]
+    fn test_lcm() {
+        let fraction1 = Fraction::new(3, 5);
+        let fraction2 = Fraction::new(2, 3);
+        let lcm_result = fraction1.lcm(fraction2);
+        assert_eq!(lcm_result, Fraction::new(2, 5));
+    }*/
+/*
+    #[test]
+    fn as_f64(){
+        let fraction1 = Fraction::new(2,4);
+        let fraction2 = Fraction::new(1,4);
+        let result1 = fraction1.as_f64().unwrap();
+        let result2 = fraction2.as_f64().unwrap();
+
+        assert_eq!(result1,0.5);
+        assert_eq!(fraction1,result1);
+        assert_eq!(fraction2,0.25);
+        assert_eq!(fraction1,result2);
+    }*/
 }

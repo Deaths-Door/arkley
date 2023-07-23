@@ -56,6 +56,7 @@ impl StandardForm {
     }
 }
 
+/*
 impl std::fmt::Display for StandardForm {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         if self.exponent > 4 {
@@ -64,7 +65,7 @@ impl std::fmt::Display for StandardForm {
 
         write!(f,"{}",(self.mantissa * 10.0).to_the_power_of(self.exponent as f64))
     }
-}
+}*/
 
 
 /*use std::ops::{Add,Sub,Mul,Div,Rem,AddAssign,SubAssign,MulAssign,DivAssign};
