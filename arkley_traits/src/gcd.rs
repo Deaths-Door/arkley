@@ -143,4 +143,12 @@ mod tests {
         let gcd_result = a.gcd(b);
         assert_eq!(gcd_result, 35);
     }
+
+    #[test]
+    fn one_two(){
+        let a: i64 = 1;
+        let b: i64 = 2;
+        let gcd_result = a.gcd(b);
+        assert_eq!(gcd_result, 1);
+    }
 }

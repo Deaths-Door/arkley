@@ -4,6 +4,8 @@ use arkley_traits::{Gcd,Zero,Lcm};
 
 /// Approximates the fractional representation of a floating-point number with a given tolerance.
 ///
+/// `Note` : at time of writing this doesnt work at all
+/// 
 /// The function uses the continued fraction algorithm to find the closest rational approximation
 /// to the given floating-point `value` with a specified `tolerance`. The resulting approximation
 /// is represented as a `Ratio<i64>`, where the numerator and denominator are both of type `i64`.
@@ -13,28 +15,42 @@ use arkley_traits::{Gcd,Zero,Lcm};
 /// - `tolerance`: The maximum tolerance allowed for the approximation. Smaller tolerance values
 ///               will result in more accurate approximations.
 pub fn from_f64(value : f64,tolerance : f64) -> Fraction<i64,i64> {
-    let mut x = value;
-    let mut h1 = 1;
-    let mut h2 = 0;
-    let mut k1 = 0;
-    let mut k2 = 1;
-
-    while x.abs() > tolerance {
-        let a = x.floor() as i64;
-        let k_next = a * k1 + k2;
-        let h_next = a * h1 + h2;
-
-        x = 1.0 / (x - a as f64);
-        h2 = h1;
-        h1 = h_next;
-        k2 = k1;
-        k1 = k_next;
+    if value.is_nan() { 
+        return Fraction::NaN 
     }
-    Fraction::new(h1,k1)
+
+    if value.is_infinite() { 
+        return match value.is_sign_negative() {
+            true => Fraction::PositiveInfinity,
+            false => Fraction::NegativeInfinity
+        };
+    }
+
+    let mut precision = 0;
+    let mut new = value;
+
+    let tenth : f64 = 10.0;
+
+    while (new.floor() - new).abs() < tolerance {
+        precision += 1;
+        new = value * tenth.powi(precision);
+        
+        if value.is_infinite() { 
+            return match value.is_sign_negative() {
+                true => Fraction::PositiveInfinity,
+                false => Fraction::NegativeInfinity
+            };
+        }
+    }
+    let n = new.ceil() as i64;
+    let d = tenth.powi(precision).ceil() as i64;
+    
+    Fraction::new_unchecked_reduced(n,d)
 }
 
 /// The `Fraction` struct represents a fraction with a numerator and denominator.
 ///
+/// `Note` : Avoid using f32 and f64 as N or D as it leads to errors with current implementation but works for intergers
 /// # Overview
 ///
 /// `Fraction` is designed to be a precise and lossless drop-in replacement for floating-point types.
@@ -46,7 +62,7 @@ pub fn from_f64(value : f64,tolerance : f64) -> Fraction<i64,i64> {
 /// The `Fraction` struct can be used to perform arithmetic operations on fractions,
 /// such as addition, subtraction, multiplication, and division.
 /// It also supports comparison operations, simplification, conversion to other types and other mathematical operations.
-#[derive(Debug,PartialEq)]
+#[derive(Debug,PartialEq,Copy,Clone)]
 pub enum Fraction<N, D> {
     /// Represents an undefined or "Not a Number" fraction.
     NaN,
@@ -85,7 +101,7 @@ impl<N,D> Fraction<N,D> {
     /// Returns an option containing a reference to the denominator of the fraction.
     ///
     /// Returns `Some` if the fraction is in the `Fraction::TopHeavy` variant, otherwise returns `None`.
-    pub const fn denomator(&self) -> Option<&D>{
+    pub const fn denominator(&self) -> Option<&D>{
         match self {
             Fraction::TopHeavy(_,denomator) => Some(&denomator),
             Fraction::NaN => None,
@@ -109,8 +125,8 @@ impl<N,D> Fraction<N,D> {
     }
 }
 
-impl<N,D> Fraction<N,D> where N : Zero +  Gcd + Div<N,Output = N> + PartialOrd, D : Zero + Div<N,Output = D> + Into<N> + Copy + PartialOrd { 
-    /// Creates a new fraction with the given numerator and denominator.
+impl<N,D> Fraction<N,D> where N : Zero + Gcd + Div<N,Output = N> + Neg<Output = N> + PartialOrd,
+D : Zero + Div<N,Output = D> + Neg<Output = D> + PartialOrd + Into<N> + Copy { /// Creates a new fraction with the given numerator and denominator.
     ///
     /// # Arguments
     ///
@@ -139,7 +155,37 @@ impl<N,D> Fraction<N,D> where N : Zero +  Gcd + Div<N,Output = N> + PartialOrd, 
     }
 }
 
-impl<N,D> Fraction<N,D> where N : Div<D> , f64: TryFrom<<N as Div<D>>::Output> {
+impl<N,D> Fraction<N,D> where N : Zero + Gcd + Div<N,Output = N> + Neg<Output = N>,
+                            D : Zero + Div<N,Output = D> + Neg<Output = D> + PartialOrd + Into<N> + Copy {
+    /// Creates a new `Fraction` with the given numerator and denominator.
+    /// The fraction is reduced to its simplest form, where the numerator and denominator have no common divisors.
+    ///
+    /// # Arguments
+    ///
+    /// * `numerator`: The numerator of the fraction.
+    /// * `denominator`: The denominator of the fraction.
+    ///
+    /// # Returns
+    ///
+    /// The reduced `Fraction` with the provided numerator and denominator.
+    pub fn new_unchecked_reduced(numerator : N,denominator : D) -> Fraction<N,D> {
+        let gcd = numerator.gcd(denominator.into());
+        let n = if denominator < D::ZERO {
+            -numerator / gcd
+        } else {
+            numerator / gcd
+        };
+
+        let d = if denominator < D::ZERO {
+            -denominator / gcd
+        } else {
+            denominator / gcd
+        };
+        Fraction::TopHeavy(n,d)
+    }
+}
+
+impl<N,D> Fraction<N,D> where N : TryInto<f64>, D : TryInto<f64> { // N : Div<D> + Into<f64> , f64: TryFrom<<N as Div<D>>::Output> + Into<f64> {
     /// Converts the fraction to its decimal representation (`f64`).
     ///
     /// # Returns
@@ -147,9 +193,13 @@ impl<N,D> Fraction<N,D> where N : Div<D> , f64: TryFrom<<N as Div<D>>::Output> {
     /// - `Ok(value)`: If the conversion is successful, returns the decimal representation as `f64`.
     /// - `Err(err)`: If an error occurs during the conversion, returns the actual error.
     ///
-    pub fn as_f64(self) -> Result<f64,<f64 as TryFrom<<N as Div<D>>::Output>>::Error> {
+    pub fn to_f64(self) -> Result<f64,()>/*Result<f64,<f64 as TryFrom<<N as Div<D>>::Output>>::Error>*/ {
         match self {
-            Fraction::TopHeavy(numerator,denominator) => (numerator / denominator).try_into(),
+            Fraction::TopHeavy(numerator,denominator) => {
+                let n : f64 = numerator.try_into().map_err(|_| ())?;
+                let d : f64 = denominator.try_into().map_err(|_| ())?;
+                Ok(n / d)
+            } ,
             Fraction::NaN => Ok(f64::NAN),
             Fraction::PositiveInfinity => Ok(f64::INFINITY),
             Fraction::NegativeInfinity => Ok(f64::NEG_INFINITY),
@@ -193,24 +243,6 @@ impl<N,D> Neg for Fraction<N,D> where N : Neg<Output = N> {
             Fraction::PositiveInfinity => Fraction::NegativeInfinity,
             Fraction::NegativeInfinity => Fraction::PositiveInfinity,
         }
-    }
-}
-
-impl<N,D> Fraction<N,D> where N : Gcd + Div<N,Output = N>, D : Div<N,Output = D> + Into<N> + Copy {
-    /// Creates a new `Fraction` with the given numerator and denominator.
-    /// The fraction is reduced to its simplest form, where the numerator and denominator have no common divisors.
-    ///
-    /// # Arguments
-    ///
-    /// * `numerator`: The numerator of the fraction.
-    /// * `denominator`: The denominator of the fraction.
-    ///
-    /// # Returns
-    ///
-    /// The reduced `Fraction` with the provided numerator and denominator.
-    pub fn new_unchecked_reduced(numerator : N,denominator : D) -> Fraction<N,D> {
-        let gcd = numerator.gcd(denominator.into());
-        Fraction::TopHeavy(numerator / gcd, denominator / gcd)
     }
 }
 
@@ -305,11 +337,10 @@ impl<N,D> DivAssign for Fraction<N,D> where Self : Div<Self,Output = Self> + Cop
         *self = *self / other;
     }
 }
-
 macro_rules! from_ints {
     ($($t:ty),*) => {
         $(
-            impl From<$t> for Fraction<$t,u8> {
+            impl From<$t> for Fraction<$t,$t> {
                 fn from(value: $t) -> Self {
                     Fraction::new_unchecked(value, 1)
                 }
@@ -322,7 +353,7 @@ from_ints!(u8, i8, u16, i16, u32, i32, u64, i64);
 
 impl From<f64> for Fraction<i64,i64> {
     fn from(value: f64) -> Self {
-        from_f64(value,1.0e-10)
+        from_f64(value,f64::EPSILON)
     }
 }
 
@@ -395,6 +426,59 @@ impl<'a,N,D> TryFrom<&'a str> for Fraction<N,D> where N : Numeric + From<&'a str
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn new_unchecked(){
+        let fraction1 = Fraction::new_unchecked(1, 2);
+        let fraction2 = Fraction::new_unchecked(3, 4);
+        let fraction3 = Fraction::new_unchecked(6,8);
+
+        assert_eq!(fraction1,Fraction::TopHeavy(1,2));
+        assert_eq!(fraction2,Fraction::TopHeavy(3,4));
+        assert_ne!(fraction3,fraction1);
+    }
+
+    #[test]
+    fn new_unchecked_reduced(){
+        let fraction1 = Fraction::new_unchecked_reduced(4,8);
+        let fraction2 = Fraction::new_unchecked_reduced(3, 4);
+        let fraction3 = Fraction::new_unchecked_reduced(6,8);
+
+        assert_eq!(fraction1,Fraction::TopHeavy(1,2));
+        assert_eq!(fraction2,Fraction::TopHeavy(3,4));
+        assert_ne!(fraction3,Fraction::NaN);
+    }
+
+    #[test]
+fn test_new_fraction() {
+    // Test case 1: Create a new fraction with a reduced numerator and denominator
+    let fraction1 = Fraction::new(2, 4);
+    assert_eq!(fraction1, Fraction::TopHeavy(1, 2));
+
+    // Test case 2: Create a new fraction with an unreduced numerator and denominator
+    let fraction2 = Fraction::new(5, 15);
+    assert_eq!(fraction2, Fraction::TopHeavy(1, 3));
+
+    // Test case 3: Create a new fraction with a negative numerator and denominator
+    let fraction3 = Fraction::new(-10, -20);
+    assert_eq!(fraction3, Fraction::TopHeavy(1, 2));
+
+    // Test case 4: Create a new fraction with a zero numerator and non-zero denominator
+    let fraction4 = Fraction::new(0, 5);
+    assert_eq!(fraction4, Fraction::TopHeavy(0, 1));
+
+    // Test case 5: Create a new fraction with a non-zero numerator and zero denominator
+    let fraction5 = Fraction::new(7, 0);
+    assert_eq!(fraction5, Fraction::PositiveInfinity);
+
+    // Test case 6: Create a new fraction with both numerator and denominator as zero
+    let fraction6 = Fraction::new(0, 0);
+    assert_eq!(fraction6, Fraction::NaN);
+
+    // Test case 7: Create a new fraction with a negative numerator and zero denominator
+    let fraction7 = Fraction::new(-3, 0);
+    assert_eq!(fraction7, Fraction::NegativeInfinity);
+}
 
     #[test]
     fn addition() {
@@ -501,10 +585,25 @@ mod tests {
             (3.0, Fraction::new(3, 1), 1e-8),
         ];
     
-        for (input, expected_output, tolerance) in test_cases.iter() {
-            let result = from_f64(*input, *tolerance);
+        for (input,expected_output,_) in test_cases.iter() {
+            let result = Fraction::from(*input);
             assert_eq!(result, *expected_output);
         }
     }
     
+    #[test]
+    fn neg(){
+        let fraction1 = Fraction::new(1,2);
+        let result = -fraction1;
+        assert_ne!(fraction1,result);
+        assert_eq!(result,Fraction::new(-1,2));
+    }
+
+    #[test]
+    fn neg_f64(){
+        let fraction1 = Fraction::new(1.0,2.0);
+        let result = -fraction1;
+        assert_ne!(fraction1,result);
+        assert_eq!(result,Fraction::new(-1.0,2.0));
+    }
 }

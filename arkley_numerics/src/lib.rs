@@ -17,6 +17,8 @@
 
 mod standardform;
 mod fraction;
+mod decimal;
 
 pub use self::standardform::*;
 pub use self::fraction::*;
+pub use self::decimal::*;
