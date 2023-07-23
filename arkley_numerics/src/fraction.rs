@@ -203,6 +203,7 @@ impl<N,D> Zero for Fraction<N,D> where N : PartialEq + Sized + From<u8> , D : Pa
     }
 }
 
+/*
 impl<N, D> Rem for Fraction<N, D> where N : Rem<N,Output = N>  {
     type Output = Self;
 
@@ -217,7 +218,7 @@ impl<N, D> Rem for Fraction<N, D> where N : Rem<N,Output = N>  {
 }
 
 impl<N,D> Gcd for Fraction<N,D> where Self : Zero + Rem<Output = Self> + Sized + Copy {}
-impl<N,D> Lcm for Fraction<N,D> where Self : Gcd + Div<Output = Self> + Mul<Output = Self> {}
+impl<N,D> Lcm for Fraction<N,D> where Self : Gcd + Div<Output = Self> + Mul<Output = Self> {}*/
 /*
 impl<'a, N, D> TryInto<f64> for &'a Fraction<N, D> where f64: From<N> {
     type Error = (<f64 as TryInto<<N as TryInto<f64>>::Error>>::Error);
@@ -693,13 +694,15 @@ fn test_new_fraction() {
         assert!(!fraction2.is_zero());
         assert!(!fraction3.is_zero()); // Fractions with a denominator of zero are not considered zero
     }
+
+    /*
     #[test]
     fn test_rem() {
         let fraction1 = Fraction::TopHeavy(10, 4);
         let fraction2 = Fraction::TopHeavy(3, 4);
         let remainder = fraction1 % fraction2;
         assert_eq!(remainder, Fraction::new(1, 4));
-    }
+    }*/
 
     /*#[test]
     fn test_gcd() {

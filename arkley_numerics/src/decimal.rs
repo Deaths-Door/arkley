@@ -23,11 +23,20 @@ impl Decimal {
         Self(fraction)
     }
 
-    /*
+    
     /// Converts the Decimal to a floating-point representation (f64).
     pub fn to_f64(&self) -> f64 {
-        self.0.as_f64().unwrap()
-    }*/
+        match self.0 {
+            Fraction::TopHeavy(numerator,denominator) => {
+                let n : f64 = numerator as f64;
+                let d : f64 = denominator as f64;
+                n / d
+            } ,
+            Fraction::NaN => f64::NAN,
+            Fraction::PositiveInfinity => f64::INFINITY,
+            Fraction::NegativeInfinity => f64::NEG_INFINITY,
+        }
+    }
 }
 
 impl Add for Decimal {
@@ -107,12 +116,11 @@ impl std::fmt::Display for Decimal {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    /*
+    
     #[test]
     fn test_addition() {
         let a = Decimal::new(Fraction::new(1, 4));
@@ -182,5 +190,5 @@ mod tests {
         let b = Decimal::new(Fraction::new(3, 4));
         a /= b;
         assert_eq!(a.to_f64(), 0.8888888888888888);
-    }*/
+    }
 }
