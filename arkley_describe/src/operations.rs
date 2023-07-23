@@ -12,12 +12,12 @@
 /// operations in a human-readable format. It allows you to generate step-by-step explanations
 /// of arithmetic and algebraic expressions, including different operations.
 /// 
-/// The `Operation` enum can be used as an argument to the `describe` method of types that implement
+/// The `DescribeOperation` enum can be used as an argument to the `describe` method of types that implement
 /// the `Describe` trait. This enables generating human-readable descriptions of mathematical expressions,
 /// making it useful for educational purposes, debugging, or any scenario where a step-by-step
 /// explanation of numeric operations is required.
 #[derive(PartialEq)]
-pub enum Operation {
+pub enum DescribeOperation {
     /// Represents the addition operation (+).
     Addition,
     /// Represents the subtraction operation (-).

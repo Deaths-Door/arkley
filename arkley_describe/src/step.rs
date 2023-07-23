@@ -20,4 +20,9 @@ impl Step {
     pub fn add_substeps(&mut self, substeps: Vec<SubStep>) {
         self.1.extend(substeps);
     }
+
+    /// returns unterlying substeps
+    pub const fn substeps(&self) -> &Vec<SubStep> {
+        &self.1
+    }
 }

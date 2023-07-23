@@ -1,4 +1,4 @@
-use crate::{FilterLevel,Operation,Step};
+use crate::{FilterLevel,DescribeOperation,DescribeOperationWithIntergers,Step};
 
 /// Represents a generic trait for describing operations.
 /// The associated type `Output` specifies the return type of the `describe` method.
@@ -23,25 +23,30 @@ pub trait Describe<T,Rhs = Self> : Sized {
     /// An `Option<Self::Output>` representing the description of the operation as a `Step`.
     /// If the operation can be described successfully or is described at all, the method returns `Some(step)`,
     /// otherwise, it returns `None`
-    fn describe(&self,other : Rhs,filter_level : Option<FilterLevel>,operation: Operation) -> Option<Self::Output>;
+    fn describe(self,other : Rhs,filter_level : Option<FilterLevel>,operation: DescribeOperation) -> Option<Self::Output>;
 }
 
 impl Describe<f64> for f64 {
     type Output = Step;
 
-    fn describe(&self,other : f64,filter_level : Option<FilterLevel>,operation: Operation) -> Option<Self::Output> {
+    fn describe(self,other : f64,filter_level : Option<FilterLevel>,operation: DescribeOperation) -> Option<Self::Output> {
         match filter_level.map(|level| level >= FilterLevel::Intermediate).unwrap_or(true) {
             false => None,
-            true => {
-                match operation {
-                    Operation::Multiplication => todo!("NOT DONE YET"),
-                    Operation::Division => todo!("NOT DONE YET"),
-                    Operation::Addition | Operation::Subtraction => {
+            true => Some(DescribeOperationWithIntergers::new(operation,self,other)) /*{
+                DescribeOperationWithIntergers::new(operations,&mut [self,other])
+                /*match operation {
+                    DescribeOperation::Multiplication => todo!("NOT DONE YET"),
+                    DescribeOperation::Division => todo!("NOT DONE YET"),
+                    DescribeOperation::Addition | DescribeOperation::Subtraction => {
+                        match (self.is_positive(),other.is_positive()){
+                            (true,true) => todo!(".."),
+                            _ => todo!("...")
+                        }
                         todo!("..")
                     },
                     _ => todo!("...")
-                }
-            }
+                }*/
+            }*/
         }
     }
 }
