@@ -76,19 +76,6 @@ use std::num::ParseFloatError;
 use arkley_traits::{Power,Gcd,Lcm,Zero};
 */
 /*
-//use crate::Numeric;
-
-/// Represents a number in standard form.
-///
-/// The `Standardform` struct holds the significand (mantissa) of the number (using a underlying fraction for zero precision loss)
-/// and an exponent that determines the power of 10 by which the significand should be multiplied.
-/// 'Note' : TODO implement Numeric for it and see if fraction or decimal is needed for it to retain precision
-#[derive(Debug,PartialEq,Clone,Copy)]
-pub struct StandardForm  {
-    mantissa : Fraction<i8,i8>,
-    exponent : i8
-}
-
 impl StandardForm {*/
  /*   /// Creates a new instance of StandardForm with the given mantissa and exponent
     pub fn new(mantissa : Fraction<i8,i8>,exponent : i8) -> Self {

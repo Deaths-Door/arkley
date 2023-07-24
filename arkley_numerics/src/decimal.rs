@@ -94,7 +94,6 @@ macro_rules! impl_ints {
         $(
             impl PartialEq<$t> for Decimal {
                 fn eq(&self,other: &$t) -> bool {
-                    let rhs : Fraction<i32> = (*other).into();
                     self == other
                 }
             }

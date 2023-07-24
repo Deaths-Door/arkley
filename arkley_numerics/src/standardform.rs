@@ -18,10 +18,10 @@ impl StandardForm {
         Self { mantissa , exponent }.adjust()
     }
     
-    fn adjust(self) -> Self {
-        if self.mantissa >= 1 && self.mantissa <= 10 {
-
-        }
+    /// TODO IMPLEMENT THE ADJUST 
+    fn adjust(mut self) -> Self {
+        self.mantissa = self.mantissa;
+        todo!("....");
         self
     }
 
