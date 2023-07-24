@@ -1,4 +1,4 @@
-use std::ops::{Add,Sub,Mul,Div,AddAssign,SubAssign,MulAssign,DivAssign};
+use std::ops::{Add,Sub,Mul,Div,AddAssign,SubAssign,MulAssign,DivAssign,Neg};
 
 use crate::*;
 
@@ -17,6 +17,7 @@ pub trait ArithmeticCore<Rhs = Self,Output = Self> :
     SubAssign<Rhs> + 
     MulAssign<Rhs> + 
     DivAssign<Rhs> + 
+    Neg<Output = Output> + 
     Power<Rhs,Output = Output> + 
     Abs + 
     Gcd + 
