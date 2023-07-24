@@ -35,7 +35,6 @@ impl DescribeOperationWithIntergers {
         //multiplication
         for (y_index,ch_y) in y_str.chars().rev().enumerate() {
             if ch_y == '.' {
-                y_dec_encounted = true;
                 continue;
             }
 
@@ -52,7 +51,7 @@ impl DescribeOperationWithIntergers {
                 continue;
             }
 
-            let y_factor = 10_i32.pow(y_index as u32 - y_dec_encounted as u32);
+            let y_factor = 10_i32.pow(y_index as u32);
 
             let y_digit = _yd * (y_factor as u32);
 
@@ -86,50 +85,38 @@ impl DescribeOperationWithIntergers {
             }
         }
 
+        let seperator = "-".repeat(padding);
         let last_dash_index = c_aligned_updated.rfind('-').unwrap();
-        let addition_numbers : Vec<_> = c_aligned_updated[last_dash_index + 1..].lines().collect();
+        let mut addition_numbers : Vec<_> = c_aligned_updated[last_dash_index + 2..].lines().rev().collect();
         
-        let substeps = Self::describe_add_numbers(addition_numbers,padding);
+        addition_numbers.push(&seperator);
+        let substeps = Self::describe_add_numbers(&addition_numbers,padding,longest_decimal);
         step.add_substeps(substeps);
         
         step
     }
 
-    fn describe_add_f64(x : f64,y : f64) -> Step {
-        let mut step = Step::new("lets start (TODO GIVE BETTER STARTING INSTRUCTION)".to_string());
-
-        let (c_aligned,padding,_) = Self::align(x,y,"+");
-
-        let c_updated = c_aligned.iter().map(|s| s.as_str()).collect();
-
-        let substeps = Self::describe_add_numbers(c_updated,padding);
-        step.add_substeps(substeps);
-
-        step
-    }
-
-    fn describe_add_numbers(c_aligned : Vec<&str>,padding : usize) -> Vec<SubStep> {
-        let c_pairs = Self::pair_numbers(&c_aligned);
-    
+    fn describe_add_numbers(c_aligned : &Vec<&str>,padding : usize,longest_decimal : usize) -> Vec<SubStep> {        
+        let c_pairs = Self::into_num_pairs(&c_aligned);
         let column = c_aligned.join("\n");
-    
+
         let mut previous_carry = 0;
     
         let mut carry_str = String::from("0");
         let mut sum_str = String::new();
     
         let mut substeps : Vec<SubStep> = Vec::new();
-        
-        for (index,vec_item) in c_pairs.iter().rev().enumerate() {
-            if vec_item.iter().all(Option::is_none) {
+
+        for pair in c_pairs.iter().rev() {
+            if pair.iter().all(Option::is_none) {
                 continue;
-            };
-              
+            }
+
             let mut c_sum = previous_carry;
     
             let mut info = String::from("Sum : ");
     
-            for &num in vec_item.iter().flatten() {
+            for &num in pair.iter().flatten() {
                 c_sum += num;
                 info += &format!("{num} + ");
             }
@@ -145,6 +132,9 @@ impl DescribeOperationWithIntergers {
             if c_sum >= 10 {
                 info += &format!("\nSince sum is greater than 10 we carry 1 forward");
             }
+            else if c_sum == 0{
+                info += &format!("\nSince sum is less then 10 we dont carry forward anything")
+            }
     
             let c_rem = c_sum % 10;
     
@@ -152,11 +142,17 @@ impl DescribeOperationWithIntergers {
     
             carry_str.insert_str(0,&previous_carry.to_string());
     
-            let latex = format!("{:>p$}\n{column}\n---------\n{:>p$}",carry_str,sum_str,p = padding);
+            let _temp_carry_str = match carry_str.parse::<u8>().unwrap() {
+                0 => "",
+                _ => &carry_str
+            };//carry_str.parse::<u64>().unwrap();
+
+            let latex = format!("{:>p$}\n{column}\n---------\n{:>p$}",_temp_carry_str,sum_str,p = padding);
     
-            
-            substeps.push(SubStep::new_with_latex(info,Some(latex)));
-        }                                 
+            let mut substep = SubStep::new(info);
+            substep.set_latex(latex);
+            substeps.push(substep);
+        }
     
         substeps
     }
@@ -207,27 +203,29 @@ impl DescribeOperationWithIntergers {
         return (vec![padded_x,padded_y,seperator],padding,longest_decimal);
     }
 
-    fn pair_numbers(vec : &Vec<&str>) -> Vec<Vec<Option<u32>>> {
-        let strings : Vec<String> = vec.iter().map(|item| item.chars().rev().collect()).collect();
-        strings[0].chars().enumerate().map(|(index,_)|{
+    fn into_num_pairs(vec :&Vec<&str>) -> Vec<Vec<Option<u32>>> {
+        vec[0].chars().enumerate().map(|(index,_)|{
             vec.iter().map(|item|{
-                item.chars().nth(index).unwrap().to_digit(10)
-            }).collect::<Vec<_>>()
-        }).collect::<Vec<_>>()
-    }
+                    item.chars().nth(index).unwrap().to_digit(10)
+                }).collect::<Vec<_>>()
+        })
+        .collect()
+    }  
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
 
+    use std::panic;
     #[test]
     fn init_mul_unsigned_float() {
-        let vec = DescribeOperationWithIntergers::new(DescribeOperation::Multiplication,340.5,40.0);
-        for substep in vec.substeps() {
-            println!("Info = {}",substep.information());
-            println!("Latex = \n{}",substep.latex().clone().unwrap_or("NO latex".to_string()));
-        }
+        let vec = DescribeOperationWithIntergers::new(DescribeOperation::Multiplication,345.0,40.0);
+            for substep in vec.substeps() {
+                println!("Info = {}",substep.information());
+                println!("Latex = \n{}",substep.latex().clone().unwrap_or("NO latex".to_string()));
+            }
+        
     }
 }
 
