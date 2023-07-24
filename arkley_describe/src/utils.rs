@@ -17,7 +17,7 @@ impl DescribeOperationWithIntergers {
 
         let mut step = Step::new("lets start (TODO GIVE BETTER STARTING INSTRUCTION)".to_string());
 
-        let (c_aligned,padding) = Self::align(x,y,"*");
+        let (c_aligned,padding,longest_decimal) = Self::align(x,y,"*");
 
         let mut c_aligned_updated = c_aligned.join("\n");
 
@@ -28,9 +28,14 @@ impl DescribeOperationWithIntergers {
         let x_str = &c_aligned[0][x_space_index + 1..];
         let y_str = &c_aligned[1][y_space_index + 1..];
 
+        // to take into account decimal points in numbers for the factor scaling so 10 to the power of index - (encounter as i32)
+      //  let mut x_dec_encounted = false;
+       // let mut y_dec_encounted = false;
+
         //multiplication
         for (y_index,ch_y) in y_str.chars().rev().enumerate() {
             if ch_y == '.' {
+                y_dec_encounted = true;
                 continue;
             }
 
@@ -47,9 +52,9 @@ impl DescribeOperationWithIntergers {
                 continue;
             }
 
-            let y_factor = 10_i32.pow(y_index as u32);
+            let y_factor = 10_i32.pow(y_index as u32 - y_dec_encounted as u32);
 
-            let y_digit = _yd * y_factor as u32;
+            let y_digit = _yd * (y_factor as u32);
 
             for (x_index,ch_x) in x_str.chars().rev().enumerate() {
                 if ch_x == '.' {
@@ -73,7 +78,7 @@ impl DescribeOperationWithIntergers {
 
                 let info = format!("Multiply {y_digit} * {x_digit} which is {product}\nNow write the product down below");
 
-                c_aligned_updated = format!("{}\n{:width$}",c_aligned_updated.as_str(),product,width = padding);
+                c_aligned_updated = format!("{}\n{:width$.dec$}",c_aligned_updated.as_str(),product,width = padding,dec = longest_decimal);
                 
                 let latex = Some(c_aligned_updated.clone());
                 let substep : SubStep = SubStep::new_with_latex(info,latex);
@@ -93,7 +98,7 @@ impl DescribeOperationWithIntergers {
     fn describe_add_f64(x : f64,y : f64) -> Step {
         let mut step = Step::new("lets start (TODO GIVE BETTER STARTING INSTRUCTION)".to_string());
 
-        let (c_aligned,padding) = Self::align(x,y,"+");
+        let (c_aligned,padding,_) = Self::align(x,y,"+");
 
         let c_updated = c_aligned.iter().map(|s| s.as_str()).collect();
 
@@ -157,7 +162,7 @@ impl DescribeOperationWithIntergers {
     }
 
     
-    fn align(x : f64,y : f64,op_str : &str) -> (Vec<String>,usize) {
+    fn align(x : f64,y : f64,op_str : &str) -> (Vec<String>,usize,usize) {
         let x_str = x.to_string();
         let y_str = y.to_string();
 
@@ -199,7 +204,7 @@ impl DescribeOperationWithIntergers {
 
         let seperator = "-".repeat(padding);
 
-        return (vec![padded_x,padded_y,seperator],padding);
+        return (vec![padded_x,padded_y,seperator],padding,longest_decimal);
     }
 
     fn pair_numbers(vec : &Vec<&str>) -> Vec<Vec<Option<u32>>> {
@@ -218,7 +223,7 @@ mod test {
 
     #[test]
     fn init_mul_unsigned_float() {
-        let vec = DescribeOperationWithIntergers::new(DescribeOperation::Multiplication,340.0,40.0);
+        let vec = DescribeOperationWithIntergers::new(DescribeOperation::Multiplication,340.5,40.0);
         for substep in vec.substeps() {
             println!("Info = {}",substep.information());
             println!("Latex = \n{}",substep.latex().clone().unwrap_or("NO latex".to_string()));
