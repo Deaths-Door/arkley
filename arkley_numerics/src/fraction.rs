@@ -252,6 +252,25 @@ impl<T> Div for Fraction<T> where T : ArithmeticCore + PartialOrd {
     }
 }
 
+#[cfg(feature = "describe")]
+impl arkley_describe::Describe for Fraction<T> where T : ArithmeticCore {
+    type Output = Step;
+
+    fn describe(
+        self,
+        other: $t,
+        filter_level: Option<FilterLevel>,
+        operation: DescribeOperation,
+    ) -> Option<Self::Output> {
+        match filter_level.map(|level| level > FilterLevel::Advanced).unwrap_or(true) {
+            false => None,
+            true => {
+                
+                todo!("...")
+            }
+        }
+    }
+}
 macro_rules! from_ints {
     ($($t:ty),*) => {
         $(

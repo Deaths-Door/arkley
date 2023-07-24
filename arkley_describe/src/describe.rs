@@ -30,7 +30,7 @@ impl Describe<f64> for f64 {
     type Output = Step;
 
     fn describe(self,other : f64,filter_level : Option<FilterLevel>,operation: DescribeOperation) -> Option<Self::Output> {
-        match filter_level.map(|level| level >= FilterLevel::Intermediate).unwrap_or(true) {
+        match filter_level.map(|level| level > FilterLevel::Intermediate).unwrap_or(true) {
             false => None,
             true => Some(DescribeOperationWithIntegers::new(operation,self,other)) 
         }
