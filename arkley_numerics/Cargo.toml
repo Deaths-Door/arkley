@@ -7,7 +7,3 @@ edition = "2021"
 
 [dependencies]
 arkley_traits = { path = "../arkley_traits" }
-arkley_describe = { path = "../arkley_describe" , optional = true }
-
-[features]
-describe = ["dep:arkley_describe"]

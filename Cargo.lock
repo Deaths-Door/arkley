@@ -22,7 +22,6 @@ version = "0.1.0"
 name = "arkley_numerics"
 version = "0.1.0"
 dependencies = [
- "arkley_describe",
  "arkley_traits",
 ]
 

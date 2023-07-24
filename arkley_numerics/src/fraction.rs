@@ -252,8 +252,8 @@ impl<T> Div for Fraction<T> where T : ArithmeticCore + PartialOrd {
     }
 }
 
-macro_rules! from_ints {
-    ($($t:ty),*) => {
+macro_rules! impl_ints {
+    (form; $($t:ty),*) => {
         $(
             impl From<$t> for Fraction<$t> {
                 fn from(value: $t) -> Self {
@@ -261,10 +261,23 @@ macro_rules! from_ints {
                 }
             }
         )*
-    }
+    };
+    (eq; $($t:ty),*) => {
+        $(
+            impl PartialEq<$t> for Fraction<$t> {
+                fn eq(&self, other: &$t) -> bool {
+                    match self {
+                        Fraction::Proper(n,d) => n == other && d == &(1 as $t),
+                        _ => false
+                    }
+                }
+            }
+        )*
+    };
 }
 
-from_ints!(i8, i16, i32, i64);
+impl_ints!(form; i8, i16, i32, i64);
+impl_ints!(eq; i8, i16, i32, i64);
 
 #[cfg(test)]
 mod tests {
