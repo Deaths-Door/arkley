@@ -1,5 +1,7 @@
 use std::ops::{Add,Sub,Mul,Div,Neg};
 
+use std::cmp::Ordering;
+
 use arkley_traits::{
     ArithmeticCore,
     Abs,
@@ -252,6 +254,49 @@ impl<T> Div for Fraction<T> where T : ArithmeticCore + PartialOrd {
     }
 }
 
+impl<T> PartialOrd for Fraction<T> where T: ArithmeticCore + PartialOrd {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let ordering = match (self, other) {
+            (Fraction::NaN, Fraction::NaN) => Ordering::Equal,
+            (Fraction::NaN, _) => Ordering::Less,
+            (_, Fraction::NaN) => Ordering::Greater,
+
+            (Fraction::PositiveInfinity, Fraction::PositiveInfinity) => Ordering::Equal,
+            (Fraction::PositiveInfinity, Fraction::NegativeInfinity) => Ordering::Greater,
+            (Fraction::NegativeInfinity, Fraction::PositiveInfinity) => Ordering::Less,
+            (Fraction::NegativeInfinity, Fraction::NegativeInfinity) => Ordering::Equal,
+
+            (Fraction::PositiveInfinity, Fraction::Proper(_, _)) => Ordering::Greater,
+            (Fraction::NegativeInfinity, Fraction::Proper(_, _)) => Ordering::Less,
+
+            (Fraction::Proper(_, _), Fraction::PositiveInfinity) => Ordering::Less,
+            (Fraction::Proper(_, _), Fraction::NegativeInfinity) => Ordering::Greater,
+            (
+                Fraction::Proper(ref n1, ref d1),
+                Fraction::Proper(ref n2, ref d2),
+            ) => {
+                if d1.is_zero() && d2.is_zero() {
+                    Ordering::Equal
+                }
+                else {
+                    let lhs_value = *n1 * *d2;
+                    let rhs_value = *n2 * *d1;
+
+                    if lhs_value == rhs_value {
+                        Ordering::Equal
+                    } else if lhs_value < rhs_value {
+                        Ordering::Less
+                    } else {
+                        Ordering::Greater
+                    }
+                }
+            }
+        };
+        
+        Some(ordering)
+    }
+}
+
 macro_rules! impl_ints {
     (form; $($t:ty),*) => {
         $(
@@ -269,6 +314,22 @@ macro_rules! impl_ints {
                 fn eq(&self,other: &$t) -> bool {
                     let rhs : Self = (*other).into();
                     *self == rhs
+                }
+            }
+        )*
+    };
+
+    (ord; $($t:ty),*) => {
+        $(
+            impl<T> PartialOrd<$t> for Fraction<T>
+            where
+                Self : PartialOrd,
+                T: ArithmeticCore,
+                $t : Into<Fraction<T>>
+            {
+                fn partial_cmp(&self, other: &$t) -> Option<std::cmp::Ordering> {
+                    let rhs : Self = (*other).into();
+                    self.partial_cmp(&rhs)
                 }
             }
         )*
@@ -338,6 +399,7 @@ macro_rules! impl_ints {
 
 impl_ints!(form; i8, i16, i32, i64);
 impl_ints!(eq; i8, i16, i32, i64);
+impl_ints!(ord; i8, i16, i32, i64);
 impl_ints!(operations; i8, i16, i32, i64);
 
 #[cfg(test)]
@@ -505,6 +567,51 @@ mod tests {
         let fraction2 = Fraction::new(3, 4);
         let abs_fraction2 = fraction2.absolute();
         assert_eq!(abs_fraction2, fraction2); // Absolute value of a positive fraction is the fraction itself
+    }
+
+    #[test]
+    fn test_partial_ord_integers_vs_fractions() {
+        assert!(Fraction::new(1,1) >= Fraction::new(1,2));
+
+        // Test integers vs fractions using PartialOrd
+        let integer_values : [i32;4] = [1, 3, -2, 5];
+        let fraction_values = [
+            Fraction::new(1, 2),
+            Fraction::new(-3, 4),
+            Fraction::new(5, 1),
+            Fraction::new(-6, 2),
+        ];
+        let results = [
+            Some(Ordering::Less), // 1/2 is less than 1
+            Some(Ordering::Less), // -3/4 is less than 3
+            Some(Ordering::Greater), // 5/1 is greater than -2
+            Some(Ordering::Less)   // -6/2 is less than 5
+        ];
+
+        for x in 0..4 {
+            println!("f1 = {:?}",fraction_values[x]);
+            println!("i2 = {:?}",integer_values[x]);
+            println!("-------------");
+
+            assert_eq!(fraction_values[x].partial_cmp(&integer_values[x]), results[x]);
+        }
+    }
+
+    #[test]
+    fn test_partial_eq_integers_vs_fractions() {
+        // Test integers vs fractions using PartialEq
+        let integer_values = [2, -3, 5, -1, 7];
+        let fraction_values = [
+            Fraction::new(2, 1),
+            Fraction::new(-3, 1),
+            Fraction::new(5, 1),
+            Fraction::new(-1, 1),
+            Fraction::new(7, 1),
+        ];
+
+        for x in 0..5 {
+            assert_eq!(fraction_values[x],integer_values[x]);
+        }
     }
 
     /*#[test]

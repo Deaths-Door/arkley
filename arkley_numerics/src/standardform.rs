@@ -15,16 +15,14 @@ pub struct StandardForm  {
 impl StandardForm {
     /// Creates a new instance of StandardForm with the given mantissa and exponent
     pub fn new(mantissa : Decimal,exponent : i8) -> Self {
-        let mut instance = Self { mantissa , exponent };
-        instance.adjust();
-        instance
+        Self { mantissa , exponent }.adjust()
     }
     
-    fn adjust(&mut self) {
-        todo!("IMPLEMENT THIS RIGHT NOWs")
-        //if self.mantissa >= 1 && self.mantissa <= 10 {
-            //..
+    fn adjust(self) -> Self {
+      //  if self.mantissa >= 1 && self.mantissa <= 10 {
+
         //}
+        self
     }
 
     /// Returns a reference to the StandardForm representing the significand (mantissa) of the number.
