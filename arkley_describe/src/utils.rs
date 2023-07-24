@@ -8,6 +8,9 @@ impl DescribeOperationWithIntergers {
         match operation {
             DescribeOperation::Multiplication => Self::describe_mul_f64(a,b),
             DescribeOperation::Division => todo!("NOT DONE YET"),
+            DescribeOperation::Addition if a.is_positive() && b.is_positive() => Self::describe_add_f64(x,y),
+            DescribeOperation::Subtraction if a.is_negative() && b.is_negative() => Self::describe_add_f64(x,y),
+            DescribeOperation::Addition | DescribeOperation::Subtraction => todo!("describe substraction"),
             _ => todo!("...")
         }
     }
@@ -156,6 +159,15 @@ impl DescribeOperationWithIntergers {
         }
     
         substeps
+    }
+
+    fn describe_add_f64(x : f64,y : f64) -> Step {
+        let (_c_aligned,padding,_) = Self::align(x,y,"+");
+        let c_aligned = _c_aligned.iter().map(|s| s.as_str()).collect();
+        let substeps = Self::describe_add_numbers(&c_aligned,padding);
+        let mut step = Step::new("Start from left to right".to_string());
+        step.add_substeps(substeps);
+        step
     }
 
     fn align(x : f64,y : f64,op_str : &str) -> (Vec<String>,usize,usize) {
