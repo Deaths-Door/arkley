@@ -261,7 +261,7 @@ macro_rules! impl_ints {
                 }
             }
         )*
-    };;
+    };
 }
 
 impl_ints!(form; i8, i16, i32, i64);
