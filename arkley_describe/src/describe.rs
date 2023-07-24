@@ -1,4 +1,4 @@
-use crate::{FilterLevel,DescribeOperation,DescribeOperationWithIntegers,Step};
+use crate::{FilterLevel,DescribeOperation,Step};
 
 /// Represents a generic trait for describing operations.
 /// The associated type `Output` specifies the return type of the `describe` method.
@@ -32,7 +32,19 @@ impl Describe<f64> for f64 {
     fn describe(self,other : f64,filter_level : Option<FilterLevel>,operation: DescribeOperation) -> Option<Self::Output> {
         match filter_level.map(|level| level > FilterLevel::Intermediate).unwrap_or(true) {
             false => None,
-            true => Some(DescribeOperationWithIntegers::new(operation,self,other)) 
+            true => {
+                let (a,b) = if self >= other { (self, other) } else { (other, self) };
+                let step = match operation {
+                    DescribeOperation::Multiplication => crate::describe_mul_f64(a,b),
+                    DescribeOperation::Division => todo!("NOT DONE YET"),
+                    DescribeOperation::Addition if a.is_positive() && b.is_positive() => crate::describe_add_f64(a,b),
+                    DescribeOperation::Subtraction if a.is_negative() && b.is_negative() => crate::describe_add_f64(a,b),
+                    DescribeOperation::Addition | DescribeOperation::Subtraction => todo!("describe substraction"),
+                    _ => todo!("...")
+                };
+
+                Some(step)
+            }
         }
     }
 }
