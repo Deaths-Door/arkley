@@ -3,7 +3,7 @@
 #![forbid(
         missing_docs,
         unsafe_code,
-       // unused_imports,
+        unused_imports,
         unused_variables,
         unused_mut,
         unused_results,
@@ -15,10 +15,5 @@
         overflowing_literals,
 )]
 
-mod standardform;
 mod fraction;
-mod decimal;
-
-pub use self::standardform::*;
 pub use self::fraction::*;
-pub use self::decimal::*;
