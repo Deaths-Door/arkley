@@ -167,8 +167,8 @@ impl DescribeOperationWithIntergers {
 
         let mut longest_decimal : usize = 0 ;
 
-        let is_x_int = (x as i64) as f64 == x;
-        let is_y_int = (y as i64) as f64 == y;
+       // let is_x_int = (x as i64) as f64 == x;
+      //  let is_y_int = (y as i64) as f64 == y;
 
         let mut closure = |string : &str|{
             let index = string.find('.').unwrap();
@@ -179,19 +179,13 @@ impl DescribeOperationWithIntergers {
             };
         };
 
-        match (is_x_int,is_y_int) {
-            // both are whole numbers so nothing
-            (true,true) => { },
-            // y is f64
-            (true,false) => closure(&y_str),
-            // x is 64
-            (false,true) => closure(&x_str),
-            // neither are whole numbers
-            (false,false) => {
-                closure(&y_str);
-                closure(&x_str);
-            }
-        };
+        if x.fract() != 0.0 {
+            closure(&x_str);
+        }
+
+        if y.fract() != 0.0 {
+            closure(&y_str);
+        }
 
         let padded_x = format!("{:width$.dec$}", x, width = padding,dec = longest_decimal);
        
