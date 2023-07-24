@@ -21,6 +21,7 @@ mod abs;
 mod power;
 mod zero;
 mod log;
+mod core;
 
 pub use self::gcd::*;
 pub use self::lcm::*;
@@ -28,3 +29,4 @@ pub use self::abs::*;
 pub use self::power::*;
 pub use self::zero::*;
 pub use self::log::*;
+pub use self::core::*;
