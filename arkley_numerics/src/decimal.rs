@@ -1,12 +1,10 @@
-use std::ops::{Add,Sub,Mul,Div,Neg,AddAssign,SubAssign,MulAssign,DivAssign};
+use std::ops::{Add,Sub,Mul,Div,Neg};
 
 use super::Fraction;
 
 /// Represents a decimal number as a fraction of two integers.
-/// The `Decimal` struct wraps a `Fraction<i16, i16>` to represent decimal numbers with zero precision loss for structs like [super::StandardForm]
-/// `Note` : TODO IMPLMENT IT SO THAT DECIMAL<int,int> where int is i8 .. i64 
-#[derive(Debug,PartialEq)]
-pub struct Decimal(Fraction<i16,i16>);
+/// The `Decimal` struct wraps a `Fraction<i32>` to represent decimal numbers with zero precision loss for structs like [super::StandardForm]
+pub struct Decimal(Fraction<i32>);
 
 impl Decimal {
     /// Creates a new `Decimal` instance from a given `Fraction<i16, i16>`.
@@ -19,7 +17,7 @@ impl Decimal {
     ///
     /// A new `Decimal` instance with the provided `fraction` as the internal representation.
 
-    pub const fn new(fraction : Fraction<i16,i16>) -> Self {
+    pub const fn new(fraction : Fraction<i32>) -> Self {
         Self(fraction)
     }
 
@@ -27,7 +25,7 @@ impl Decimal {
     /// Converts the Decimal to a floating-point representation (f64).
     pub fn to_f64(&self) -> f64 {
         match self.0 {
-            Fraction::TopHeavy(numerator,denominator) => {
+            Fraction::Proper(numerator,denominator) => {
                 let n : f64 = numerator as f64;
                 let d : f64 = denominator as f64;
                 n / d
@@ -72,31 +70,6 @@ impl Div for Decimal {
     }
 }
 
-
-impl AddAssign for Decimal {
-    fn add_assign(&mut self, other: Self) {
-        self.0 += other.0
-    }
-}
-
-impl SubAssign for Decimal  {
-    fn sub_assign(&mut self, other: Self) {
-        self.0 -= other.0
-    }
-}
-
-impl MulAssign for Decimal  {
-    fn mul_assign(&mut self, other: Self) {
-        self.0 *= other.0
-    }
-}
-
-impl DivAssign for Decimal {
-    fn div_assign(&mut self, other: Self) {
-        self.0 /= other.0
-    }
-}
-
 impl Neg for Decimal {
     type Output = Self;
 
@@ -108,13 +81,14 @@ impl Neg for Decimal {
 impl std::fmt::Display for Decimal {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self.0 {
-            Fraction::TopHeavy(numerator,denominator) => write!(f,"{}",numerator / denominator),
+            Fraction::Proper(numerator,denominator) => write!(f,"{}",numerator / denominator),
             Fraction::NaN => write!(f,"NaN"),
             Fraction::PositiveInfinity => write!(f,"+∞"),
             Fraction::NegativeInfinity => write!(f,"-∞"),
         }
     }
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -158,37 +132,5 @@ mod tests {
         let a = Decimal::new(Fraction::new(3, 4));
         let result = -a;
         assert_eq!(result.to_f64(), -0.75);
-    }
-
-    #[test]
-    fn test_add_assign() {
-        let mut a = Decimal::new(Fraction::new(1, 4));
-        let b = Decimal::new(Fraction::new(3, 4));
-        a += b;
-        assert_eq!(a.to_f64(), 1.0);
-    }
-
-    #[test]
-    fn test_sub_assign() {
-        let mut a = Decimal::new(Fraction::new(3, 4));
-        let b = Decimal::new(Fraction::new(1, 4));
-        a -= b;
-        assert_eq!(a.to_f64(), 0.5);
-    }
-
-    #[test]
-    fn test_mul_assign() {
-        let mut a = Decimal::new(Fraction::new(2, 3));
-        let b = Decimal::new(Fraction::new(3, 4));
-        a *= b;
-        assert_eq!(a.to_f64(), 0.5);
-    }
-
-    #[test]
-    fn test_div_assign() {
-        let mut a = Decimal::new(Fraction::new(2, 3));
-        let b = Decimal::new(Fraction::new(3, 4));
-        a /= b;
-        assert_eq!(a.to_f64(), 0.8888888888888888);
     }
 }
