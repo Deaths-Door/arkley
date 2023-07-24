@@ -255,16 +255,90 @@ impl<T> Div for Fraction<T> where T : ArithmeticCore + PartialOrd {
 macro_rules! impl_ints {
     (form; $($t:ty),*) => {
         $(
-            impl From<$t> for Fraction<$t> {
+            impl<T> From<$t> for Fraction<T> where T : ArithmeticCore , $t : Into<T>{
                 fn from(value: $t) -> Self {
-                    Fraction::new_unchecked(value, 1)
+                    Fraction::new_unchecked(value.into(), 1.into())
                 }
             }
         )*
     };
+
+    (eq; $($t:ty),*) => {
+        $(
+            impl<T> PartialEq<$t> for Fraction<T> where T : ArithmeticCore , $t : Into<Self>{
+                fn eq(&self,other: &$t) -> bool {
+                    let rhs : Self = (*other).into();
+                    *self == rhs
+                }
+            }
+        )*
+    };
+
+    (add; $($t:ty),*) => {
+        $(
+            impl<T> Add<$t> for Fraction<T> where T : ArithmeticCore + PartialEq + PartialOrd , $t : Into<Self> {
+                type Output = Self;
+
+                fn add(self, other: $t) -> Self::Output {
+                    let rhs : Self = other.into();
+                    self + rhs
+                }
+            }
+        )*
+    };
+
+    (sub; $($t:ty),*) => {
+        $(
+            impl<T> Sub<$t> for Fraction<T> where T : ArithmeticCore + PartialEq + PartialOrd , $t : Into<Self> {
+                type Output = Self;
+
+                fn sub(self, other: $t) -> Self::Output {
+                    let rhs : Self = other.into();
+                    self - rhs
+                }
+            }
+        )*
+    };
+
+    (div; $($t:ty),*) => {
+        $(
+            impl<T> Div<$t> for Fraction<T> where T : ArithmeticCore + PartialOrd , $t : Into<Self> {
+                type Output = Self;
+
+                fn div(self, other: $t) -> Self::Output {
+                    let rhs : Self = other.into();
+                    self * rhs
+                }
+            }
+        )*
+    };
+
+    (mul; $($t:ty),*) => {
+        $(
+            impl<T> Mul<$t> for Fraction<T> where T : ArithmeticCore + PartialOrd , $t : Into<Self> {
+                type Output = Self;
+
+                fn mul(self, other: $t) -> Self::Output {
+                    let rhs : Self = other.into();
+                    self * rhs
+                }
+            }
+        )*
+    };
+
+    (operations; $($t:ty),*) => {
+        $(
+            impl_ints!(add; $t);
+            impl_ints!(sub; $t);
+            impl_ints!(mul; $t);
+            impl_ints!(div; $t);
+        )*
+    }
 }
 
 impl_ints!(form; i8, i16, i32, i64);
+impl_ints!(eq; i8, i16, i32, i64);
+impl_ints!(operations; i8, i16, i32, i64);
 
 #[cfg(test)]
 mod tests {
