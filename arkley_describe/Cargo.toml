@@ -2,7 +2,10 @@
 name = "arkley_describe"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+readme = "README.md"
+authors = ["Aarav Shah <aaravaditya51@gmail.com>"]
+description = "This crate provides generators for human-readable explanations of complex mathematical operations"
+documentation = "https://docs.rs/arkley_describe"
+repository = "https://github.com/Deaths-Door/arkley/tree/main/arkley_describe"
+homepage = "https://github.com/Deaths-Door/arkley"
+license = "MIT OR Apache-2.0"
