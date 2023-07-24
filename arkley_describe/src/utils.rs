@@ -87,13 +87,13 @@ impl DescribeOperationWithIntergers {
         let last_dash_index = c_aligned_updated.rfind('-').unwrap();
         let addition_numbers : Vec<_> = c_aligned_updated[last_dash_index + 2..].lines().rev().collect();
         
-        let substeps = Self::describe_add_numbers(&addition_numbers,padding,longest_decimal);
+        let substeps = Self::describe_add_numbers(&addition_numbers,padding);
         step.add_substeps(substeps);
         
         step
     }
 
-    fn describe_add_numbers(c_aligned : &Vec<&str>,padding : usize,longest_decimal : usize) -> Vec<SubStep> {        
+    fn describe_add_numbers(c_aligned : &Vec<&str>,padding : usize) -> Vec<SubStep> {        
         let c_pairs = Self::into_num_pairs(&c_aligned);
         let column = c_aligned.join("\n");
 
