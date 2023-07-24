@@ -1,8 +1,8 @@
-use crate::{FilterLevel,DescribeOperation,DescribeOperationWithIntergers,Step};
+use crate::{FilterLevel,DescribeOperation,DescribeOperationWithIntegers,Step};
 
 /// Represents a generic trait for describing operations.
 /// The associated type `Output` specifies the return type of the `describe` method.
-pub trait Describe<T,Rhs = Self> : Sized {
+pub trait Describe<Rhs = Self> : Sized {
     /// The output type returned by the `describe` method.
     /// By default, it is `Step`, but implementations can override it.
     type Output;
@@ -32,21 +32,28 @@ impl Describe<f64> for f64 {
     fn describe(self,other : f64,filter_level : Option<FilterLevel>,operation: DescribeOperation) -> Option<Self::Output> {
         match filter_level.map(|level| level >= FilterLevel::Intermediate).unwrap_or(true) {
             false => None,
-            true => Some(DescribeOperationWithIntergers::new(operation,self,other)) /*{
-                DescribeOperationWithIntergers::new(operations,&mut [self,other])
-                /*match operation {
-                    DescribeOperation::Multiplication => todo!("NOT DONE YET"),
-                    DescribeOperation::Division => todo!("NOT DONE YET"),
-                    DescribeOperation::Addition | DescribeOperation::Subtraction => {
-                        match (self.is_positive(),other.is_positive()){
-                            (true,true) => todo!(".."),
-                            _ => todo!("...")
-                        }
-                        todo!("..")
-                    },
-                    _ => todo!("...")
-                }*/
-            }*/
+            true => Some(DescribeOperationWithIntegers::new(operation,self,other)) 
         }
     }
 }
+
+macro_rules! impl_describe_for_integers {
+    ($($t:ty),*) => {
+        $(
+            impl Describe<$t> for $t {
+                type Output = Step;
+    
+                fn describe(
+                    self,
+                    other: $t,
+                    filter_level: Option<FilterLevel>,
+                    operation: DescribeOperation,
+                ) -> Option<Self::Output> {
+                    (self as f64).describe(other as f64,filter_level,operation)
+                }
+            }
+        )*
+    };
+}
+
+impl_describe_for_integers!(u8,u16,u32,u64,i8,i16,i32,i64,f32);

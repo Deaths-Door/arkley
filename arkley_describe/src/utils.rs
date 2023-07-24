@@ -1,8 +1,8 @@
 use crate::{DescribeOperation,SubStep,Step};
 
-pub(crate) struct DescribeOperationWithIntergers;
+pub(crate) struct DescribeOperationWithIntegers;
 
-impl DescribeOperationWithIntergers {
+impl DescribeOperationWithIntegers {
     pub(crate) fn new(operation: DescribeOperation,x : f64,y : f64) -> Step {
         let (a,b) = if x >= y { (x, y) } else { (y, x) };
         match operation {
@@ -226,7 +226,7 @@ mod test {
     use std::panic;
     #[test]
     fn init_mul_unsigned_float() {
-        let vec = DescribeOperationWithIntergers::new(DescribeOperation::Multiplication,345.0,40.0);
+        let vec = DescribeOperationWithIntegers::new(DescribeOperation::Multiplication,345.0,40.0);
             for substep in vec.substeps() {
                 println!("Info = {}",substep.information());
                 println!("Latex = \n{}",substep.latex().clone().unwrap_or("NO latex".to_string()));
