@@ -17,8 +17,14 @@
 
 mod fraction;
 mod decimal;
+
+#[cfg(feature="describe")]
+mod describe;
 //mod standardform;
 
 pub use self::fraction::*;
 pub use self::decimal::*;
 //pub use self::standardform::*;
+
+#[cfg(feature="describe")]
+pub use self::describe::*;
