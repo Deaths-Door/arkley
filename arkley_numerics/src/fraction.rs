@@ -261,23 +261,10 @@ macro_rules! impl_ints {
                 }
             }
         )*
-    };
-    (eq; $($t:ty),*) => {
-        $(
-            impl PartialEq<$t> for Fraction<$t> {
-                fn eq(&self, other: &$t) -> bool {
-                    match self {
-                        Fraction::Proper(n,d) => n == other && d == &(1 as $t),
-                        _ => false
-                    }
-                }
-            }
-        )*
-    };
+    };;
 }
 
 impl_ints!(form; i8, i16, i32, i64);
-impl_ints!(eq; i8, i16, i32, i64);
 
 #[cfg(test)]
 mod tests {
