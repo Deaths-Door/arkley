@@ -4,7 +4,7 @@ use super::Fraction;
 
 /// Represents a decimal number as a fraction of two integers.
 /// The `Decimal` struct wraps a `Fraction<i32>` to represent decimal numbers with zero precision loss for structs like [super::StandardForm]
-#[derive(Debug,PartialEq)]
+#[derive(Debug,PartialEq,PartialOrd)]
 pub struct Decimal(Fraction<i32>);
 
 impl Decimal {
@@ -17,7 +17,6 @@ impl Decimal {
     /// # Returns
     ///
     /// A new `Decimal` instance with the provided `fraction` as the internal representation.
-
     pub const fn new(fraction : Fraction<i32>) -> Self {
         Self(fraction)
     }
@@ -89,6 +88,91 @@ impl std::fmt::Display for Decimal {
         }
     }
 }
+
+macro_rules! impl_ints {
+    (eq; $($t:ty),*) => {
+        $(
+            impl PartialEq<$t> for Decimal {
+                fn eq(&self,other: &$t) -> bool {
+                    let rhs : Fraction<i32> = (*other).into();
+                    self == other
+                }
+            }
+        )*
+    };
+
+    (ord; $($t:ty),*) => {
+        $(
+            impl PartialOrd<$t> for Decimal {
+                fn partial_cmp(&self, other: &$t) -> Option<std::cmp::Ordering> {
+                    let rhs : Fraction<i32> = (*other).into();
+                    self.0.partial_cmp(&rhs)
+                }
+            }
+        )*
+    };
+
+    (add; $($t:ty),*) => {
+        $(
+            impl Add<$t> for Decimal {
+                type Output = Self;
+
+                fn add(self, other: $t) -> Self::Output {
+                    Decimal::new(self.0 + other)
+                }
+            }
+        )*
+    };
+
+    (sub; $($t:ty),*) => {
+        $(
+            impl Sub<$t> for Decimal {
+                type Output = Self;
+
+                fn sub(self, other: $t) -> Self::Output {
+                    Decimal::new(self.0 - other)
+                }
+            }
+        )*
+    };
+
+    (div; $($t:ty),*) => {
+        $(
+            impl Div<$t> for Decimal {
+                type Output = Self;
+
+                fn div(self, other: $t) -> Self::Output {
+                    Decimal::new(self.0 / other)
+                }
+            }
+        )*
+    };
+
+    (mul; $($t:ty),*) => {
+        $(
+            impl Mul<$t> for Decimal {
+                type Output = Self;
+
+                fn mul(self, other: $t) -> Self::Output {
+                    Decimal::new(self.0 * other)
+                }
+            }
+        )*
+    };
+
+    (operations; $($t:ty),*) => {
+        $(
+            impl_ints!(add; $t);
+            impl_ints!(sub; $t);
+            impl_ints!(mul; $t);
+            impl_ints!(div; $t);
+        )*
+    }
+}
+
+impl_ints!(eq; i8, i16, i32);
+impl_ints!(ord; i8, i16, i32);
+impl_ints!(operations; i8, i16, i32);
 
 
 #[cfg(test)]

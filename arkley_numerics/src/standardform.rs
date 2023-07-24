@@ -19,9 +19,9 @@ impl StandardForm {
     }
     
     fn adjust(self) -> Self {
-      //  if self.mantissa >= 1 && self.mantissa <= 10 {
+        if self.mantissa >= 1 && self.mantissa <= 10 {
 
-        //}
+        }
         self
     }
 

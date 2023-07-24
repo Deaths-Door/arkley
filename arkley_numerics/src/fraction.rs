@@ -368,7 +368,7 @@ macro_rules! impl_ints {
 
                 fn div(self, other: $t) -> Self::Output {
                     let rhs : Self = other.into();
-                    self * rhs
+                    self / rhs
                 }
             }
         )*
