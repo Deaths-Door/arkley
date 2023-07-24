@@ -84,12 +84,9 @@ impl DescribeOperationWithIntergers {
                 step.add_substep(substep);
             }
         }
-
-        let seperator = "-".repeat(padding);
         let last_dash_index = c_aligned_updated.rfind('-').unwrap();
-        let mut addition_numbers : Vec<_> = c_aligned_updated[last_dash_index + 2..].lines().rev().collect();
+        let addition_numbers : Vec<_> = c_aligned_updated[last_dash_index + 2..].lines().rev().collect();
         
-        addition_numbers.push(&seperator);
         let substeps = Self::describe_add_numbers(&addition_numbers,padding,longest_decimal);
         step.add_substeps(substeps);
         
@@ -161,7 +158,6 @@ impl DescribeOperationWithIntergers {
         substeps
     }
 
-    
     fn align(x : f64,y : f64,op_str : &str) -> (Vec<String>,usize,usize) {
         let x_str = x.to_string();
         let y_str = y.to_string();
