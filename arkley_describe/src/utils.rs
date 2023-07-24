@@ -120,7 +120,11 @@ impl DescribeOperationWithIntergers {
                 c_sum += num;
                 info += &format!("{num} + ");
             }
-    
+
+            if c_sum == 0 {
+                info += &format!("\nSince sum is 0 we can skip this column")
+            }
+
             if previous_carry != 0 {
                 info += &format!("{} (carried forward)",previous_carry);
             }
@@ -132,9 +136,9 @@ impl DescribeOperationWithIntergers {
             if c_sum >= 10 {
                 info += &format!("\nSince sum is greater than 10 we carry 1 forward");
             }
-            else if c_sum == 0{
+            /*else if c_sum == 0{
                 info += &format!("\nSince sum is less then 10 we dont carry forward anything")
-            }
+            }*/
     
             let c_rem = c_sum % 10;
     
