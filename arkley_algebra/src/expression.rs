@@ -1,4 +1,4 @@
-use arkley_numerics::Numeric;
+/*use arkley_numerics::Numeric;
 
 use crate::Term;
 
@@ -8,4 +8,4 @@ pub enum Expression<N> where N : Numeric {
     Subtract(Box<Expression<N>>, Box<Expression<N>>),
     Multiply(Box<Expression<N>>, Box<Expression<N>>),
     Divide(Box<Expression<N>>, Box<Expression<N>>),
-}
+}*/

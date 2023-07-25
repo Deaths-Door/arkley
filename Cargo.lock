@@ -4,11 +4,15 @@ version = 3
 
 [[package]]
 name = "arkley"
-version = "0.1.0"
+version = "0.0.1"
+dependencies = [
+ "arkley_numerics",
+ "arkley_traits",
+]
 
 [[package]]
 name = "arkley_algebra"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "arkley_numerics",
  "arkley_traits",
@@ -20,7 +24,7 @@ version = "0.1.0"
 
 [[package]]
 name = "arkley_numerics"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "arkley_traits",
 ]

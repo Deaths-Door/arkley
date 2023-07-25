@@ -1,9 +1,14 @@
 [package]
 name = "arkley_numerics"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+readme = "README.md"
+authors = ["Aarav Shah <aaravaditya51@gmail.com>"]
+description = "This module provides various number representations and calculations that represent several structs and enums that represent common mathematical numbers such as fractions, standard form, and decimals,"
+documentation = "https://docs.rs/arkley_numerics"
+repository = "https://github.com/Deaths-Door/arkley/tree/main/arkley_numerics"
+homepage = "https://github.com/Deaths-Door/arkley"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 arkley_traits = { path = "../arkley_traits" }

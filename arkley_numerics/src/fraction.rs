@@ -5,7 +5,6 @@ use std::cmp::Ordering;
 use arkley_traits::{
     ArithmeticCore,
     Abs,
-    Zero
 };
 
 /// The `Fraction` struct represents a fraction with a numerator and denominator.

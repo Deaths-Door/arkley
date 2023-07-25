@@ -14,3 +14,14 @@
         unsafe_op_in_unsafe_fn,
         overflowing_literals,
 )]
+
+#[doc = include_str!("../arkley_traits/README.md")]
+pub mod traits {
+    pub use arkley_traits::*;
+}
+
+#[cfg(feature = "numeric")]
+#[doc = include_str!("../arkley_numerics/README.md")]
+pub mod numeric {
+    pub use arkley_numerics::*;
+}

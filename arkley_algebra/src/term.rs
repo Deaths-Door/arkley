@@ -1,5 +1,5 @@
 //use std::ops::{Add,Sub,Mul,Div,Rem,AddAssign,SubAssign,MulAssign,DivAssign};
-
+/*
 use arkley_numerics::Numeric;
 
 use crate::{Variables,Expression};
@@ -7,7 +7,7 @@ use crate::{Variables,Expression};
 pub struct Term<N> where N : Numeric {
     coefficient : N,
     variables : Variables
-}
+}*/
 /*
 impl<N1,N2> Add<Expression<N2>> for Term<N1> where N1 : Numeric  , N2 : Numeric {
     type Output = Expression<N2>;

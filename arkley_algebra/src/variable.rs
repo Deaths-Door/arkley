@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+/*use std::collections::BTreeMap;
 
 use arkley_numerics::Fraction;
 
@@ -10,4 +10,4 @@ impl Variables {
         let other_chars: Vec<_> = other.0.keys().collect();
         variable_chars == other_chars    
     }
-}
+}*/
