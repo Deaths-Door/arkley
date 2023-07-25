@@ -2,6 +2,8 @@
 
 arkley is a lightweight and offline math library that provides algebraic calculations, explanations, and descriptions of mathematical concepts. It aims to be a convenient and cost-effective solution for performing algebraic operations, providing step-by-step explanations for mathematical concepts, and serving as a comprehensive knowledge resource without the need for internet connectivity or relying on advanced technologies like AI or ML with often require an internet connection , paid plan or huge model to be distributed with it.
 
+`Note` : At this moment this library is in early development so features described below may not be implemented or working correctly 
+
 ## Features
 
 * Algebraic Calculations: Perform algebraic operations such as addition, subtraction, multiplication, and division on numbers, variables, and expressions. Arkley is designed to handle various data types and provides accurate results for precise calculations.
