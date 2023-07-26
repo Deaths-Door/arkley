@@ -36,6 +36,20 @@ impl Term {
     }
 }
 
+
+impl std::fmt::Display for Term {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f,"{}",self.coefficient)?;
+        for (name,exponent) in self.variables.iter() {
+            write!(f,"{name}")?;
+            if exponent > &1 {
+                write!(f,"^{exponent}")?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl Add for Term {
     type Output = Expression;
 
@@ -357,5 +371,28 @@ mod tests {
         );
 
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_display_term() {
+        let variables: Variables = [('x',Number::Decimal(2.0)), ('y', Number::Decimal(3.0))].iter().cloned().collect();
+        let term = Term::new_with_variable(Number::Decimal(2.5),variables);
+        assert_eq!(term.to_string(), "2.5x^2y^3");
+        println!("{}",term.to_string());
+    }
+
+    #[test]
+    fn test_display_term_single_variable() {
+        let variables: Variables = [('x', Number::Decimal(1.0))].iter().cloned().collect();
+        let term = Term::new_with_variable(Number::Decimal(3.0),variables);
+        assert_eq!(term.to_string(), "3x");
+    }
+
+    #[test]
+    fn test_display_term_constant() {
+        let variables: Variables = Variables::new();
+        let term = Term::new_with_variable(Number::Decimal(5.0),variables);
+
+        assert_eq!(term.to_string(), "5");
     }
 }
