@@ -1,23 +1,50 @@
 use std::ops::{Add, Sub, Mul, Div, AddAssign, SubAssign, MulAssign, DivAssign};
 
-/// Represents a numeric value that can be either a floating-point decimal (`f64`)
-/// or a fraction (`Fraction`) with customizable precision.
-///
-/// # Generic Parameters
-///
-/// `T`: A type that implements the `ArithmeticCore` trait, which defines basic
-/// arithmetic operations like addition, subtraction, multiplication, and division.
+/// Represents a numeric value that can be decimal (aka f64) or Fraction or Standardform number
 ///
 /// `Note` : TODO add standardform to it maybe and add fractions variant to is as well
 /// # Variants
-///
-/// - `Decimal(f64)`: Represents a floating-point decimal number.
-/// - `Fraction(Fraction<T>)`: Represents a fraction with the given precision type `T`.
 #[derive(Debug,PartialEq,Copy,Clone)]
 pub enum Number {
     /// Represents a floating-point decimal number.
     Decimal(f64),
 }
+
+impl PartialOrd<Number> for Number {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self, other) {
+            (Number::Decimal(a), Number::Decimal(b)) => a.partial_cmp(b),
+        }
+    }
+}
+
+macro_rules! partial_number {
+    (eq => $($t : ty),*) => {
+        $(
+            impl PartialEq<$t> for Number {
+                fn eq(&self, other: &$t) -> bool {
+                    match self {
+                        Number::Decimal(f) => f == &(*other as f64)
+                    }
+                }
+            }
+        )*
+    };
+    (ord => $($t : ty),*) => {
+        $(
+            impl PartialOrd<$t> for Number {
+                fn partial_cmp(&self, other: &$t) -> Option<std::cmp::Ordering> {
+                    match self {
+                        Number::Decimal(f) => f.partial_cmp(&(*other as f64))
+                    }
+                }
+            }
+        )*
+    };
+}
+
+partial_number!(eq => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
+partial_number!(ord => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
 
 impl Add for Number {
     type Output = Number;
