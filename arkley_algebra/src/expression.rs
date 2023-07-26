@@ -10,7 +10,7 @@ pub enum Expression {
     /// Represents a basic unit in a mathematical expression.
     Term(Term),
 
-     /// Represents the addition of two terms.
+    /// Represents the addition of two terms.
     ///
     /// The `Plus` variant is a binary operator (+) that takes two `Term` values as its operands.
     Plus(Term, Term),

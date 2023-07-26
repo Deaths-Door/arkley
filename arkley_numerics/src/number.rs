@@ -46,6 +46,19 @@ macro_rules! partial_number {
 partial_number!(eq => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
 partial_number!(ord => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
 
+impl std::fmt::Display for Number {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Number::Decimal(f) => f
+            }
+        )   
+
+    }
+}
+
 impl Add for Number {
     type Output = Number;
 
@@ -200,15 +213,10 @@ mod test {
         assert_eq!(num, Number::Decimal(5.0));
     }
 
-    // Run all the tests
-    fn main() {
-        test_addition();
-        test_subtraction();
-        test_multiplication();
-        test_division();
-        test_addition_assignment();
-        test_subtraction_assignment();
-        test_multiplication_assignment();
-        test_division_assignment();
+    #[test]
+    fn test_display_decimal() {
+        let number = Number::Decimal(3.14);
+        assert_eq!(format!("{}", number), "3.14");
+        assert_eq!(number.to_string(), "3.14");
     }
 }
