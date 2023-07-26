@@ -1,7 +1,21 @@
-mod variable;
-mod term;
-mod expression;
+#![doc = include_str!("../README.md")]
 
-pub use self::term::*;
-pub(crate) use self::variable::*;
+#![forbid(
+    missing_docs,
+    unsafe_code,
+    unused_variables,
+    unused_mut,
+    unused_allocation,
+    unused_must_use,
+    unreachable_patterns,
+    trivial_casts,
+    unsafe_op_in_unsafe_fn,
+    overflowing_literals,
+)]
+
+
+mod expression;
+mod term;
+
 pub use self::expression::*;
+pub use self::term::*;

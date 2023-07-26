@@ -15,7 +15,6 @@ name = "arkley_algebra"
 version = "0.0.1"
 dependencies = [
  "arkley_numerics",
- "arkley_traits",
 ]
 
 [[package]]
