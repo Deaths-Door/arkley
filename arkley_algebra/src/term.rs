@@ -82,7 +82,7 @@ impl Add for Term {
             let variables = self.variables;
             return Expression::new_term(Term::new_with_variable(coefficient,variables));
         }
-        Expression::new_plus(self,other)
+        Expression::new_plus(self.into(),other.into())
     }
 }
 
@@ -95,7 +95,7 @@ impl Sub for Term {
             let variables = self.variables;
             return Expression::new_term(Term::new_with_variable(coefficient,variables));
         }
-        Expression::new_minus(self,other)
+        Expression::new_minus(self.into(),other.into())
     }
 }
 
@@ -164,7 +164,7 @@ impl Div for Term {
                     true => Expression::new_term(t1),
                     false => {
                         let t2 = Term::new_with_variable(other.coefficient,o_variables);
-                        Expression::new_durch(t1,t2)
+                        Expression::new_durch(t1.into(),t2.into())
                     }
                 }
             }
@@ -389,8 +389,8 @@ mod tests {
         let et2 = Term::new_with_variable(Number::Decimal(1.0),ev2);
         // (x * y^2) / z
         let expected = Expression::new_durch(
-            et1,
-            et2
+            et1.into(),
+            et2.into()
         );
 
         assert_eq!(result, expected);
