@@ -111,6 +111,7 @@ impl Expression {
     /// as a new `Expression`. The evaluation process takes into account the values
     /// of any variables that are present in the expression. If the expression contains
     /// nested expressions, they will be evaluated as well.
+    /// `Note` : Test is more to find out errors
     pub fn evaluate(&self) -> Self {
         match self {
             Expression::Plus(left, right) => left.clone() + right.clone(),
