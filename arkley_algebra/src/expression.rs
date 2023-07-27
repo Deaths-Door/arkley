@@ -302,4 +302,23 @@ mod tests {
         let expected = Expression::new_term(Term::new(Number::Decimal(22.0)));
         assert_eq!(result, expected);
     }
+
+    #[test]
+    fn test_evaluate_expression_with_single_variable() {
+        // Create an expression: 2x + 3x.
+        let term1 = Term::new_with_variable(Number::Decimal(2.0), Variables::from([('x', Number::Decimal(1.0))]));
+        let term2 = Term::new_with_variable(Number::Decimal(3.0), Variables::from([('x', Number::Decimal(1.0))]));
+        let expression = Expression::Plus(term1, term2.clone());
+
+        // Evaluate the expression without setting variable values.
+        let result = expression.evaluate();
+
+        // Since we have variables 'x' and 'y' without specific values, the result should
+        // still contain those variables.
+        let expected = Expression::new_term(
+            Term::new_with_variable(Number::Decimal(5.0), Variables::from([('x', Number::Decimal(1.0))])),
+        );
+        assert_eq!(result, expected);
+    }
+
 }
