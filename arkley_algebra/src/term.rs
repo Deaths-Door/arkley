@@ -3,6 +3,7 @@ use std::collections::{BTreeMap,BTreeSet};
 use std::cmp::Ordering;
 
 use arkley_numerics::Number;
+use arkley_traits::Power;
 
 use crate::Expression;
 
@@ -33,6 +34,28 @@ impl Term {
     /// Creates new instance of Term using coefficient
     pub const fn new(coefficient: Number) -> Self {
         Self { coefficient , variables : Variables::new() }
+    }
+
+    /// Tries to set the value of a variable in the `Term` object and updates the coefficient accordingly.
+    ///
+    /// # Parameters
+    ///
+    /// - `variable`: A reference to a `char` representing the variable whose value needs to be set.
+    /// - `value`: A `Number` representing the new value for the variable.
+    ///
+    /// # Returns
+    ///
+    /// - `Some(())`: If the variable is found in the `Term`, it sets the value of the variable and updates the coefficient accordingly.
+    /// - `None`: If the variable is not found in the `Term`, it returns `None`.
+    ///
+    pub fn try_set_variable_value(&mut self,variable : &char,value : Number) -> Option<()> {
+        match self.variables.remove(variable) {
+            None => None,
+            Some(exponent) => {
+                self.coefficient *= value.to_the_power_of(exponent);
+                Some(())
+            }
+        }
     }
 }
 
@@ -394,5 +417,29 @@ mod tests {
         let term = Term::new_with_variable(Number::Decimal(5.0),variables);
 
         assert_eq!(term.to_string(), "5");
+    }
+
+    #[test]
+    fn test_try_set_variable_value_existing_variable() {
+        // Create a term with the variable 'x' and exponent 2
+        let mut term = Term::new_with_variable(Number::Decimal(5.0), Variables::from([('x', Number::Decimal(2.0))]));
+
+        // Set the value of variable 'x' to 7
+        assert_eq!(term.try_set_variable_value(&'x', Number::Decimal(7.0)), Some(()));
+
+        // Check that the coefficient is updated correctly
+        assert_eq!(term.coefficient, Number::Decimal(5.0 * (7_i32.pow(2)) as f64));
+    }
+
+    #[test]
+    fn test_try_set_variable_value_non_existing_variable() {
+        // Create a term with the variable 'y' and exponent 3
+        let mut term = Term::new_with_variable(Number::Decimal(3.0), Variables::from([('y', Number::Decimal(3.0))]));
+
+        // Try to set the value of variable 'x' (non-existing variable) to 5
+        assert_eq!(term.try_set_variable_value(&'x', Number::Decimal(5.0)), None);
+
+        // Check that the coefficient remains unchanged
+        assert_eq!(term.coefficient, Number::Decimal(3.0));
     }
 }

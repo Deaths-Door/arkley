@@ -1,5 +1,7 @@
 use std::ops::{Add, Sub, Mul, Div, AddAssign, SubAssign, MulAssign, DivAssign};
 
+use arkley_traits::Power;
+
 /// Represents a numeric value that can be decimal (aka f64) or Fraction or Standardform number
 ///
 /// `Note` : TODO add standardform to it maybe and add fractions variant to is as well
@@ -56,6 +58,16 @@ impl std::fmt::Display for Number {
             }
         )   
 
+    }
+}
+
+impl Power for Number {
+    type Output = Number;
+
+    fn to_the_power_of(self, other: Number) -> Self::Output {
+        match (self, other) {
+            (Number::Decimal(a), Number::Decimal(b)) => Number::Decimal(a.to_the_power_of(b)),
+        }
     }
 }
 

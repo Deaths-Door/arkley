@@ -1,5 +1,6 @@
 use crate::Term;
 
+use arkley_numerics::Number;
 /// An enum representing a mathematical expression.
 ///
 /// The `Expression` enum allows building complex mathematical expressions
@@ -32,6 +33,7 @@ pub enum Expression {
     Durch(Term, Term),
 
     /// Represents a more complex expression that contains nested expressions that contain `()` 
+    /// `Note` : TODO Create function for it
     Nested(Box<Expression>),
 }
 
@@ -74,6 +76,34 @@ impl Expression {
     pub fn new_durch(left : Term , right : Term) -> Self {
         Expression::Durch(left, right)
     }
+
+    /// Tries to set the value of a variable in the expression.
+    ///
+    /// This method recursively traverses the expression and attempts to set the value of the specified
+    /// variable to the given `Number`. If the variable is found and updated, it returns `Some(())`.
+    /// If the variable is not found in the expression, it returns `None`.
+    ///
+    /// # Arguments
+    ///
+    /// * `variable` - A reference to the variable (a `char`) whose value needs to be updated.
+    /// * `value` - The new value (a `Number`) to be set for the variable.
+    pub fn try_set_variable_value(&mut self, variable: &char, value: Number) -> Option<()> {
+        match self {
+            Expression::Term(term) => term.try_set_variable_value(variable, value),
+            Expression::Plus(left, right)
+            | Expression::Minus(left, right)
+            | Expression::Mal(left, right)
+            | Expression::Durch(left, right) => {
+                let left_result = left.try_set_variable_value(variable, value);
+                let right_result = right.try_set_variable_value(variable, value);
+                match (left_result,right_result) {
+                    (None,None) => None,
+                    _ => Some(())
+                }
+            }
+            Expression::Nested(inner) => inner.try_set_variable_value(variable, value),
+        }
+    }
 }
 
 impl std::fmt::Display for Expression {
@@ -94,7 +124,7 @@ mod tests {
     use super::*;
     use arkley_numerics::Number;
     use crate::Variables;
-    
+
     // Helper function to create a Term with a single variable.
     fn create_term_with_variable(coeff: f64, var: char, exp: f64) -> Term {
         let mut variables = Variables::new();
@@ -199,4 +229,38 @@ mod tests {
         assert_eq!(formatted, expected);
     }
 
+    #[test]
+    fn test_try_set_variable_value_variable_not_found() {
+        // Create a simple expression: 2x^3 + 3y^2.
+        let term1 = Term::new_with_variable(Number::Decimal(2.0), Variables::from([('x', Number::Decimal(3.0))]));
+        let term2 = Term::new_with_variable(Number::Decimal(3.0), Variables::from([('y', Number::Decimal(2.0))]));
+        let mut expression = Expression::Plus(term1.clone(), term2.clone());
+    
+        // Try to set the value of variable 'z' (not present in the expression).
+        let result = expression.try_set_variable_value(&'z', Number::Decimal(1.0));
+    
+        // Assert that the value of variable 'z' has not been updated in the expression.
+        assert_eq!(result, None);
+    
+        // Check if the expression remains unchanged.
+        assert_eq!(expression, Expression::Plus(term1, term2));
+    }
+
+    #[test]
+    fn test_try_set_variable_value_single_variable() {
+        // Create a simple expression: 2x^3.
+        let term1 = Term::new_with_variable(Number::Decimal(2.0), Variables::from([('x', Number::Decimal(3.0))]));
+        let mut expression = Expression::Term(term1);
+
+        // Try to set the value of variable 'x' to 5.
+        let result = expression.try_set_variable_value(&'x', Number::Decimal(5.0));
+
+        // Assert that the value of variable 'x' has been updated in the expression.
+        assert_eq!(result, Some(()));
+
+        // Check if the updated expression is as expected: 2x^3 (x = 5) which is 250.
+        let et = Term::new(Number::Decimal(250.0));
+        let expected_expression = Expression::Term(et);
+        assert_eq!(expression, expected_expression);
+    }
 }

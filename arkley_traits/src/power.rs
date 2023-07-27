@@ -1,5 +1,5 @@
 /// Trait for exponentiation.
-pub trait Power<Rhs>{
+pub trait Power<Rhs = Self>{
     /// The output type of the exponentiation operation.
     type Output;
 
