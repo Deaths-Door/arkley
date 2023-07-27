@@ -104,6 +104,23 @@ impl Expression {
             Expression::Nested(inner) => inner.try_set_variable_value(variable, value),
         }
     }
+
+    /// Evaluates the expression and returns the result as a new `Expression`.
+    ///
+    /// This function recursively evaluates the expression tree and returns the result
+    /// as a new `Expression`. The evaluation process takes into account the values
+    /// of any variables that are present in the expression. If the expression contains
+    /// nested expressions, they will be evaluated as well.
+    pub fn evaluate(&self) -> Self {
+        match self {
+            Expression::Plus(left, right) => left.clone() + right.clone(),
+            Expression::Minus(left, right) => left.clone() - right.clone(),
+            Expression::Mal(left, right) => left.clone() * right.clone(),
+            Expression::Durch(left, right) => left.clone() / right.clone(),
+            Expression::Term(term) => Expression::Term(term.clone()),
+            Expression::Nested(inner) => inner.evaluate()
+        }
+    }
 }
 
 impl std::fmt::Display for Expression {
@@ -262,5 +279,26 @@ mod tests {
         let et = Term::new(Number::Decimal(250.0));
         let expected_expression = Expression::Term(et);
         assert_eq!(expression, expected_expression);
+    }
+
+    #[test]
+    fn test_evaluate_variable_addition() {
+        // Create an expression: 2x + 3y.
+        let term1 = Term::new_with_variable(Number::Decimal(2.0), Variables::from([('x', Number::Decimal(1.0))]));
+        let term2 = Term::new_with_variable(Number::Decimal(3.0), Variables::from([('y', Number::Decimal(1.0))]));
+        let mut expression = Expression::Plus(term1, term2.clone());
+
+        // Try to set the value of variable 'x' to 5.
+        let _ = expression.try_set_variable_value(&'x', Number::Decimal(5.0));
+
+        // Try to set the value of variable 'y' to 4.
+        let _ = expression.try_set_variable_value(&'y', Number::Decimal(4.0));
+
+        // Evaluate the expression.
+        let result = expression.evaluate();
+
+        // The result will be 2 * 5 (x = 5) + 3 * 4 (y = 4) = 10 + 12 = 22.0.
+        let expected = Expression::new_term(Term::new(Number::Decimal(22.0)));
+        assert_eq!(result, expected);
     }
 }
