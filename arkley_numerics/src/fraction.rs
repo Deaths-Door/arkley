@@ -308,6 +308,24 @@ macro_rules! impl_ints {
         )*
     };
 
+    (try_form; $($t:ty),*) => {
+        $(
+            impl TryFrom<&str> for Fraction<$t> {
+                type Error = std::num::ParseIntError;
+                fn try_from(value : &str) -> Result<Self, Self::Error> {
+                    match value.find('/') {
+                        None => value.parse::<$t>().and_then(|number| Ok(number.into())),
+                        Some(index) => {
+                            let n : $t = value[..index].parse::<$t>()?;
+                            let d : $t = value[index + 1..].parse::<$t>()?;
+                            Ok(Fraction::new(n,d))
+                        } 
+                    }
+                }
+            }
+        )*
+    };
+
     (eq; $($t:ty),*) => {
         $(
             impl<T> PartialEq<$t> for Fraction<T> where T : ArithmeticCore , $t : Into<Self>{
@@ -398,6 +416,7 @@ macro_rules! impl_ints {
 }
 
 impl_ints!(form; i8, i16, i32, i64);
+impl_ints!(try_form; i8, i16, i32, i64);
 impl_ints!(eq; i8, i16, i32, i64);
 impl_ints!(ord; i8, i16, i32, i64);
 impl_ints!(operations; i8, i16, i32, i64);
@@ -429,7 +448,7 @@ mod tests {
     }
 
     #[test]
-    fn test_new_fraction() {
+    fn new_fraction() {
         // Test case 1: Create a new fraction with a reduced numerator and denominator
         let fraction1 = Fraction::new(2, 4);
         assert_eq!(fraction1, Fraction::Proper(1, 2));
@@ -537,7 +556,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fraction_equality() {
+    fn fraction_equality() {
         let fraction1: Fraction<i32> = Fraction::new(2, 4);
         let fraction2: Fraction<i32> = Fraction::new(1, 2);
         let fraction3: Fraction<i32> = Fraction::new(4, 8);
@@ -559,7 +578,7 @@ mod tests {
     }
 
     #[test]
-    fn test_abs() {
+    fn abs() {
         let fraction1 = Fraction::new(-1, 2);
         let abs_fraction1 = fraction1.absolute();
         assert_eq!(abs_fraction1, Fraction::new(1, 2));
@@ -570,7 +589,7 @@ mod tests {
     }
 
     #[test]
-    fn test_partial_ord_integers_vs_fractions() {
+    fn partial_ord_integers_vs_fractions() {
         assert!(Fraction::new(1,1) >= Fraction::new(1,2));
 
         // Test integers vs fractions using PartialOrd
@@ -598,7 +617,7 @@ mod tests {
     }
 
     #[test]
-    fn test_partial_eq_integers_vs_fractions() {
+    fn partial_eq_integers_vs_fractions() {
         // Test integers vs fractions using PartialEq
         let integer_values = [2, -3, 5, -1, 7];
         let fraction_values = [
@@ -614,37 +633,70 @@ mod tests {
         }
     }
 
-    /*#[test]
-    fn test_from_f64() {
-        // Test cases and expected results as Fraction values
-        let test_cases = [
-            (0.25, Fraction::new(1, 4), 1e-8),
-            (0.333333, Fraction::new(1, 3), 1e-8),
-            (0.5, Fraction::new(1, 2), 1e-8),
-            (0.75, Fraction::new(3, 4), 1e-8),
-            (1.0, Fraction::new(1, 1), 1e-8),
-            (1.25, Fraction::new(5, 4), 1e-8),
-            (1.5, Fraction::new(3, 2), 1e-8),
-            (1.75, Fraction::new(7, 4), 1e-8),
-            (2.0, Fraction::new(2, 1), 1e-8),
-            (2.25, Fraction::new(9, 4), 1e-8),
-            (2.5, Fraction::new(5, 2), 1e-8),
-            (2.75, Fraction::new(11, 4), 1e-8),
-            (3.0, Fraction::new(3, 1), 1e-8),
-        ];
-    
-        for (input,expected_output,_) in test_cases.iter() {
-            let result = Fraction::from(*input);
-            assert_eq!(result, *expected_output);
-        }
-    }*/
-    
-  /*  
-      #[test]
-    fn neg_f64(){
-        let fraction1 = Fraction::new(1.0,2.0);
-        let result = -Fraction::new(1.0,2.0);
-        assert_ne!(fraction1,result);
-        assert_eq!(result,Fraction::new(-1.0,2.0));
-    }*/
+    // Test for i8
+    #[test]
+    fn try_from_i8() {
+        let input = "42";
+        let result = Fraction::<i8>::try_from(input);
+        assert!(result.is_ok());
+
+        // Add more test cases specific to i8 if needed
+    }
+
+    // Test for i16
+    #[test]
+    fn try_from_i16() {
+        let input = "12345";
+        let result = Fraction::<i16>::try_from(input);
+        assert!(result.is_ok());
+
+        // Add more test cases specific to i16 if needed
+    }
+
+    // Test for i32
+    #[test]
+    fn try_from_i32() {
+        let input = "100/25";
+        let result = Fraction::<i32>::try_from(input);
+        assert!(result.is_ok());
+
+        // Add more test cases specific to i32 if needed
+    }
+
+    // Test for i64
+    #[test]
+    fn try_from_i64() {
+        let input = "500/125";
+        let result = Fraction::<i64>::try_from(input);
+        assert!(result.is_ok());
+
+        // Add more test cases specific to i64 if needed
+    }
+
+    // Additional Test Cases
+    #[test]
+    fn try_from_negative() {
+        let input = "-42";
+        let result = Fraction::<i32>::try_from(input);
+        assert!(result.is_ok());
+
+        // Add more test cases with negative numbers if needed
+    }
+
+    #[test]
+    fn try_from_negative_fraction() {
+        let input = "-1/2";
+        let result = Fraction::<i64>::try_from(input);
+        assert!(result.is_ok());
+        // Add more test cases with negative fractions if needed
+    }
+
+    #[test]
+    fn try_from_invalid_input() {
+        let input = "invalid"; // Not a valid integer or fraction
+        let result = Fraction::<i16>::try_from(input);
+        assert!(result.is_err());
+
+        // Add more test cases with invalid input strings if needed
+    }
 }

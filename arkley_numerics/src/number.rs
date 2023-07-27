@@ -61,6 +61,13 @@ impl std::fmt::Display for Number {
     }
 }
 
+impl TryFrom<&str> for Number {
+    type Error = std::num::ParseFloatError;
+    fn try_from(value : &str) -> Result<Self, Self::Error> {
+        value.parse::<f64>().and_then(|float| Ok(Number::Decimal(float)) )
+    }
+}
+
 impl Power for Number {
     type Output = Number;
 
@@ -153,7 +160,6 @@ impl DivAssign for Number {
 #[cfg(test)]
 mod test {
     use super::*;
-    
     #[test]
     fn test_addition() {
         let num1 = Number::Decimal(2.5);
@@ -230,5 +236,48 @@ mod test {
         let number = Number::Decimal(3.14);
         assert_eq!(format!("{}", number), "3.14");
         assert_eq!(number.to_string(), "3.14");
+    }
+
+    #[test]
+    fn test_try_from_valid_number() {
+        // Test a valid number conversion
+        let input = "3.14";
+        let result = Number::try_from(input);
+        assert!(result.is_ok());
+
+        // Check if the correct variant and value are returned
+        if let Ok(Number::Decimal(value)) = result {
+            assert_eq!(value, 3.14);
+        } else {
+            assert!(false, "Expected Ok(Number::Decimal(_)), but got an error.");
+        }
+    }
+
+    #[test]
+    fn test_try_from_invalid_number() {
+        // Test an invalid number conversion
+        let input = "abc"; // This is not a valid floating-point number
+        let result = Number::try_from(input);
+        assert!(result.is_err());
+
+        // Check if the correct error variant is returned
+        if let Err(error) = result {
+        } else {
+            assert!(false, "Expected Err(ParseFloatError), but got a success.");
+        }
+    }
+
+    #[test]
+    fn test_try_from_empty_string() {
+        // Test conversion from an empty string
+        let input = "";
+        let result = Number::try_from(input);
+        assert!(result.is_err());
+
+        // Check if the correct error variant is returned
+        if let Err(error) = result {
+        } else {
+            assert!(false, "Expected Err(ParseFloatError), but got a success.");
+        }
     }
 }
