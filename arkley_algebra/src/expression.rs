@@ -146,6 +146,7 @@ impl From<Term> for Expression {
         Expression::new_term(value)
     }
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
