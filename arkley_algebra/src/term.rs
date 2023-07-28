@@ -73,6 +73,56 @@ impl std::fmt::Display for Term {
     }
 }
 
+impl TryFrom<&str> for Term {
+    /// temp return type
+    type Error = ();
+    fn try_from(value : &str) -> Result<Self, Self::Error> {        
+        match value.find(|c: char| c.is_ascii_alphabetic()) {
+            None => {
+                let number = Number::try_from(value)?;
+                Ok(Term::new(number))
+            },
+            Some(v_index) => {
+                let v_str = &value[v_index..];
+
+                let mut variables = Variables::new();
+
+                let v_vec : Vec<_> = v_str.split_inclusive(|c:char| c >= 'a' && c <= 'z').collect();
+            
+                for item in v_vec {
+                    let ch = item.chars().next().unwrap();
+                    if item.len() == 1 {
+                        variables.insert(ch,Number::Decimal(1.0));
+                        continue;
+                    }
+
+                    if &item[0..1] != "^" {
+                        return Err(());
+                    }
+
+                    let number = Number::try_from(&item[2..])?;
+                    variables.insert(ch,number);
+                }
+
+                // to handle cases like -x or +xy
+                let possible_sign_str = &value[..v_index];
+                
+                let term = if v_index == 1 || possible_sign_str.is_empty() ||possible_sign_str == "+" {
+                    Term::new_with_variable(Number::Decimal(1.0), variables)
+                }
+                else if v_index == 1 || possible_sign_str == "-" {
+                    Term::new_with_variable(Number::Decimal(-1.0), variables)
+                } 
+                else{
+                    let n = Number::try_from(possible_sign_str)?;
+                    Term::new_with_variable(n,variables)
+                };
+                Ok(term)
+            }
+        }
+    }
+}
+
 impl Add for Term {
     type Output = Expression;
 
@@ -177,7 +227,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_add_terms_with_same_variables() {
+    fn add_terms_with_same_variables() {
         // 2.5x
         let term1 = Term::new_with_variable(Number::Decimal(2.5), Variables::from([('x', Number::Decimal(1.0))]));
         //3.5x
@@ -195,7 +245,7 @@ mod tests {
     }
 
     #[test]
-    fn test_add_terms_with_different_variables() {
+    fn add_terms_with_different_variables() {
         //2.5x
         let term1 = Term::new_with_variable(Number::Decimal(2.5), Variables::from([('x', Number::Decimal(1.0))]));
 
@@ -212,7 +262,7 @@ mod tests {
     }
 
     #[test]
-    fn test_add_terms_with_same_variables_and_different_powers() {
+    fn add_terms_with_same_variables_and_different_powers() {
         // 2.5x^2
         let term1 = Term::new_with_variable(Number::Decimal(2.5), Variables::from([('x', Number::Decimal(2.0))]));
 
@@ -229,7 +279,7 @@ mod tests {
     }
 
     #[test]
-    fn test_subtract_terms_with_same_variables() {
+    fn subtract_terms_with_same_variables() {
         // 5x
         let term1 = Term::new_with_variable(Number::Decimal(5.0), Variables::from([('x', Number::Decimal(1.0))]));
 
@@ -248,7 +298,7 @@ mod tests {
     }
 
     #[test]
-    fn test_subtract_terms_with_different_variables() {
+    fn subtract_terms_with_different_variables() {
 
         // 5x
         let term1 = Term::new_with_variable(Number::Decimal(5.0), Variables::from([('x', Number::Decimal(1.0))]));
@@ -266,7 +316,7 @@ mod tests {
     }
 
     #[test]
-    fn test_subtract_terms_with_same_variables_and_different_powers() {
+    fn subtract_terms_with_same_variables_and_different_powers() {
         // 5x^3
         let term1 = Term::new_with_variable(Number::Decimal(5.0), Variables::from([('x', Number::Decimal(3.0))]));
 
@@ -282,7 +332,7 @@ mod tests {
     }
 
     #[test]
-    fn test_multiply_terms() {
+    fn multiply_terms() {
         // 2x
         let term1 = Term::new_with_variable(Number::Decimal(2.0), Variables::from([('x', Number::Decimal(1.0))]));
 
@@ -300,7 +350,7 @@ mod tests {
     }
 
     #[test]
-    fn test_multiply_terms_with_same_variables_and_different_powers() {
+    fn multiply_terms_with_same_variables_and_different_powers() {
         // 2.5x^2
         let term1 = Term::new_with_variable(Number::Decimal(2.5), Variables::from([('x', Number::Decimal(2.0))]));
 
@@ -325,7 +375,7 @@ mod tests {
     }
 
     #[test]
-    fn test_division_with_single_variable() {
+    fn division_with_single_variable() {
         // Test division with a single variable (x^2 / x).
         let term1 = create_term_with_variable(1, 'x', 2);
         let term2 = create_term_with_variable(1, 'x', 1);
@@ -337,7 +387,7 @@ mod tests {
     }
 
     #[test]
-    fn test_division_with_constants() {
+    fn division_with_constants() {
         // Test division with constants (6 / 3).
         let term1 = Term::new(Number::Decimal(6.0));
         let term2 = Term::new(Number::Decimal(3.0));
@@ -347,7 +397,7 @@ mod tests {
     }
 
     #[test]
-    fn test_division_with_common_variables() {
+    fn division_with_common_variables() {
         // Test division with common variables (x^3 / x^2).
         let term1 = create_term_with_variable(1, 'x', 3);
         let term2 = create_term_with_variable(1, 'x', 2);
@@ -357,7 +407,7 @@ mod tests {
     }
 
     #[test]
-    fn test_division_with_unique_variables() {
+    fn division_with_unique_variables() {
         let mut variables1 = Variables::new();
         variables1.insert('x', Number::Decimal(3.0));
         variables1.insert('y', Number::Decimal(2.0));
@@ -397,7 +447,7 @@ mod tests {
     }
 
     #[test]
-    fn test_display_term() {
+    fn display_term() {
         let variables: Variables = [('x',Number::Decimal(2.0)), ('y', Number::Decimal(3.0))].iter().cloned().collect();
         let term = Term::new_with_variable(Number::Decimal(2.5),variables);
         assert_eq!(term.to_string(), "2.5x^2y^3");
@@ -405,14 +455,14 @@ mod tests {
     }
 
     #[test]
-    fn test_display_term_single_variable() {
+    fn display_term_single_variable() {
         let variables: Variables = [('x', Number::Decimal(1.0))].iter().cloned().collect();
         let term = Term::new_with_variable(Number::Decimal(3.0),variables);
         assert_eq!(term.to_string(), "3x");
     }
 
     #[test]
-    fn test_display_term_constant() {
+    fn display_term_constant() {
         let variables: Variables = Variables::new();
         let term = Term::new_with_variable(Number::Decimal(5.0),variables);
 
@@ -420,7 +470,7 @@ mod tests {
     }
 
     #[test]
-    fn test_try_set_variable_value_existing_variable() {
+    fn try_set_variable_value_existing_variable() {
         // Create a term with the variable 'x' and exponent 2
         let mut term = Term::new_with_variable(Number::Decimal(5.0), Variables::from([('x', Number::Decimal(2.0))]));
 
@@ -432,7 +482,7 @@ mod tests {
     }
 
     #[test]
-    fn test_try_set_variable_value_non_existing_variable() {
+    fn try_set_variable_value_non_existing_variable() {
         // Create a term with the variable 'y' and exponent 3
         let mut term = Term::new_with_variable(Number::Decimal(3.0), Variables::from([('y', Number::Decimal(3.0))]));
 
@@ -441,5 +491,45 @@ mod tests {
 
         // Check that the coefficient remains unchanged
         assert_eq!(term.coefficient, Number::Decimal(3.0));
+    }
+
+
+    #[test]
+    fn try_from_term_with_valid_input_no_variables() {
+        let input = "123.45";
+        let result = Term::try_from(input).unwrap();
+        let expected = Term::new(Number::Decimal(123.45));
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn try_from_term_with_variables() {
+        let input = "2x^3y^2z";
+        let _result = Term::try_from(input);//.unwrap();
+        
+     /*   let expected_variables: Variables = [('x', Number::Decimal(3.0)),
+                                            ('y', Number::Decimal(2.0)),
+                                            ('z', Number::Decimal(1.0))].iter().cloned().collect();
+*/
+      //  let expected = Term::new_with_variable(Number::Decimal(2.0), expected_variables);
+        assert!(false)
+        //   assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn try_from_term_with_valid_input_no_exponents() {
+        let input = "xyz";
+        let result = Term::try_from(input);//.unwrap();
+        assert!(result.is_ok());
+
+        let ev = Variables::from(
+            [
+                ('x',Number::Decimal(1.0)),
+                ('y',Number::Decimal(1.0)),
+                ('z',Number::Decimal(1.0))
+            ]
+        );
+        let expected = Term::new_with_variable(Number::Decimal(1.0), ev);
+        assert_eq!(result.unwrap(), expected);
     }
 }

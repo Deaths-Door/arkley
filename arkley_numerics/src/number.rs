@@ -62,9 +62,9 @@ impl std::fmt::Display for Number {
 }
 
 impl TryFrom<&str> for Number {
-    type Error = std::num::ParseFloatError;
+    type Error = ();
     fn try_from(value : &str) -> Result<Self, Self::Error> {
-        value.parse::<f64>().and_then(|float| Ok(Number::Decimal(float)) )
+        value.parse::<f64>().and_then(|float| Ok(Number::Decimal(float)) ).map_err(|_| ())
     }
 }
 
