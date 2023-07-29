@@ -328,7 +328,7 @@ macro_rules! impl_ints {
 
     (eq; $($t:ty),*) => {
         $(
-            impl<T> PartialEq<$t> for Fraction<T> where T : ArithmeticCore , $t : Into<Self>{
+            impl<T> PartialEq<$t> for Fraction<T> where T : ArithmeticCore , $t : Into<Self> {
                 fn eq(&self,other: &$t) -> bool {
                     let rhs : Self = (*other).into();
                     *self == rhs
@@ -415,11 +415,11 @@ macro_rules! impl_ints {
     }
 }
 
-impl_ints!(form; i8, i16, i32, i64);
+impl_ints!(form; i8, i16, i32, i64, u8, u16, u32, u64);
 impl_ints!(try_form; i8, i16, i32, i64);
-impl_ints!(eq; i8, i16, i32, i64);
-impl_ints!(ord; i8, i16, i32, i64);
-impl_ints!(operations; i8, i16, i32, i64);
+impl_ints!(eq; i8, i16, i32, i64, u8, u16, u32, u64);
+impl_ints!(ord; i8, i16, i32, i64 ,  u8, u16, u32, u64);
+impl_ints!(operations; i8, i16, i32, i64, u8, u16, u32, u64);
 
 #[cfg(test)]
 mod tests {

@@ -25,7 +25,7 @@ impl StandardForm {
 
 
     fn in_range(&self) -> bool {
-        self.mantissa >= 1.0 && self.mantissa <= 10.0
+        (self.mantissa >= 1.0 && self.mantissa <= 10.0) || (self.mantissa >= -10.0 && self.mantissa <= -1.0)
     }
 
     fn adjust(&mut self) {
@@ -39,37 +39,14 @@ impl StandardForm {
         self.exponent = log_zehn as i8;
 
         if self.mantissa < 0.0 {
-            self.mantissa *= 10.0;
+            self.mantissa = -self.mantissa;
         }       
 
-        /*if self.mantissa > 0.0 && self.mantissa < 1.0 {
-            self.exponent -= 1;
-        }*/
-    }
-    /*
-    
-    fn adjust(&mut self) {
-        if self.mantissa >= 1.0 && self.mantissa <= 10.0 {
-            return;
-        }        
-/*
-        let abs = self.mantissa.abs(); // 2
-        let log = abs.log10().floor(); 
-
-        self.exponent += log as u8;
-        self.mantissa *= log;*/
-       /* self.mantissa /= 10_f64.powf(log);
-        self.exponent = log as u8;
-
-        if self.mantissa.is_sign_negative() {
-            self.mantissa = -self.mantissa;
-        }
-
-        if self.mantissa > 0.0 && self.mantissa <= 10.0 {
+        if self.mantissa > 0.0 && self.mantissa < 1.0 {
             self.mantissa *= 10.0;
             self.exponent -= 1;
-        }*/
-    }*/
+        }
+    }
 
     /// Returns a reference to the StandardForm representing the significand (mantissa) of the number.
     pub const fn mantissa(&self) -> &f64 {
