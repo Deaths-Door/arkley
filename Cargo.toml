@@ -11,11 +11,7 @@ homepage = "https://github.com/Deaths-Door/arkley"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-arkley_traits ={ path = "arkley_traits"}
-arkley_numerics = { path = "arkley_numerics",optional = true }
-
-[features]
-numeric = ["dep:arkley_numerics"]
+arkley_traits =  "0.0.1"#{ path = "arkley_traits" }
 
 [workspace]
 members = [

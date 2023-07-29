@@ -19,9 +19,15 @@
 pub mod traits {
     pub use arkley_traits::*;
 }
+/*
+
+arkley_numerics = { path = "arkley_numerics",optional = true }
+
+[features]
+numeric = ["dep:arkley_numerics"]
 
 #[cfg(feature = "numeric")]
 #[doc = include_str!("../arkley_numerics/README.md")]
 pub mod numeric {
     pub use arkley_numerics::*;
-}
+}*/
