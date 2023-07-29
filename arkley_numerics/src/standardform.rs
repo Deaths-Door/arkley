@@ -93,20 +93,6 @@ impl std::fmt::Display for StandardForm {
     }
 }
 
-macro_rules! from_primitives {
-    ($($t : ty),*) =>{
-        $(
-            impl From<$t> for StandardForm {
-                fn from(value: $t) -> StandardForm {
-                    StandardForm::new(value as f64,1)
-                }
-            }
-        )*
-    }
-}
-
-from_primitives!(u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
-
 impl TryFrom<&str> for StandardForm {
     type Error = ();
 
@@ -204,7 +190,28 @@ impl DivAssign for StandardForm {
 }
 
 
-macro_rules! operation_primitives {
+macro_rules! primitives {
+    (form => $($t:ty),*) => {
+        $(
+            impl From<$t> for StandardForm {
+                fn from(value: $t) -> Self {
+                    StandardForm::new(value as f64,1)
+                }
+            }
+        )*
+    };
+
+    (eq => $($t:ty),*) => {
+        $(
+            impl PartialEq<$t> for StandardForm {
+                fn eq(&self,other: &$t) -> bool {
+                    let rhs : Self = (*other).into();
+                    *self == rhs
+                }
+            }
+        )*
+    };
+
     (add => $($t : ty),*) => {
         $(
             impl Add<$t> for StandardForm {
@@ -293,12 +300,19 @@ macro_rules! operation_primitives {
             }
         )*
     };
+    (operations => $($t:ty),*) => {
+        $(
+            primitives!(add => $t);
+            primitives!(sub => $t);
+            primitives!(mul => $t);
+            primitives!(div => $t);
+        )*
+    }
 }
 
-operation_primitives!(add => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
-operation_primitives!(sub => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
-operation_primitives!(mul => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
-operation_primitives!(div => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
+primitives!(operations => i8, i16, i32, i64, u8, u16, u32, u64);
+primitives!(form => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
+primitives!(eq => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
 
 #[cfg(test)]
 mod tests {
