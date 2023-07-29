@@ -15,7 +15,6 @@
         overflowing_literals,
 )]
 
-#[doc = include_str!("../README.md")]
 pub mod traits {
     pub use arkley_traits::*;
 }

@@ -5,13 +5,13 @@ edition = "2021"
 readme = "README.md"
 authors = ["Aarav Shah <aaravaditya51@gmail.com>"]
 description = "This crate provides several traits for common mathematical operations"
-documentation = "https://docs.rs/arkley_traits"
-repository = "https://github.com/Deaths-Door/arkley/tree/main/arkley_traits"
+documentation = "https://docs.rs/arkley"
+repository = "https://github.com/Deaths-Door/arkley"
 homepage = "https://github.com/Deaths-Door/arkley"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-arkley_traits =  "0.0.1"#{ path = "arkley_traits" }
+arkley_traits =  "0.0.1"
 
 [workspace]
 members = [
