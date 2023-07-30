@@ -83,6 +83,7 @@ impl Power for Number {
     fn to_the_power_of(self, other: Number) -> Self::Output {
         match (self, other) {
             (Number::Decimal(a), Number::Decimal(b)) => Number::Decimal(a.to_the_power_of(b)),
+            _ => todo!("")
         }
     }
 }

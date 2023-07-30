@@ -346,43 +346,10 @@ macro_rules! primitives {
             }
         )*
     };
-}
-
-primitives!(form => i8,i16,i32,i64);
-primitives!(try_from => i8,i16,i32,i64);
-
-/*
-macro_rules! impl_ints {
-    (eq; $($t:ty),*) => {
-        $(
-            impl<T> PartialEq<$t> for Fraction<T> where T : ArithmeticCore , $t : Into<Self> {
-                fn eq(&self,other: &$t) -> bool {
-                    let rhs : Self = (*other).into();
-                    *self == rhs
-                }
-            }
-        )*
-    };
-
-    (ord; $($t:ty),*) => {
-        $(
-            impl<T> PartialOrd<$t> for Fraction<T>
-            where
-                Self : PartialOrd,
-                T: ArithmeticCore,
-                $t : Into<Fraction<T>>
-            {
-                fn partial_cmp(&self, other: &$t) -> Option<std::cmp::Ordering> {
-                    let rhs : Self = (*other).into();
-                    self.partial_cmp(&rhs)
-                }
-            }
-        )*
-    };
 
     (add; $($t:ty),*) => {
         $(
-            impl<T> Add<$t> for Fraction<T> where T : ArithmeticCore + PartialEq + PartialOrd , $t : Into<Self> {
+            impl<T> Add<$t> for Fraction<T> where T : ArithmeticCore + PartialEq + PartialOrd + Clone, $t : Into<Self> {
                 type Output = Self;
 
                 fn add(self, other: $t) -> Self::Output {
@@ -395,7 +362,7 @@ macro_rules! impl_ints {
 
     (sub; $($t:ty),*) => {
         $(
-            impl<T> Sub<$t> for Fraction<T> where T : ArithmeticCore + PartialEq + PartialOrd , $t : Into<Self> {
+            impl<T> Sub<$t> for Fraction<T> where T : ArithmeticCore + PartialEq + PartialOrd + Clone, $t : Into<Self> {
                 type Output = Self;
 
                 fn sub(self, other: $t) -> Self::Output {
@@ -408,7 +375,7 @@ macro_rules! impl_ints {
 
     (div; $($t:ty),*) => {
         $(
-            impl<T> Div<$t> for Fraction<T> where T : ArithmeticCore + PartialOrd , $t : Into<Self> {
+            impl<T> Div<$t> for Fraction<T> where T : ArithmeticCore + PartialOrd + Clone, $t : Into<Self> {
                 type Output = Self;
 
                 fn div(self, other: $t) -> Self::Output {
@@ -421,7 +388,7 @@ macro_rules! impl_ints {
 
     (mul; $($t:ty),*) => {
         $(
-            impl<T> Mul<$t> for Fraction<T> where T : ArithmeticCore + PartialOrd , $t : Into<Self> {
+            impl<T> Mul<$t> for Fraction<T> where T : ArithmeticCore + PartialOrd + Clone, $t : Into<Self> {
                 type Output = Self;
 
                 fn mul(self, other: $t) -> Self::Output {
@@ -432,22 +399,48 @@ macro_rules! impl_ints {
         )*
     };
 
-    (operations; $($t:ty),*) => {
+    (operations => $($t:ty),*) => {
         $(
-            impl_ints!(add; $t);
-            impl_ints!(sub; $t);
-            impl_ints!(mul; $t);
-            impl_ints!(div; $t);
+            primitives!(add; $t);
+            primitives!(sub; $t);
+            primitives!(mul; $t);
+            primitives!(div; $t);
         )*
-    }
+    };
+
+    (eq => $($t:ty),*) => {
+        $(
+            impl<T> PartialEq<$t> for Fraction<T> where T : ArithmeticCore + Clone, $t : Into<Self> {
+                fn eq(&self,other: &$t) -> bool {
+                    let rhs : Self = (*other).into();
+                    *self == rhs
+                }
+            }
+        )*
+    };
+
+    (ord => $($t:ty),*) => {
+        $(
+            impl<T> PartialOrd<$t> for Fraction<T> where
+                Self : PartialOrd,
+                T: ArithmeticCore + Clone,
+                $t : Into<Fraction<T>> {
+                fn partial_cmp(&self, other: &$t) -> Option<Ordering> {
+                    let rhs : Self = (*other).into();
+                    self.partial_cmp(&rhs)
+                }
+            }
+        )*
+    };
+
 }
 
-impl_ints!(form; i8, i16, i32, i64, u8, u16, u32, u64);
-impl_ints!(try_form; i8, i16, i32, i64);
-impl_ints!(eq; i8, i16, i32, i64, u8, u16, u32, u64);
-impl_ints!(ord; i8, i16, i32, i64 ,  u8, u16, u32, u64);
-impl_ints!(operations; i8, i16, i32, i64, u8, u16, u32, u64);
-*/
+primitives!(form => i8,i16,i32,i64);
+primitives!(try_from => i8,i16,i32,i64);
+primitives!(operations => i8, i16, i32, i64);
+primitives!(eq => i8,i16,i32,i64);
+primitives!(ord => i8,i16,i32,i64);
+
 #[cfg(test)]
 mod tests {
     use super::*;
