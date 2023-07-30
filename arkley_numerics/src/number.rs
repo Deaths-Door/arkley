@@ -2,7 +2,7 @@ use std::ops::{Add, Sub, Mul, Div, AddAssign, SubAssign, MulAssign, DivAssign};
 
 use arkley_traits::Power;
 
-use crate::StandardForm;
+use crate::{StandardForm,ParsingNumberError};
 
 /// Represents a numeric value that can be decimal (aka f64) or Fraction or Standardform number
 ///
@@ -30,36 +30,6 @@ impl PartialOrd<Number> for Number {
     }
 }
 
-macro_rules! partial_number {
-    (eq => $($t : ty),*) => {
-        $(
-            impl PartialEq<$t> for Number {
-                fn eq(&self, other: &$t) -> bool {
-                    match self {
-                        Number::Decimal(f) => f == &(*other as f64),
-                        Number::StandardForm(sf) => sf == other,
-                    }
-                }
-            }
-        )*
-    };
-    (ord => $($t : ty),*) => {
-        $(
-            impl PartialOrd<$t> for Number {
-                fn partial_cmp(&self, other: &$t) -> Option<std::cmp::Ordering> {
-                    match self {
-                        Number::Decimal(f) => f.partial_cmp(&(*other as f64)),
-                        Number::StandardForm(sf) => sf.partial_cmp(other)
-                    }
-                }
-            }
-        )*
-    };
-}
-
-partial_number!(eq => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
-partial_number!(ord => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
-
 impl std::fmt::Display for Number {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
@@ -70,10 +40,20 @@ impl std::fmt::Display for Number {
 }
 
 impl TryFrom<&str> for Number {
-    type Error = ();//ParsingNumberError;
+    type Error = ParsingNumberError;
     fn try_from(value : &str) -> Result<Self, Self::Error> {
-        todo!()
-      //  value.parse::<f64>().and_then(|float| Ok(Number::Decimal(float)) ).map_err(|_| ())
+        let into_f64 = value.parse::<f64>();
+        if let Ok(float) = into_f64 {
+            return Ok(Number::Decimal(float));
+        }
+
+        let into_sf = StandardForm::try_from(value);
+
+        if let Ok(standard_form) = into_sf{
+            return Ok(Number::StandardForm(standard_form));
+        }
+
+        Err(ParsingNumberError(into_f64.unwrap_err(),into_sf.unwrap_err()))
     }
 }
 
@@ -217,6 +197,122 @@ impl DivAssign for Number {
     }
 }
 
+macro_rules! primitives {
+    (eq => $($t : ty),*) => {
+        $(
+            impl PartialEq<$t> for Number {
+                fn eq(&self, other: &$t) -> bool {
+                    match self {
+                        Number::Decimal(f) => f == &(*other as f64),
+                        Number::StandardForm(sf) => sf == other,
+                    }
+                }
+            }
+        )*
+    };
+    (ord => $($t : ty),*) => {
+        $(
+            impl PartialOrd<$t> for Number {
+                fn partial_cmp(&self, other: &$t) -> Option<std::cmp::Ordering> {
+                    match self {
+                        Number::Decimal(f) => f.partial_cmp(&(*other as f64)),
+                        Number::StandardForm(sf) => sf.partial_cmp(other)
+                    }
+                }
+            }
+        )*
+    };
+
+    (add => $($t : ty),*) => {
+        $(
+            impl Add<$t> for Number {
+                type Output = Self;
+                fn add(self, other: $t) -> Self {
+                    match self {
+                        Number::Decimal(f) => Number::Decimal(f + other as f64),
+                        Number::StandardForm(sf) => Number::StandardForm(sf + other),
+                    }
+                }
+            }
+            
+            impl AddAssign<$t> for Number {
+                fn add_assign(&mut self, other: $t) {
+                    *self += Number::Decimal(other as f64)
+                }
+            }
+        )*
+    };
+
+    (sub => $($t : ty),*) => {
+        $(
+            impl Sub<$t> for Number {
+                type Output = Self;
+                fn sub(self, other: $t) -> Self {
+                    match self {
+                        Number::Decimal(f) => Number::Decimal(f - other as f64),
+                        Number::StandardForm(sf) => Number::StandardForm(sf - other),
+                    }
+                }
+            }
+            
+            impl SubAssign<$t> for Number {
+                fn sub_assign(&mut self, other: $t) {
+                    *self -= Number::Decimal(other as f64)
+                }
+            }
+        )*
+    };
+    (mul => $($t : ty),*) => {
+        $(
+            impl Mul<$t> for Number {
+                type Output = Self;
+                fn mul(self, other: $t) -> Self {
+                    match self {
+                        Number::Decimal(f) => Number::Decimal(f * other as f64),
+                        Number::StandardForm(sf) => Number::StandardForm(sf * other),
+                    }
+                }
+            }
+            
+            impl MulAssign<$t> for Number {
+                fn mul_assign(&mut self, other: $t) {
+                    *self *= Number::Decimal(other as f64)
+                }
+            }
+        )*
+    };
+    (div => $($t : ty),*) => {
+        $(
+            impl Div<$t> for Number {
+                type Output = Self;
+                fn div(self, other: $t) -> Self {
+                    match self {
+                        Number::Decimal(f) => Number::Decimal(f / other as f64),
+                        Number::StandardForm(sf) => Number::StandardForm(sf / other),
+                    }
+                }
+            }
+            
+            impl DivAssign<$t> for Number {
+                fn div_assign(&mut self, other: $t) {
+                    *self /= Number::Decimal(other as f64)
+                }
+            }
+        )*
+    };
+    (operations => $($t:ty),*) => {
+        $(
+            primitives!(add => $t);
+            primitives!(sub => $t);
+            primitives!(mul => $t);
+            primitives!(div => $t);
+        )*
+    }
+}
+
+primitives!(eq => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
+primitives!(ord => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
+primitives!(operations => i8, i16, i32, i64, u8, u16, u32, u64,f32,f64);
 
 #[cfg(test)]
 mod test {
