@@ -1,6 +1,6 @@
 use std::ops::{Add,Sub,Mul,Div,AddAssign,SubAssign,MulAssign,DivAssign};
 
-use std::cmp::{max,min};
+use std::cmp::max;
 use std::num::ParseFloatError;
 
 use arkley_traits::Power;
@@ -29,18 +29,19 @@ impl StandardForm {
     }
 
     fn adjust(&mut self) {
-        if self.in_range() {
+        if self.in_range() || self.mantissa == 0.0 {
             return;
         }
 
-        match self.mantissa/*.abs()*/ > 0.0 {
+        // means its things like 0.2323 not -700
+        match self.mantissa > -1.0 && self.mantissa < 1.0 {
             true => while !self.in_range() {
-                self.mantissa /= 10.0;
-                self.exponent += 1; 
-            },
-            false => while !self.in_range() {
                 self.mantissa *= 10.0;
                 self.exponent -= 1; 
+            },
+            false => while !self.in_range() {
+                self.mantissa /= 10.0;
+                self.exponent += 1; 
             }
         }
     }
@@ -160,13 +161,17 @@ impl Sub for StandardForm {
 
 impl SubAssign for StandardForm {
     fn sub_assign(&mut self, other: Self) {
-        let max_power = min(self.exponent, other.exponent);
-        let num_sum = self.mantissa * 10.0_f64.to_the_power_of((self.exponent - max_power) as f64) - other.mantissa * 10.0_f64.to_the_power_of((other.exponent - max_power) as f64);
+        let min = self.exponent.min(other.exponent);
 
-        self.mantissa = num_sum;
-        self.exponent = max_power;
+        let x = self.mantissa * 10_i32.pow((self.exponent - min) as u32) as f64;
+        let y = other.mantissa * 10_i32.pow((other.exponent - min) as u32) as f64;
 
-        self.adjust();
+        let result = x - y;
+        let rounded = (result * 1.0e6).round() / 1.0e6;
+
+        self.mantissa = rounded;
+        self.exponent = min;
+        self.adjust(); 
     }
 }
 
@@ -182,8 +187,13 @@ impl Mul for StandardForm {
 
 impl MulAssign for StandardForm {
     fn mul_assign(&mut self, other: Self) {
-        self.mantissa *= other.mantissa;
-        self.exponent += other.exponent;
+        let exponent = self.exponent + other.exponent;
+        let mantissa = self.mantissa * other.mantissa;
+        let rounded = (mantissa * 1.0e6).round() / 1.0e6;
+
+        self.mantissa = rounded;
+        self.exponent = exponent;
+
         self.adjust();
     }
 }
