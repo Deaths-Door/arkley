@@ -155,12 +155,14 @@ impl Div for Number {
 
 impl AddAssign for Number {
     fn add_assign(&mut self, other: Number) {
-        match (self, other) {
-            (Number::Decimal(f1), Number::Decimal(f2)) => *f1 += f2,
-            (Number::StandardForm(sf1),Number::StandardForm(sf2)) => *sf1 += sf2,
-            (Number::StandardForm(sf1),Number::Decimal(f2)) => *sf1 += f2,
+        let temp_self = std::mem::replace(self, Number::Decimal(0.0)); // Take ownership of self
+
+        match (temp_self, other) {
+            (Number::Decimal(f1), Number::Decimal(f2)) => *self = Number::Decimal(f1 + f2),
+            (Number::StandardForm(sf1), Number::StandardForm(sf2)) => *self = Number::StandardForm(sf1 + sf2),
+            (Number::StandardForm(sf1), Number::Decimal(f2)) => *self = Number::StandardForm(sf1 + f2),
             (Number::Decimal(f1), Number::StandardForm(sf2)) => {
-                let rhs : StandardForm = (*f1).into();
+                let rhs: StandardForm = (f1).into();
                 *self = Number::StandardForm(rhs + sf2);
             }
         }
@@ -169,12 +171,14 @@ impl AddAssign for Number {
 
 impl SubAssign for Number {
     fn sub_assign(&mut self, other: Number) {
-        match (self, other) {
-            (Number::Decimal(f1), Number::Decimal(f2)) => *f1 -= f2,
-            (Number::StandardForm(sf1),Number::StandardForm(sf2)) => *sf1 -= sf2,
-            (Number::StandardForm(sf1),Number::Decimal(f2)) => *sf1 -= f2,
+        let temp_self = std::mem::replace(self, Number::Decimal(0.0)); // Take ownership of self
+
+        match (temp_self, other) {
+            (Number::Decimal(f1), Number::Decimal(f2)) => *self = Number::Decimal(f1 - f2),
+            (Number::StandardForm(sf1), Number::StandardForm(sf2)) => *self = Number::StandardForm(sf1 - sf2),
+            (Number::StandardForm(sf1), Number::Decimal(f2)) => *self = Number::StandardForm(sf1 - f2),
             (Number::Decimal(f1), Number::StandardForm(sf2)) => {
-                let rhs : StandardForm = (*f1).into();
+                let rhs: StandardForm = (f1).into();
                 *self = Number::StandardForm(rhs - sf2);
             }
         }
@@ -183,30 +187,35 @@ impl SubAssign for Number {
 
 impl MulAssign for Number {
     fn mul_assign(&mut self, other: Number) {
-        match (self, other) {
-            (Number::Decimal(f1), Number::Decimal(f2)) => *f1 *= f2,
-            (Number::StandardForm(sf1),Number::StandardForm(sf2)) => *sf1 *= sf2,
-            (Number::StandardForm(sf1),Number::Decimal(f2)) => *sf1 *= f2,
+        let temp_self = std::mem::replace(self, Number::Decimal(0.0)); // Take ownership of self
+
+        match (temp_self, other) {
+            (Number::Decimal(f1), Number::Decimal(f2)) => *self = Number::Decimal(f1 * f2),
+            (Number::StandardForm(sf1), Number::StandardForm(sf2)) => *self = Number::StandardForm(sf1 * sf2),
+            (Number::StandardForm(sf1), Number::Decimal(f2)) => *self = Number::StandardForm(sf1 * f2),
             (Number::Decimal(f1), Number::StandardForm(sf2)) => {
-                let rhs : StandardForm = (*f1).into();
+                let rhs: StandardForm = (f1).into();
                 *self = Number::StandardForm(rhs * sf2);
             }
         }
     }
 }
+
 impl DivAssign for Number {
     fn div_assign(&mut self, other: Number) {
-        match (self, other) {
-            (Number::Decimal(f1), Number::Decimal(f2)) => *f1 /= f2,
-            (Number::StandardForm(sf1),Number::StandardForm(sf2)) => *sf1 /= sf2,
-            (Number::StandardForm(sf1),Number::Decimal(f2)) => *sf1 /= f2,
+        let temp_self = std::mem::replace(self, Number::Decimal(0.0)); // Take ownership of self
+        match (temp_self, other) {
+            (Number::Decimal(f1), Number::Decimal(f2)) => *self = Number::Decimal(f1 / f2),
+            (Number::StandardForm(sf1), Number::StandardForm(sf2)) => *self = Number::StandardForm(sf1 / sf2),
+            (Number::StandardForm(sf1), Number::Decimal(f2)) => *self = Number::StandardForm(sf1 / f2),
             (Number::Decimal(f1), Number::StandardForm(sf2)) => {
-                let rhs : StandardForm = (*f1).into();
+                let rhs: StandardForm = (f1).into();
                 *self = Number::StandardForm(rhs / sf2);
             }
         }
     }
 }
+
 
 #[cfg(test)]
 mod test {
