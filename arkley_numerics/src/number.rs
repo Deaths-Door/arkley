@@ -261,7 +261,7 @@ mod test {
         assert!(result.is_err());
 
         // Check if the correct error variant is returned
-        if let Err(error) = result {
+        if let Err(_) = result {
         } else {
             assert!(false, "Expected Err(ParseFloatError), but got a success.");
         }
@@ -275,7 +275,7 @@ mod test {
         assert!(result.is_err());
 
         // Check if the correct error variant is returned
-        if let Err(error) = result {
+        if let Err(_) = result {
         } else {
             assert!(false, "Expected Err(ParseFloatError), but got a success.");
         }

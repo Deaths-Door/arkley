@@ -33,18 +33,15 @@ impl StandardForm {
             return;
         }
 
-        let abs_number = f64::abs(self.mantissa);
-        let log_zehn = f64::ceil(f64::log10(abs_number));
-        self.mantissa /= f64::powf(10.0, log_zehn);
-        self.exponent = log_zehn as i8;
-
-        if self.mantissa < 0.0 {
-            self.mantissa = -self.mantissa;
-        }       
-
-        if self.mantissa > 0.0 && self.mantissa < 1.0 {
-            self.mantissa *= 10.0;
-            self.exponent -= 1;
+        match self.mantissa/*.abs()*/ > 0.0 {
+            true => while !self.in_range() {
+                self.mantissa /= 10.0;
+                self.exponent += 1; 
+            },
+            false => while !self.in_range() {
+                self.mantissa *= 10.0;
+                self.exponent -= 1; 
+            }
         }
     }
 
@@ -89,7 +86,16 @@ impl std::fmt::Display for StandardForm {
             return write!(f,"{}",self.to_scientific_notation());
         };
 
-        write!(f,"{}",(self.mantissa * 10.0).powf(self.exponent as f64))
+        write!(f,"{}",self.mantissa * 10_i32.pow(self.exponent as u32) as f64)
+    }
+}
+
+impl PartialOrd for StandardForm {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match self.exponent == other.exponent {
+            true => self.mantissa.partial_cmp(&other.mantissa),
+            false => self.exponent.partial_cmp(&other.exponent)
+        }
     }
 }
 
@@ -140,10 +146,15 @@ impl AddAssign for StandardForm {
 impl Sub for StandardForm {
     type Output = Self;
     fn sub(self, other: Self) -> Self {
-        let max_power = min(self.exponent, other.exponent);
-        let num_sum = self.mantissa * 10.0_f64.to_the_power_of((self.exponent - max_power) as f64) - other.mantissa * 10.0_f64.to_the_power_of((other.exponent - max_power) as f64);
+        let min = self.exponent.min(other.exponent);
 
-        StandardForm::new(num_sum, max_power)
+        let x = self.mantissa * 10_i32.pow((self.exponent - min) as u32) as f64;
+        let y = other.mantissa * 10_i32.pow((other.exponent - min) as u32) as f64;
+
+        let result = x - y;
+        let rounded = (result * 1.0e6).round() / 1.0e6;
+
+        StandardForm::new(rounded,min)
     }
 }
 
@@ -162,7 +173,10 @@ impl SubAssign for StandardForm {
 impl Mul for StandardForm {
     type Output = Self;
     fn mul(self, other: Self) -> Self {
-        StandardForm::new(self.mantissa * other.mantissa,self.exponent + other.exponent)
+        let exponent = self.exponent + other.exponent;
+        let mantissa = self.mantissa * other.mantissa;
+        let rounded = (mantissa * 1.0e6).round() / 1.0e6;
+        StandardForm::new(rounded,exponent)
     }
 }
 
@@ -189,13 +203,12 @@ impl DivAssign for StandardForm {
     }
 }
 
-
 macro_rules! primitives {
     (form => $($t:ty),*) => {
         $(
             impl From<$t> for StandardForm {
                 fn from(value: $t) -> Self {
-                    StandardForm::new(value as f64,1)
+                    StandardForm::new(value as f64,0)
                 }
             }
         )*
@@ -225,12 +238,7 @@ macro_rules! primitives {
             impl AddAssign<$t> for StandardForm {
                 fn add_assign(&mut self, other: $t) {
                     let rhs : Self = other.into();
-                    let max_power = max(self.exponent, rhs.exponent);
-                    let num_sum = self.mantissa * 10.0_f64.to_the_power_of((self.exponent - max_power) as f64) + rhs.mantissa * 10.0_f64.to_the_power_of((rhs.exponent - max_power) as f64);
-            
-                    self.mantissa = num_sum;
-                    self.exponent = max_power;
-                    self.adjust();
+                    *self += rhs;
                 }
             }
         )*
@@ -249,13 +257,7 @@ macro_rules! primitives {
             impl SubAssign<$t> for StandardForm {
                 fn sub_assign(&mut self, other: $t) {
                     let rhs : Self = other.into();
-
-                    let max_power = min(self.exponent, rhs.exponent);
-                    let num_sum = self.mantissa * 10.0_f64.to_the_power_of((self.exponent - max_power) as f64) - rhs.mantissa * 10.0_f64.to_the_power_of((rhs.exponent - max_power) as f64);
-
-                    self.mantissa = num_sum;
-                    self.exponent = max_power;
-                    self.adjust();
+                    *self -= rhs;
                 }
             }
         )*
@@ -266,16 +268,14 @@ macro_rules! primitives {
                 type Output = Self;
                 fn mul(self, other: $t) -> Self {
                     let rhs : Self = other.into();
-                    self - rhs
+                    self * rhs
                 }
             }
             
             impl MulAssign<$t> for StandardForm {
                 fn mul_assign(&mut self, other: $t) {
                     let rhs : Self = other.into();
-                    self.mantissa *= rhs.mantissa;
-                    self.exponent += rhs.exponent;
-                    self.adjust();
+                    *self *= rhs;
                 }
             }
         )*
@@ -286,16 +286,14 @@ macro_rules! primitives {
                 type Output = Self;
                 fn div(self, other: $t) -> Self {
                     let rhs : Self = other.into();
-                    self - rhs
+                    self / rhs
                 }
             }
             
             impl DivAssign<$t> for StandardForm {
                 fn div_assign(&mut self, other: $t) {
                     let rhs : Self = other.into();
-                    self.mantissa /= rhs.mantissa;
-                    self.exponent /= rhs.exponent;
-                    self.adjust();
+                    *self /= rhs;
                 }
             }
         )*
@@ -323,6 +321,14 @@ mod tests {
         let sf1 = StandardForm::new(1.0,5);
         assert_eq!(*sf1.mantissa(),1.0);
         assert_eq!(*sf1.exponent(),5);
+    }
+
+    #[test]
+    fn from_u8_standardform(){
+        let n = 2u8;
+        let r : StandardForm = n.into();
+
+        assert_eq!(r,StandardForm { mantissa : 2.0,exponent : 0 });
     }
 
     #[test]
@@ -363,7 +369,7 @@ mod tests {
         let a = StandardForm::new(1.2, 3);
         let b = StandardForm::new(3.4, 2);
         let result = a + b;
-        assert_eq!(result, 1540.into());
+        assert_eq!(result, StandardForm::new(1.54,3) );
     }
 
     #[test]
@@ -372,7 +378,7 @@ mod tests {
         let a = StandardForm::new(1.0, 1);
         let b = 2u8;
         let result = a + b;
-        assert_eq!(result, 12.into());
+        assert_eq!(result, StandardForm::new(1.2,1));
     }
 
     #[test]
@@ -381,17 +387,19 @@ mod tests {
         let a = StandardForm::new(4.6, 2);
         let b = StandardForm::new(3.4, 2);
         let result = a - b;
-        assert_eq!(result, 120.into());
+        assert_eq!(result, StandardForm::new(1.2,2));
     }
 
     #[test]
     fn subtraction_u8() {
-        // Test subtraction with u8
+        //210
         let a = StandardForm::new(21.0, 1);
+        println!("{a}");
+        //2
         let b = 2u8;
         let result = a - b;
-        assert_eq!(result.mantissa, 1.0);
-        assert_eq!(result.exponent, 1);
+        assert_eq!(result.mantissa, 2.18);
+        assert_eq!(result.exponent, 2);
     }
 
     #[test]
@@ -402,19 +410,12 @@ mod tests {
         let result = a * b;
         assert_eq!(result.mantissa, 3.6);
         assert_eq!(result.exponent, 5);
-
-        // Test multiplication with u8
-        let a = StandardForm::new(1.0, 1);
-        let b = 2u8;
-        let result = a * b;
-        assert_eq!(result.mantissa, 2.0);
-        assert_eq!(result.exponent, 1);
     }
 
     #[test]
     fn multiplication_u8() {
         // Test multiplication with u8
-        let a = StandardForm::new(1.0, 1);
+        let a = StandardForm::new(1.0, 1);        
         let b = 2u8;
         let result = a * b;
         assert_eq!(result.mantissa, 2.0);
@@ -428,13 +429,6 @@ mod tests {
         let b = StandardForm::new(2.0, 1);
         let result = a / b;
         assert_eq!(result.mantissa, 2.0);
-        assert_eq!(result.exponent, 1);
-
-        // Test division with u8
-        let a = StandardForm::new(2.0, 1);
-        let b = 2u8;
-        let result = a / b;
-        assert_eq!(result.mantissa, 1.0);
         assert_eq!(result.exponent, 1);
     }
 
@@ -456,60 +450,17 @@ mod tests {
         a += b;
         assert_eq!(a.mantissa, 3.0);
         assert_eq!(a.exponent, 1);
-
-        // Test AddAssign with u8
-        let mut a = StandardForm::new(1.0, 1);
-        let b = 2u8;
-        a += b;
-        assert_eq!(a.mantissa, 21.0);
-        assert_eq!(a.exponent, 1);
     }
 
     #[test]
     fn add_assign_u8() {
         // Test AddAssign with u8
         let mut a = StandardForm::new(1.0, 1);
+
         let b = 2u8;
+
         a += b;
-        assert_eq!(a.mantissa, 21.0);
+        assert_eq!(a.mantissa, 1.2);
         assert_eq!(a.exponent, 1);
     }
 }
-/*
-impl StandardForm {*/
- /*   /// Creates a new instance of StandardForm with the given mantissa and exponent
-    pub fn new(mantissa : Fraction<i8,i8>,exponent : i8) -> Self {
-        let mut instance = Self { mantissa , exponent };
-        instance.adjust();
-        instance
-    }
-
-    fn in_range(&self) -> bool {
-        (self.mantissa >= 1.0 && self.mantissa <= 10.0) || (self.mantissa >= -10.0  && self.mantissa <= -1.0)
-    }
-
-    fn adjust(&mut self) {
-        if !self.in_range() {
-            let abs = self.mantissa.abs();
-            let log = abs.log10().ceil();
-            
-            self.mantissa /= 10.0f64.powf(log);
-            self.exponent = log as i8;
-
-            if self.mantissa < 0.0 {
-                self.mantissa = -self.mantissa;
-            }
-            else if self.mantissa > 0.0 && self.mantissa < 1.0 {
-                self.mantissa *= 10.0;
-                self.exponent -= 1;
-            }   
-        };
-    }
-impl Rem<StandardForm> for StandardForm {
-    type Output = StandardForm;
-
-    fn rem(self, other: StandardForm) -> StandardForm {
-        let division_result = self / other;
-        self - division_result * other
-    }
-}*/

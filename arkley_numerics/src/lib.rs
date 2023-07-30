@@ -4,7 +4,7 @@
         missing_docs,
         unsafe_code,
         unused_imports,
-        //unused_variables,
+        unused_variables,
         unused_mut,
         unused_results,
         unused_allocation,
