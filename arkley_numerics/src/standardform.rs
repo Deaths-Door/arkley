@@ -315,6 +315,7 @@ primitives!(eq => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cmp::Ordering;
 
     #[test]
     fn assignment_issue() {
@@ -462,5 +463,58 @@ mod tests {
         a += b;
         assert_eq!(a.mantissa, 1.2);
         assert_eq!(a.exponent, 1);
+    }
+
+    #[test]
+    fn test_partial_cmp_equal() {
+        let sf1 = StandardForm::new(1.23, 3);
+        let sf2 = StandardForm::new(1.23, 3);
+
+        assert_eq!(sf1.partial_cmp(&sf2), Some(Ordering::Equal));
+    }
+
+    #[test]
+    fn test_partial_cmp_greater() {
+
+        //300
+        let sf1 = StandardForm::new(3.0, 2);
+        // 250
+        let sf2 = StandardForm::new(2.5, 2);
+
+        assert_eq!(sf1.partial_cmp(&sf2), Some(Ordering::Greater));
+    }
+
+    #[test]
+    fn test_partial_cmp_less() {
+        let sf1 = StandardForm::new(2.5, 2);
+        let sf2 = StandardForm::new(3.0, 2);
+
+        assert_eq!(sf1.partial_cmp(&sf2), Some(Ordering::Less));
+    }
+
+    #[test]
+    fn test_partial_cmp_different_exponents() {
+        let sf1 = StandardForm::new(1.5, 2);
+        let sf2 = StandardForm::new(1.5, 3);
+
+        // When exponents are different, the comparison is based on the magnitude
+        assert_eq!(sf1.partial_cmp(&sf2), Some(Ordering::Less));
+    }
+
+    #[test]
+    fn test_partial_cmp_zero() {
+        let sf1 = StandardForm::new(0.0, 0);
+        let sf2 = StandardForm::new(0.0, 0);
+
+        assert_eq!(sf1.partial_cmp(&sf2), Some(Ordering::Equal));
+    }
+
+    #[test]
+    fn test_partial_cmp_mixed_sign() {
+        let sf1 = StandardForm::new(-1.0, 2);
+        let sf2 = StandardForm::new(1.0, 2);
+
+        // Negative numbers are considered less than positive numbers with the same magnitude
+        assert_eq!(sf1.partial_cmp(&sf2), Some(Ordering::Less));
     }
 }
