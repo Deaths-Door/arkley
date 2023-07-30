@@ -2,20 +2,30 @@ use std::ops::{Add, Sub, Mul, Div, AddAssign, SubAssign, MulAssign, DivAssign};
 
 use arkley_traits::Power;
 
+use crate::StandardForm;
+
 /// Represents a numeric value that can be decimal (aka f64) or Fraction or Standardform number
 ///
-/// `Note` : TODO add standardform to it maybe and add fractions variant to is as well
-/// # Variants
-#[derive(Debug,PartialEq,Copy,Clone)]
+/// `Note` : add fractions variant to is as well 
+/// `Note` : Remove Clone as its only used for op assign for f64 btw standardform
+#[derive(Debug,PartialEq)]
 pub enum Number {
     /// Represents a floating-point decimal number.
     Decimal(f64),
+    /// Represents a number in the StandardForm notation.
+    StandardForm(StandardForm)
 }
 
 impl PartialOrd<Number> for Number {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         match (self, other) {
             (Number::Decimal(a), Number::Decimal(b)) => a.partial_cmp(b),
+            (Number::StandardForm(a), Number::StandardForm(b)) => a.partial_cmp(b),
+            (Number::StandardForm(a), Number::Decimal(b)) => a.partial_cmp(b),
+            (Number::Decimal(a), Number::StandardForm(b)) => {
+                let rhs : StandardForm = (*a).into();
+                rhs.partial_cmp(b)
+            },
         }
     }
 }
@@ -26,7 +36,8 @@ macro_rules! partial_number {
             impl PartialEq<$t> for Number {
                 fn eq(&self, other: &$t) -> bool {
                     match self {
-                        Number::Decimal(f) => f == &(*other as f64)
+                        Number::Decimal(f) => f == &(*other as f64),
+                        Number::StandardForm(sf) => sf == other,
                     }
                 }
             }
@@ -37,7 +48,8 @@ macro_rules! partial_number {
             impl PartialOrd<$t> for Number {
                 fn partial_cmp(&self, other: &$t) -> Option<std::cmp::Ordering> {
                     match self {
-                        Number::Decimal(f) => f.partial_cmp(&(*other as f64))
+                        Number::Decimal(f) => f.partial_cmp(&(*other as f64)),
+                        Number::StandardForm(sf) => sf.partial_cmp(other)
                     }
                 }
             }
@@ -50,21 +62,18 @@ partial_number!(ord => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
 
 impl std::fmt::Display for Number {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Number::Decimal(f) => f
-            }
-        )   
-
+        match self {
+            Number::Decimal(float) => write!(f,"{}",float),
+            Number::StandardForm(sf) => write!(f,"{}",sf),
+        }
     }
 }
 
 impl TryFrom<&str> for Number {
-    type Error = ();
+    type Error = ();//ParsingNumberError;
     fn try_from(value : &str) -> Result<Self, Self::Error> {
-        value.parse::<f64>().and_then(|float| Ok(Number::Decimal(float)) ).map_err(|_| ())
+        todo!()
+      //  value.parse::<f64>().and_then(|float| Ok(Number::Decimal(float)) ).map_err(|_| ())
     }
 }
 
@@ -85,6 +94,12 @@ impl Add for Number {
         use crate::Number::Decimal;
         match (self,other) {
             (Decimal(f1),Decimal(f2)) => Decimal(f1 + f2),
+            (Number::StandardForm(sf1),Number::StandardForm(sf2)) => Number::StandardForm(sf1 + sf2),
+            (Number::StandardForm(sf1),Number::Decimal(f2)) => Number::StandardForm(sf1 + f2),
+            (Number::Decimal(f1), Number::StandardForm(sf2)) => {
+                let rhs : StandardForm = f1.into();
+                Number::StandardForm(rhs + sf2)
+            }
         }
     }
 }
@@ -93,10 +108,14 @@ impl Sub for Number {
     type Output = Number;
 
     fn sub(self,other : Number) -> Self::Output {
-        use crate::Number::Decimal;
         match (self,other) {
-            (Decimal(f1),Decimal(f2)) => Number::Decimal(f1 - f2),
-
+            (Number::Decimal(f1),Number::Decimal(f2)) => Number::Decimal(f1 - f2),
+            (Number::StandardForm(sf1),Number::StandardForm(sf2)) => Number::StandardForm(sf1 - sf2),
+            (Number::StandardForm(sf1),Number::Decimal(f2)) => Number::StandardForm(sf1 - f2),
+            (Number::Decimal(f1), Number::StandardForm(sf2)) => {
+                let rhs : StandardForm = f1.into();
+                Number::StandardForm(rhs - sf2)
+            }
         }
     }
 }
@@ -105,10 +124,14 @@ impl Mul for Number {
     type Output = Number;
 
     fn mul(self,other : Number) -> Self::Output {
-        use crate::Number::Decimal;
         match (self,other) {
-            (Decimal(f1),Decimal(f2)) => Number::Decimal(f1 * f2),
-
+            (Number::Decimal(f1),Number::Decimal(f2)) => Number::Decimal(f1 * f2),
+            (Number::StandardForm(sf1),Number::StandardForm(sf2)) => Number::StandardForm(sf1 * sf2),
+            (Number::StandardForm(sf1),Number::Decimal(f2)) => Number::StandardForm(sf1 * f2),
+            (Number::Decimal(f1), Number::StandardForm(sf2)) => {
+                let rhs : StandardForm = f1.into();
+                Number::StandardForm(rhs * sf2)
+            }
         }
     }
 }
@@ -120,7 +143,12 @@ impl Div for Number {
         use crate::Number::Decimal;
         match (self,other) {
             (Decimal(f1),Decimal(f2)) => Number::Decimal(f1 / f2),
-
+            (Number::StandardForm(sf1),Number::StandardForm(sf2)) => Number::StandardForm(sf1 / sf2),
+            (Number::StandardForm(sf1),Number::Decimal(f2)) => Number::StandardForm(sf1 / f2),
+            (Number::Decimal(f1), Number::StandardForm(sf2)) => {
+                let rhs : StandardForm = f1.into();
+                Number::StandardForm(rhs / sf2)
+            }
         }
     }
 }
@@ -129,6 +157,12 @@ impl AddAssign for Number {
     fn add_assign(&mut self, other: Number) {
         match (self, other) {
             (Number::Decimal(f1), Number::Decimal(f2)) => *f1 += f2,
+            (Number::StandardForm(sf1),Number::StandardForm(sf2)) => *sf1 += sf2,
+            (Number::StandardForm(sf1),Number::Decimal(f2)) => *sf1 += f2,
+            (Number::Decimal(f1), Number::StandardForm(sf2)) => {
+                let rhs : StandardForm = (*f1).into();
+                *self = Number::StandardForm(rhs + sf2);
+            }
         }
     }
 }
@@ -137,6 +171,12 @@ impl SubAssign for Number {
     fn sub_assign(&mut self, other: Number) {
         match (self, other) {
             (Number::Decimal(f1), Number::Decimal(f2)) => *f1 -= f2,
+            (Number::StandardForm(sf1),Number::StandardForm(sf2)) => *sf1 -= sf2,
+            (Number::StandardForm(sf1),Number::Decimal(f2)) => *sf1 -= f2,
+            (Number::Decimal(f1), Number::StandardForm(sf2)) => {
+                let rhs : StandardForm = (*f1).into();
+                *self = Number::StandardForm(rhs - sf2);
+            }
         }
     }
 }
@@ -145,14 +185,25 @@ impl MulAssign for Number {
     fn mul_assign(&mut self, other: Number) {
         match (self, other) {
             (Number::Decimal(f1), Number::Decimal(f2)) => *f1 *= f2,
+            (Number::StandardForm(sf1),Number::StandardForm(sf2)) => *sf1 *= sf2,
+            (Number::StandardForm(sf1),Number::Decimal(f2)) => *sf1 *= f2,
+            (Number::Decimal(f1), Number::StandardForm(sf2)) => {
+                let rhs : StandardForm = (*f1).into();
+                *self = Number::StandardForm(rhs * sf2);
+            }
         }
     }
 }
-
 impl DivAssign for Number {
     fn div_assign(&mut self, other: Number) {
         match (self, other) {
             (Number::Decimal(f1), Number::Decimal(f2)) => *f1 /= f2,
+            (Number::StandardForm(sf1),Number::StandardForm(sf2)) => *sf1 /= sf2,
+            (Number::StandardForm(sf1),Number::Decimal(f2)) => *sf1 /= f2,
+            (Number::Decimal(f1), Number::StandardForm(sf2)) => {
+                let rhs : StandardForm = (*f1).into();
+                *self = Number::StandardForm(rhs / sf2);
+            }
         }
     }
 }

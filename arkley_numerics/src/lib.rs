@@ -18,7 +18,9 @@
 mod fraction;
 mod number;
 mod standardform;
+mod errors;
 
 pub use self::fraction::*;
 pub use self::number::*;
 pub use self::standardform::*;
+pub use self::errors::*;

@@ -5,6 +5,8 @@ use std::num::ParseFloatError;
 
 use arkley_traits::Power;
 
+use crate::ParsingStandardFormError;
+
 /// Represents a number in standard form.
 ///
 /// The `Standardform` struct holds the significand (mantissa) of the number 
@@ -101,25 +103,26 @@ impl PartialOrd for StandardForm {
 }
 
 impl TryFrom<&str> for StandardForm {
-    type Error = ();
+    type Error = ParsingStandardFormError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value.parse::<f64>() {
-            Ok(number) => Ok(number.into()),
-            Err(_) => if let Some(index) = value.find('e') {
-                let m_str : f64 = value[0..index].parse().map_err(|_| ())?;
-                let e_str : i8 = value[index + 1..].parse().map_err(|_| ())?;
-                Ok(StandardForm::new(m_str,e_str))
-            }
-            else if let Some(index) = value.find('^') {
-                let m_str : f64 = value[0..index - 2].parse().map_err(|_| ())?;
-                let e_str : i8 = value[index + 1..].parse().map_err(|_| ())?;
-                Ok(StandardForm::new(m_str,e_str))
-            }
-            else {
-                Err(())
-            }
+        if let Ok(number) = value.parse::<f64>() {
+            return Ok(number.into());
         }
+
+        if let Some(index) = value.find('e') {
+            let m_str : f64 = value[0..index].parse().map_err(|error| ParsingStandardFormError::Mantissa(error) )?;
+            let e_str : i8 = value[index + 1..].parse().map_err(|error| ParsingStandardFormError::Exponent(error) )?;
+            return Ok(StandardForm::new(m_str,e_str));
+        }
+        
+        if let Some(index) = value.find('^') {
+            let m_str : f64 = value[0..index - 2].parse().map_err(|error| ParsingStandardFormError::Mantissa(error) )?;
+            let e_str : i8 = value[index + 1..].parse().map_err(|error| ParsingStandardFormError::Exponent(error) )?;
+            return Ok(StandardForm::new(m_str,e_str));
+        }
+
+        Err(ParsingStandardFormError::InvalidFormat)
     }
 }
 
@@ -234,6 +237,17 @@ macro_rules! primitives {
             }
         )*
     };
+    (ord => $($t:ty),*) => {
+        $(
+            impl PartialOrd<$t> for StandardForm {
+                fn partial_cmp(&self, other: &$t) -> Option<std::cmp::Ordering> {
+                    let rhs : Self = (*other).into();
+                    self.partial_cmp(&rhs)
+                }
+            }
+        )*
+    };
+
 
     (add => $($t : ty),*) => {
         $(
@@ -318,9 +332,10 @@ macro_rules! primitives {
     }
 }
 
-primitives!(operations => i8, i16, i32, i64, u8, u16, u32, u64);
+primitives!(operations => i8, i16, i32, i64, u8, u16, u32, u64,f32,f64);
 primitives!(form => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
 primitives!(eq => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
+primitives!(ord => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
 
 #[cfg(test)]
 mod tests {
