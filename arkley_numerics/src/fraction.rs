@@ -604,7 +604,7 @@ mod tests {
         assert_eq!(abs_fraction1, Fraction::new(1, 2));
 
         let fraction2 = Fraction::new(3, 4);
-        let abs_fraction2 = fraction2.absolute();
+        let abs_fraction2 = fraction2.clone().absolute();
         assert_eq!(abs_fraction2, fraction2); // Absolute value of a positive fraction is the fraction itself
     }
 
