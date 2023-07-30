@@ -20,8 +20,8 @@ use arkley_traits::{
 /// The `Fraction` struct can be used to perform arithmetic operations on fractions,
 /// such as addition, subtraction, multiplication, and division.
 /// It also supports comparison operations, simplification, conversion to other types and other mathematical operations.
-#[derive(Debug,PartialEq,Copy,Clone)]
-pub enum Fraction<T> where T : ArithmeticCore {
+#[derive(Debug,PartialEq,Clone)]
+pub enum Fraction<T> where T : ArithmeticCore + Clone {
     /// Represents an undefined or "Not a Number" fraction.
     NaN,
     /// Represents positive infinity.
@@ -32,7 +32,7 @@ pub enum Fraction<T> where T : ArithmeticCore {
     Proper(T, T),
 }
 
-impl<T> Fraction<T> where T : ArithmeticCore {
+impl<T> Fraction<T> where T : ArithmeticCore + Clone {
     /// Constructs a new `Fraction` instance with the given numerator and denominator.
     ///
     /// # Safety
@@ -69,7 +69,7 @@ impl<T> Fraction<T> where T : ArithmeticCore {
     }
 }
 
-impl<T> Fraction<T> where T : ArithmeticCore + Copy {
+impl<T> Fraction<T> where T : ArithmeticCore + Clone {
     /// Returns a new `Fraction` instance that represents the inverse of the current fraction.
     ///
     /// If the current fraction is in the `Fraction::Proper` variant, this method swaps the
@@ -77,7 +77,7 @@ impl<T> Fraction<T> where T : ArithmeticCore + Copy {
     /// `NaN` for `NaN`, swaps `PositiveInfinity` to `NegativeInfinity`, and vice versa.
     pub fn as_inverse(&self) -> Fraction<T> {
         match self {
-            Fraction::Proper(numerator,denominator) => Fraction::new_unchecked(*denominator,*numerator),
+            Fraction::Proper(numerator,denominator) => Fraction::new_unchecked(denominator.clone(),numerator.clone()),
             Fraction::NaN => Fraction::NaN,
             Fraction::PositiveInfinity => Fraction::NegativeInfinity,
             Fraction::NegativeInfinity => Fraction::PositiveInfinity,
@@ -85,7 +85,7 @@ impl<T> Fraction<T> where T : ArithmeticCore + Copy {
     }
 }
 
-impl<T> Fraction<T> where T : ArithmeticCore + PartialOrd {
+impl<T> Fraction<T> where T : ArithmeticCore + PartialOrd + Clone {
     /// Creates a new fraction with the given numerator and denominator.
     ///
     /// # Arguments
@@ -115,7 +115,7 @@ impl<T> Fraction<T> where T : ArithmeticCore + PartialOrd {
     }
 }
 
-impl<T> Fraction<T> where T : ArithmeticCore + PartialOrd {
+impl<T> Fraction<T> where T : ArithmeticCore + PartialOrd + Clone {
     /// Creates a new `Fraction` with the given numerator and denominator.
     /// The fraction is reduced to its simplest form, where the numerator and denominator have no common divisors.
     ///
@@ -128,11 +128,11 @@ impl<T> Fraction<T> where T : ArithmeticCore + PartialOrd {
     ///
     /// The reduced `Fraction` with the provided numerator and denominator.
     pub fn new_unchecked_reduced(numerator : T,denominator : T) -> Fraction<T> {
-        let gcd = numerator.gcd(denominator);
+        let gcd = numerator.clone().gcd(denominator.clone());
         let n = if denominator < T::zero() {
-            -numerator / gcd
+            -numerator / gcd.clone()
         } else {
-            numerator / gcd
+            numerator / gcd.clone()
         };
 
         let d = if denominator < T::zero() {
@@ -140,11 +140,12 @@ impl<T> Fraction<T> where T : ArithmeticCore + PartialOrd {
         } else {
             denominator / gcd
         };
+
         Fraction::Proper(n,d)
     }
 }
 
-impl<T> Abs for Fraction<T> where T : ArithmeticCore {
+impl<T> Abs for Fraction<T> where T : ArithmeticCore + Clone{
     // Required method
     fn absolute(self) -> Self {
         match self {
@@ -155,7 +156,7 @@ impl<T> Abs for Fraction<T> where T : ArithmeticCore {
     }
 }
 
-impl<T> std::fmt::Display for Fraction<T> where T : ArithmeticCore + std::fmt::Display {
+impl<T> std::fmt::Display for Fraction<T> where T : ArithmeticCore + std::fmt::Display + Clone{
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Fraction::Proper(numerator,denominator) => {
@@ -181,7 +182,7 @@ impl<T> std::fmt::Display for Fraction<T> where T : ArithmeticCore + std::fmt::D
     }
 }
 
-impl<T> Neg for Fraction<T> where T: ArithmeticCore {
+impl<T> Neg for Fraction<T> where T: ArithmeticCore + Clone{
     type Output = Self;
 
     fn neg(self) -> Self::Output {
@@ -194,17 +195,23 @@ impl<T> Neg for Fraction<T> where T: ArithmeticCore {
     }
 }
 
-impl<T> Add for Fraction<T> where T : ArithmeticCore + PartialEq + PartialOrd{
+impl<T> Add for Fraction<T> where T : ArithmeticCore + PartialEq + PartialOrd + Clone{
     type Output = Self;
 
     fn add(self, other: Self) -> Self::Output {
         match (self,other) {
             (Fraction::Proper(self_numerator , self_denominator),Fraction::Proper(other_numerator , other_denominator)) => {                
                 if self_denominator == other_denominator {
-                    return Fraction::Proper(self_numerator + other_numerator,self_denominator);
+                    return Fraction::new_unchecked(self_numerator + other_numerator,self_denominator);
                 }
-    
-                Fraction::new_unchecked_reduced(self_numerator * other_denominator + other_numerator * self_denominator,self_denominator * other_denominator)
+                
+                let n1 = self_numerator * other_denominator.clone();
+                let n2 = other_numerator * self_denominator.clone();
+                let n = n1 + n2;
+
+                let d = self_denominator * other_denominator;
+
+                Fraction::new_unchecked_reduced(n,d)
             }
             (Fraction::NaN,_) | (_,Fraction::NaN) => Fraction::NaN,
             (Fraction::PositiveInfinity,_) | (_,Fraction::PositiveInfinity) => Fraction::PositiveInfinity,
@@ -213,7 +220,7 @@ impl<T> Add for Fraction<T> where T : ArithmeticCore + PartialEq + PartialOrd{
     }
 }
 
-impl<T> Sub for Fraction<T> where T : ArithmeticCore + PartialEq + PartialOrd{
+impl<T> Sub for Fraction<T> where T : ArithmeticCore + PartialEq + PartialOrd + Clone{
     type Output = Self;
 
     fn sub(self, other: Self) -> Self::Output {
@@ -223,7 +230,13 @@ impl<T> Sub for Fraction<T> where T : ArithmeticCore + PartialEq + PartialOrd{
                     return Fraction::Proper(self_numerator - other_numerator,self_denominator);
                 }
 
-                Fraction::new_unchecked_reduced(self_numerator * other_denominator - other_numerator * self_denominator,self_denominator * other_denominator)
+                let n1 = self_numerator * other_denominator.clone();
+                let n2 = other_numerator * self_denominator.clone();
+                let n = n1 - n2;
+
+                let d = self_denominator * other_denominator;
+
+                Fraction::new_unchecked_reduced(n,d)
             }
             (Fraction::NaN,_) | (_,Fraction::NaN) => Fraction::NaN,
             (Fraction::PositiveInfinity,_) | (_,Fraction::PositiveInfinity) => Fraction::PositiveInfinity,
@@ -232,7 +245,7 @@ impl<T> Sub for Fraction<T> where T : ArithmeticCore + PartialEq + PartialOrd{
     }
 }
 
-impl<T> Mul for Fraction<T> where T : ArithmeticCore + PartialOrd {
+impl<T> Mul for Fraction<T> where T : ArithmeticCore + PartialOrd + Clone{
     type Output = Self;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -246,7 +259,7 @@ impl<T> Mul for Fraction<T> where T : ArithmeticCore + PartialOrd {
     }
 }
 
-impl<T> Div for Fraction<T> where T : ArithmeticCore + PartialOrd {
+impl<T> Div for Fraction<T> where T : ArithmeticCore + PartialOrd + Clone {
     type Output = Self;
 
     fn div(self, other: Self) -> Self::Output {
@@ -254,7 +267,7 @@ impl<T> Div for Fraction<T> where T : ArithmeticCore + PartialOrd {
     }
 }
 
-impl<T> PartialOrd for Fraction<T> where T: ArithmeticCore + PartialOrd {
+impl<T> PartialOrd for Fraction<T> where T: ArithmeticCore + PartialOrd + Clone {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         let ordering = match (self, other) {
             (Fraction::NaN, Fraction::NaN) => Ordering::Equal,
@@ -272,9 +285,17 @@ impl<T> PartialOrd for Fraction<T> where T: ArithmeticCore + PartialOrd {
             (Fraction::Proper(_, _), Fraction::PositiveInfinity) => Ordering::Less,
             (Fraction::Proper(_, _), Fraction::NegativeInfinity) => Ordering::Greater,
             (
-                Fraction::Proper(ref n1, ref d1),
-                Fraction::Proper(ref n2, ref d2),
-            ) => {
+                Fraction::Proper(n1,d1),
+                Fraction::Proper(n2,d2),
+            ) => match d1.is_zero() && d2.is_zero() {
+                true => Ordering::Equal,
+                false => {
+                    let lhs = n1.clone() * d2.clone();
+                    let rhs = n2.clone() * d1.clone();
+
+                    lhs.partial_cmp(&rhs).unwrap()
+                }
+            } /*{
                 if d1.is_zero() && d2.is_zero() {
                     Ordering::Equal
                 }
@@ -290,17 +311,17 @@ impl<T> PartialOrd for Fraction<T> where T: ArithmeticCore + PartialOrd {
                         Ordering::Greater
                     }
                 }
-            }
+            }*/
         };
         
         Some(ordering)
     }
 }
 
-macro_rules! impl_ints {
-    (form; $($t:ty),*) => {
+macro_rules! primitives {
+    (form => $($t:ty),*) => {
         $(
-            impl<T> From<$t> for Fraction<T> where T : ArithmeticCore , $t : Into<T>{
+            impl<T> From<$t> for Fraction<T> where T : ArithmeticCore + Clone, $t : Into<T> {
                 fn from(value: $t) -> Self {
                     Fraction::new_unchecked(value.into(), 1.into())
                 }
@@ -308,7 +329,7 @@ macro_rules! impl_ints {
         )*
     };
 
-    (try_form; $($t:ty),*) => {
+    (try_from => $($t:ty),*) => {
         $(
             impl TryFrom<&str> for Fraction<$t> {
                 type Error = std::num::ParseIntError;
@@ -325,7 +346,13 @@ macro_rules! impl_ints {
             }
         )*
     };
+}
 
+primitives!(form => i8,i16,i32,i64);
+primitives!(try_from => i8,i16,i32,i64);
+
+/*
+macro_rules! impl_ints {
     (eq; $($t:ty),*) => {
         $(
             impl<T> PartialEq<$t> for Fraction<T> where T : ArithmeticCore , $t : Into<Self> {
@@ -420,7 +447,7 @@ impl_ints!(try_form; i8, i16, i32, i64);
 impl_ints!(eq; i8, i16, i32, i64, u8, u16, u32, u64);
 impl_ints!(ord; i8, i16, i32, i64 ,  u8, u16, u32, u64);
 impl_ints!(operations; i8, i16, i32, i64, u8, u16, u32, u64);
-
+*/
 #[cfg(test)]
 mod tests {
     use super::*;
