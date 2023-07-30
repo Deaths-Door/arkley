@@ -15,19 +15,18 @@
         overflowing_literals,
 )]
 
-#[doc = include_str!("../arkley_traits/README.md")]
+/// # Arkley Traits
+///
+/// This module provides traits for Arkley traits crate.
+/// For more information, refer to the [README.md](https://docs.rs/arkley_traits).
 pub mod traits {
     pub use arkley_traits::*;
 }
-/*
 
-arkley_numerics = { path = "arkley_numerics",optional = true }
-
-[features]
-numeric = ["dep:arkley_numerics"]
-
-#[cfg(feature = "numeric")]
-#[doc = include_str!("../arkley_numerics/README.md")]
-pub mod numeric {
+/// # Arkley Numerics
+///
+/// This module provides numbers for Arkley traits crate.
+/// For more information, refer to the [README.md](https://docs.rs/arkley_numerics).
+pub mod numerics {
     pub use arkley_numerics::*;
-}*/
+}

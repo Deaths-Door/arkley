@@ -1,6 +1,6 @@
 [package]
 name = "arkley_numerics"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 readme = "README.md"
 authors = ["Aarav Shah <aaravaditya51@gmail.com>"]
@@ -11,4 +11,4 @@ homepage = "https://github.com/Deaths-Door/arkley"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-arkley_traits = { path = "../arkley_traits" }
+arkley_traits = "0.0.2"

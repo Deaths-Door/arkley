@@ -7,13 +7,12 @@ use crate::{StandardForm,ParsingNumberError};
 /// Represents a numeric value that can be decimal (aka f64) or Fraction or Standardform number
 ///
 /// `Note` : add fractions variant to is as well 
-/// `Note` : Remove Clone as its only used for op assign for f64 btw standardform
 #[derive(Debug,PartialEq)]
 pub enum Number {
     /// Represents a floating-point decimal number.
     Decimal(f64),
     /// Represents a number in the StandardForm notation.
-    StandardForm(StandardForm)
+    StandardForm(StandardForm),
 }
 
 impl PartialOrd<Number> for Number {
