@@ -4,9 +4,9 @@ version = 3
 
 [[package]]
 name = "arkley"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
- "arkley_traits 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "arkley_traits 0.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -14,7 +14,7 @@ name = "arkley_algebra"
 version = "0.0.1"
 dependencies = [
  "arkley_numerics",
- "arkley_traits 0.0.1",
+ "arkley_traits 0.0.2",
 ]
 
 [[package]]
@@ -23,17 +23,17 @@ version = "0.1.0"
 
 [[package]]
 name = "arkley_numerics"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
- "arkley_traits 0.0.1",
+ "arkley_traits 0.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "arkley_traits"
-version = "0.0.1"
+version = "0.0.2"
 
 [[package]]
 name = "arkley_traits"
-version = "0.0.1"
+version = "0.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2fb9e63f4605877e5ab127070b08087719bb6a33a702acd449fa33d570e3b68"
+checksum = "c26f1f80306f04dc0afbec4b9ec68d9afd9083c6ffa3c03b11f470bd5b25ab71"
