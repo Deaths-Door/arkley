@@ -7,67 +7,6 @@ use arkley_traits::{
     Abs,
 };
 
-/// Converts a floating-point number to its fraction representation.
-///
-/// The  function takes a floating-point number `float` and the number of recurring digits `n_recurring`.
-/// It calculates the fraction that represents the recurring decimal portion of `float` with `n_recurring` recurring digits.
-/// The function follows this logic : 
-///
-/// For example : 0.3 (recurring) is 1/3 so ..
-/// 
-/// Step 1: Denote x = 0.3̄ (where 0.3̄ is the recurring decimal)
-///
-/// Step 2: Multiply both sides of the equation by 10 to shift the recurring part to the left of the decimal point:
-///   10x = 3.3̄
-///
-/// Step 3: Subtract x from 10x to eliminate the recurring part:
-///   10x - x = 3.3̄ - 0.3̄
-///
-/// Step 4: Simplify:
-///   9x = 3
-///
-/// Step 5: Solve for x:
-///   x = 3 / 9
-///
-/// Step 6: Reduce the fraction:
-///   x = 1 / 3
-///
-/// 
-/// # Arguments
-///
-/// * `float` - The floating-point number to convert to a fraction.
-/// * `n_recurring` - The number of recurring digits in the decimal representation of the fraction.
-///
-/// # Returns
-///
-/// A `Fraction` representing the recurring decimal as a fraction.
-pub fn precise_from_f64(float : f64,n_recurring : usize) -> Fraction<i64> {
-    let _str = float.to_string();
-    println!("{_str}");
-
-    let f_str = _str.trim_end_matches('0');
-
-    println!("{f_str}");
-
-    let dp = f_str.find('.').unwrap();
-
-    let till_dp = ((f_str.len() - dp) / n_recurring) + n_recurring - 2;//(f_str.len() - dp ) / n_recurring - 2 + n_recurring;
-
-    println!("{till_dp}");
-
-    let factor_x = 10_i32.pow(till_dp as u32) as f64;// * float;
-    println!("factor x = {factor_x}");
-
-    let d = factor_x as i64 - 1;
-
-    let n = (factor_x * float) as i64;
-    //let lhs_x_factor = f_str.len() - f_str.find('.').unwrap() - n_recurring;
-    //let rhs_n = (float * lhs_x_factor as f64).trunc() + 1.0;
-
-    Fraction::new(n,d)
-}
-
-
 /// The `Fraction` struct represents a fraction with a numerator and denominator.
 ///
 /// # Overview
@@ -759,19 +698,5 @@ mod tests {
         assert!(result.is_err());
 
         // Add more test cases with invalid input strings if needed
-    }
-
-    #[test]
-    fn test_precise_from_f64() {
-    //    let _ = precise_from_f64(0.3333333333, 2);
-        // Test case 1: 0.3333333333 with 2 recurring digits should be 1/3
-        assert_eq!(precise_from_f64(0.3, 1), Fraction::new(1, 3));
-
-       // Test case 3: 0.666666 with 1 recurring digit should be 2/3
-       assert_eq!(precise_from_f64(0.666666, 1), Fraction::new(2, 3));
-
-        // Test case 2: 1.428571 with 6 recurring digits should be 1 3/7
-        assert_eq!(precise_from_f64(1.428571, 6), Fraction::new(1, 7));
-
     }
 }
