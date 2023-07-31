@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 arkley_numerics = { path = "../arkley_numerics" }
-arkley_traits = { path = "../arkley_traits" }
+arkley_traits = "0.0.2"

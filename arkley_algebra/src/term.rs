@@ -79,7 +79,7 @@ impl TryFrom<&str> for Term {
     fn try_from(value : &str) -> Result<Self, Self::Error> {        
         match value.find(|c: char| c.is_ascii_alphabetic()) {
             None => {
-                let number = Number::try_from(value)?;
+                let number = Number::try_from(value).map_err(|_| ())?;
                 Ok(Term::new(number))
             },
             Some(v_index) => {
@@ -87,7 +87,35 @@ impl TryFrom<&str> for Term {
 
                 let mut variables = Variables::new();
 
-                let v_vec : Vec<_> = v_str.split_inclusive(|c:char| c >= 'a' && c <= 'z').collect();
+                let is_char = |c :char| -> bool {
+                    c >= 'a' && c <= 'z'
+                };
+
+                let mut v_iter = v_str.chars().peekable();
+                loop {
+                    match v_iter.next(){
+                        None => break,
+                        Some(ch) => match is_char(ch) {
+                            false => return Err(()),
+                            true => match v_iter.peek() {
+                                None => break,
+                                Some('^') => {
+                                    let n : &str =  &v_iter
+                                        .clone()
+                                        .take_while(|c| is_char(*c))
+                                        .map(|c| c.to_string())
+                                        .collect::<Vec<_>>()
+                                        .join("");
+
+                                    let number = Number::try_from(n).map_err(|_| ())?;
+                                    variables.insert(ch,number);
+                                }
+                                _ => return Err(())
+                            }
+                        }
+                    }
+                }
+                /*let v_vec : Vec<_> = v_str.split_inclusive(|c:char| c >= 'a' && c <= 'z').collect();
             
                 for item in v_vec {
                     let ch = item.chars().next().unwrap();
@@ -102,7 +130,7 @@ impl TryFrom<&str> for Term {
 
                     let number = Number::try_from(&item[2..])?;
                     variables.insert(ch,number);
-                }
+                }*/
 
                 // to handle cases like -x or +xy
                 let possible_sign_str = &value[..v_index];
@@ -114,7 +142,7 @@ impl TryFrom<&str> for Term {
                     Term::new_with_variable(Number::Decimal(-1.0), variables)
                 } 
                 else{
-                    let n = Number::try_from(possible_sign_str)?;
+                    let n = Number::try_from(possible_sign_str).map_err(|_| ())?;
                     Term::new_with_variable(n,variables)
                 };
                 Ok(term)
@@ -155,8 +183,8 @@ impl Mul for Term {
     fn mul(self,other : Term) -> Self::Output {
         let coefficient = self.coefficient * other.coefficient;
         let mut variables = self.variables;
-        for (&var,&exponent) in &other.variables {
-            *variables.entry(var).or_insert(Number::Decimal(0.0)) += exponent;
+        for (&var,&ref exponent) in &other.variables {
+            *variables.entry(var).or_insert(Number::Decimal(0.0)) += exponent.clone();
         };
 
         Expression::new_term(Term::new_with_variable(coefficient,variables))
@@ -178,16 +206,16 @@ impl Div for Term {
         let mut o_variables =Variables::new();
 
         for key in s_unique_keys {
-            s_variables.insert(*key,self.variables[key]);
+            s_variables.insert(*key,self.variables[key].clone());
         }
 
         for key in o_unique_keys {
-            o_variables.insert(*key,other.variables[key]);
+            o_variables.insert(*key,other.variables[key].clone());
         }
 
         for key in common {
-            let s_exponent = self.variables[&key];
-            let o_exponent = other.variables[&key];
+            let s_exponent = self.variables[&key].clone();
+            let o_exponent = other.variables[&key].clone();
 
             let result = s_exponent - o_exponent;
 
@@ -505,15 +533,14 @@ mod tests {
     #[test]
     fn try_from_term_with_variables() {
         let input = "2x^3y^2z";
-        let _result = Term::try_from(input);//.unwrap();
+        let result = Term::try_from(input).unwrap();//.unwrap();
         
-     /*   let expected_variables: Variables = [('x', Number::Decimal(3.0)),
+        let expected_variables: Variables = [('x', Number::Decimal(3.0)),
                                             ('y', Number::Decimal(2.0)),
                                             ('z', Number::Decimal(1.0))].iter().cloned().collect();
-*/
-      //  let expected = Term::new_with_variable(Number::Decimal(2.0), expected_variables);
-        assert!(false)
-        //   assert_eq!(result, expected);
+
+        let expected = Term::new_with_variable(Number::Decimal(2.0), expected_variables);
+        assert_eq!(result, expected);
     }
 
     #[test]

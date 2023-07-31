@@ -11,7 +11,7 @@ use crate::ParsingStandardFormError;
 ///
 /// The `Standardform` struct holds the significand (mantissa) of the number 
 /// and an exponent that determines the power of 10 by which the significand should be multiplied.
-#[derive(Debug,PartialEq)]
+#[derive(Debug,PartialEq,Clone)]
 pub struct StandardForm  {
     mantissa : f64,
     exponent : i8

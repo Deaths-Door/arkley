@@ -1,5 +1,3 @@
-use std::ops::{Add,Sub,Mul,Div};
-
 use arkley_numerics::Number;
 
 use crate::Term;
@@ -97,7 +95,7 @@ impl Expression {
             | Expression::Minus(left, right)
             | Expression::Mal(left, right)
             | Expression::Durch(left, right) => {
-                let left_result = left.try_set_variable_value(variable, value);
+                let left_result = left.try_set_variable_value(variable, value.clone());
                 let right_result = right.try_set_variable_value(variable, value);
                 match (left_result,right_result) {
                     (None,None) => None,
