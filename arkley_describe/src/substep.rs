@@ -1,44 +1,43 @@
-
-/// Represents a substep in the description of numeric operations.
+/// Represents a substep in the description of an operation .
 #[derive(Debug)]
 pub struct SubStep {
-    /// Informational text for the substep.
-    info: String,
+    /// Description of the substep.
+    description: String,
+
     /// LaTeX representation of the substep (for mathematical notation).
     latex: Option<String>,
+
+    /// Path to the diagram image (if any) representing infomation used in the substep.
+    diagram_path: Option<String>,
 }
 
 impl SubStep {
-    /// Creates a new instance of `SubStep` with the given informational text
-    pub const fn new(info: String) -> Self {
-        Self { info, latex : None }
+    pub const fn new(description: String)-> Self {
+        Self { description , latex : None , diagram_path : None }
     }
 
-    /// Creates a new instance of `SubStep` with the given informational text and latxes
-    pub const fn new_with_latex(info: String,latex : Option<String>) -> Self {
-        Self { info, latex }
-    }
-
-    /// Updates latex of current instance
-    pub fn set_latex(&mut self,latex : String) {
+    /// Set the LaTeX representation of the SubStep.
+    pub fn set_latex(&mut self, latex: String) {
         self.latex = Some(latex);
     }
 
-    /// Returns a reference to the informational text of the substep.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the informational text of the substep.
-    pub fn information(&self) -> &str {
-        &self.info
+    /// Set the path to the diagram image representing the SubStep visually.
+    pub fn set_diagram_path(&mut self, diagram_path: String) {
+        self.diagram_path = Some(diagram_path);
     }
 
-    /// Returns a reference to the LaTeX representation of the substep.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the LaTeX representation of the substep.
-    pub fn latex(&self) -> &Option<String> {
+    /// Get the description of the SubStep.
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+
+    /// Get the LaTeX representation of the SubStep (if available).
+    pub const fn latex(&self) -> &Option<String> {
         &self.latex
+    }
+
+    /// Get the path to the diagram image (if available).
+    pub const fn diagram_path(&self) -> &Option<String> {
+        &self.diagram_path
     }
 }

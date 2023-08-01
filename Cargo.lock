@@ -14,13 +14,13 @@ dependencies = [
 name = "arkley_algebra"
 version = "0.0.1"
 dependencies = [
- "arkley_numerics 0.0.2",
+ "arkley_numerics 0.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "arkley_traits 0.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "arkley_describe"
-version = "0.1.0"
+version = "0.0.3"
 
 [[package]]
 name = "arkley_numerics"

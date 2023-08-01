@@ -1,14 +1,15 @@
 [package]
 name = "arkley"
-version = "0.0.2"
-edition = "2021"
-readme = "README.md"
-authors = ["Aarav Shah <aaravaditya51@gmail.com>"]
+edition.workspace = true
+readme.workspace = true
+version.workspace = true
 description = "This crate provides several traits for common mathematical operations"
 documentation = "https://docs.rs/arkley"
 repository = "https://github.com/Deaths-Door/arkley"
-homepage = "https://github.com/Deaths-Door/arkley"
-license = "MIT OR Apache-2.0"
+
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
 
 [dependencies]
 arkley_traits =  "0.0.2"
@@ -21,3 +22,15 @@ members = [
     "arkley_algebra",
     "arkley_describe",
 ]
+
+[workspace.dependencies]
+arkley_traits =  "0.0.2"
+arkley_numerics = "0.0.2"
+
+[workspace.package]
+version = "0.0.2"
+edition = "2021"
+readme = "README.md"
+authors = ["Aarav Shah <aaravaditya51@gmail.com>"]
+homepage = "https://github.com/Deaths-Door/arkley"
+license = "MIT OR Apache-2.0"

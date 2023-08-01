@@ -1,11 +1,11 @@
 [package]
 name = "arkley_traits"
-version = "0.0.2"
-edition = "2021"
-readme = "README.md"
+edition.workspace = true
+readme.workspace = true
+version.workspace = true
 authors = ["Aarav Shah <aaravaditya51@gmail.com>"]
 description = "This crate provides several traits for common mathematical operations"
 documentation = "https://docs.rs/arkley_traits"
 repository = "https://github.com/Deaths-Door/arkley/tree/main/arkley_traits"
-homepage = "https://github.com/Deaths-Door/arkley"
-license = "MIT OR Apache-2.0"
+homepage.workspace = true
+license.workspace = true
