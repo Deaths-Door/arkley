@@ -6,14 +6,12 @@ pub struct SubStep {
 
     /// LaTeX representation of the substep (for mathematical notation).
     latex: Option<String>,
-
-    /// Path to the diagram image (if any) representing infomation used in the substep.
-    diagram_path: Option<String>,
 }
 
 impl SubStep {
+    /// Creates new instance of substep with description
     pub const fn new(description: String)-> Self {
-        Self { description , latex : None , diagram_path : None }
+        Self { description , latex : None }
     }
 
     /// Set the LaTeX representation of the SubStep.
@@ -21,9 +19,9 @@ impl SubStep {
         self.latex = Some(latex);
     }
 
-    /// Set the path to the diagram image representing the SubStep visually.
-    pub fn set_diagram_path(&mut self, diagram_path: String) {
-        self.diagram_path = Some(diagram_path);
+    /// Set the description of the SubStep.
+    pub fn set_description(&mut self, latex: String) {
+        self.latex = Some(latex);
     }
 
     /// Get the description of the SubStep.
@@ -34,10 +32,5 @@ impl SubStep {
     /// Get the LaTeX representation of the SubStep (if available).
     pub const fn latex(&self) -> &Option<String> {
         &self.latex
-    }
-
-    /// Get the path to the diagram image (if available).
-    pub const fn diagram_path(&self) -> &Option<String> {
-        &self.diagram_path
     }
 }

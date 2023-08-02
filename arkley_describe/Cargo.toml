@@ -9,3 +9,6 @@ documentation = "https://docs.rs/arkley_describe"
 repository = "https://github.com/Deaths-Door/arkley/tree/main/arkley_describe"
 homepage = "https://github.com/Deaths-Door/arkley"
 license = "MIT OR Apache-2.0"
+
+[dependencies]
+typst = { git = "https://github.com/typst/typst.git" }
