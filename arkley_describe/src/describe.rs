@@ -81,40 +81,42 @@ impl Describe<f64> for f64 {
         if filter_level != FilterLevel::Beginner {
             return None;
         }
-
-        const BASE : u32 = 10;
         const TITLE : &str = "Column Multiplication";
         const DESCRIPTION : &str =  "Multiply each digit in the second number with the digits in the first number, and write the results below each digit in the second number.";
 
         let mut step = Step::new(TITLE.to_string(),DESCRIPTION.to_string());
        
-        if self.is_negative() || other.is_negative() {
+        let x_neg = self.is_negative();
+        let y_neg = other.is_negative();
+
+        let either_neg : bool;
+        
+        if x_neg && x_neg {
+            either_neg = false;
+            step.insert_to_description("\nSince both are negative we can simpilfy them into positive");
+        }
+        else if x_neg || y_neg {
+            either_neg = true;
+
             step.insert_to_description("\nSince we have a negative number lets ignore the sign for now.");
         }
 
-        let (x,y) = swap_if_greater(self,other);
+        let (x,y) = swap_if_greater(self.abs(),other.abs());
 
         let (padding,longest_decimal)  = figure_alignment(x,y);
 
         let c_aligned = into_column(x,y,"+",padding,longest_decimal);
 
-        println!("{:?}",c_aligned);
-
         let c_aligned_joined = c_aligned.join("");
 
         let space_index = c_aligned[0].find(' ').unwrap();
-      //  let y_space_index = c_aligned[1].find(' ').unwrap();
 
-        // So only valid numbers are there in loop
         let _c_zero = &c_aligned[0];
         let _c_one = &c_aligned[1];
 
-        let x_str = &_c_zero[space_index.._c_zero.len() - 3].trim_start_matches(' ');//.trim_end_matches(' ');
-        let y_str = &_c_one[space_index + 2.._c_zero.len() - 3].trim_start_matches(' ');//.trim_end_matches(' ');
-
-        println!("{:?}",x_str);
-        println!("{:?}",y_str);
-
+        // So only valid numbers are there in loop
+        let x_str = &_c_zero[space_index.._c_zero.len() - 3].trim_start_matches(' ');
+        let y_str = &_c_one[space_index + 2.._c_zero.len() - 3].trim_start_matches(' ');
 
         // to take into account decimal points in numbers for the factor scaling so 10 to the power of index - (encounter as i32)
         let mut x_dec_encounted = false;
@@ -129,7 +131,8 @@ impl Describe<f64> for f64 {
                 continue;
             }
 
-            println!("{y_ch}");
+            const BASE : u32 = 10;
+
             let yd = y_ch.to_digit(BASE).unwrap();//.unwrap_or(0);
 
             if yd == 0 {
@@ -179,6 +182,14 @@ impl Describe<f64> for f64 {
 
                 step.add_substep(substep);
             }
+        }
+
+        todo!("ADDDD");
+
+        if either_neg {
+            const INCLUDE_NEG : &str = "We previously omitted the negative sign, but now we've included it into the sum.";
+            let substep = SubStep::new(INCLUDE_NEG.to_string());
+            step.add_substep(substep);
         }
         
         Some(step)
