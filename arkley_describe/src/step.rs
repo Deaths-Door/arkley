@@ -3,9 +3,6 @@ use crate::SubStep;
 /// Represents a step in the description of an operation.
 #[derive(Debug)]
 pub struct Step {
-    /// Title of the step.
-    title: String,
-
     /// Description of the step.
     description: String,
 
@@ -25,8 +22,8 @@ impl Step {
     ///
     /// A new `Step` object with the given `title` and `description`. The `sub_steps` field
     /// is initialized as an empty vector.
-    pub const fn new(title: String,description: String) -> Step {
-        Self { title,description , sub_steps : Vec::new() }
+    pub const fn new(description: String) -> Step {
+        Self { description , sub_steps : Vec::new() }
     }
 
     /// Inserts the provided string slice into the existing description of the `Step`.
@@ -36,11 +33,6 @@ impl Step {
     /// * `ds`: A string slice (`&str`) to be appended to the existing description.
     pub fn insert_to_description(&mut self,ds : &str) {
         self.description += ds;
-    }
-
-    /// Get the title of the Step.
-    pub fn title(&self) -> &str {
-        &self.title
     }
 
     /// Get the description of the Step.

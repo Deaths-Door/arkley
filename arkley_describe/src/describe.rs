@@ -2,10 +2,13 @@ use crate::{FilterLevel,Step, SubStep};
 
 use crate::utils::*;
 
+/// Represents a list of steps to solve a mathematical problem.
+pub type SolutionSteps  = Vec<Step>;
+
 /// Represents a generic trait for describing operations.
 /// The associated type `Output` specifies the return type of the `describe` method.
 pub trait Describe<Rhs = Self>: Sized {
-    /// The output type returned by the `describe` method (with is [crate::Step] for arkley).
+    /// The output type returned by the `describe` method (is [Method] for arkley).
     type Output;
 
     /// Describes the addition operation between the current instance and the right-hand side `Rhs`.
@@ -65,15 +68,22 @@ pub trait Describe<Rhs = Self>: Sized {
     fn describe_div(self, other: Rhs, filter_level: FilterLevel) -> Option<Self::Output>;
 }
 
-
 impl Describe<f64> for f64 {
-    type Output = Step;
+    type Output = SolutionSteps;
 
     fn describe_add(self, other: f64, filter_level: FilterLevel) -> Option<Self::Output> {
+        if filter_level != FilterLevel::Beginner {
+            return None;
+        }
+
         todo!()
     }
 
     fn describe_sub(self, other: f64, filter_level: FilterLevel) -> Option<Self::Output> {
+        if filter_level != FilterLevel::Beginner {
+            return None;
+        }
+
         todo!()
     }
 
@@ -81,24 +91,24 @@ impl Describe<f64> for f64 {
         if filter_level != FilterLevel::Beginner {
             return None;
         }
-        const TITLE : &str = "Column Multiplication";
+
         const DESCRIPTION : &str =  "Multiply each digit in the second number with the digits in the first number, and write the results below each digit in the second number.";
 
-        let mut step = Step::new(TITLE.to_string(),DESCRIPTION.to_string());
+        let mut solution = SolutionSteps::new();
+
+        let mut step1 = Step::new(DESCRIPTION.to_string());
        
         let x_neg = self.is_negative();
         let y_neg = other.is_negative();
 
-        let either_neg : bool;
+        let mut either_neg : bool = false;
         
         if x_neg && x_neg {
-            either_neg = false;
-            step.insert_to_description("\nSince both are negative we can simpilfy them into positive");
+            step1.insert_to_description("\nSince both are negative we can simpilfy them into positive");
         }
         else if x_neg || y_neg {
             either_neg = true;
-
-            step.insert_to_description("\nSince we have a negative number lets ignore the sign for now.");
+            step1.insert_to_description("\nSince we have a negative number lets ignore the sign for now.");
         }
 
         let (x,y) = swap_if_greater(self.abs(),other.abs());
@@ -115,8 +125,8 @@ impl Describe<f64> for f64 {
         let _c_one = &c_aligned[1];
 
         // So only valid numbers are there in loop
-        let x_str = &_c_zero[space_index.._c_zero.len() - 3].trim_start_matches(' ');
-        let y_str = &_c_one[space_index + 2.._c_zero.len() - 3].trim_start_matches(' ');
+        let x_str = &_c_zero[space_index.._c_zero.len() - 3].trim_start_matches(SPACE);
+        let y_str = &_c_one[space_index + 2.._c_zero.len() - 3].trim_start_matches(SPACE);
 
         // to take into account decimal points in numbers for the factor scaling so 10 to the power of index - (encounter as i32)
         let mut x_dec_encounted = false;
@@ -131,9 +141,7 @@ impl Describe<f64> for f64 {
                 continue;
             }
 
-            const BASE : u32 = 10;
-
-            let yd = y_ch.to_digit(BASE).unwrap();//.unwrap_or(0);
+            let yd = y_ch.to_digit(BASE).unwrap();
 
             if yd == 0 {
                 if y_index == y_str.len() - 1 {
@@ -142,7 +150,7 @@ impl Describe<f64> for f64 {
                 
                 let format = format!("Now we can skip multiplying {x_str} with 0 as {x_str} * 0 = 0");
                 let substep = SubStep::new(format);
-                step.add_substep(substep);
+                step1.add_substep(substep);
                 continue;
             }
 
@@ -161,7 +169,7 @@ impl Describe<f64> for f64 {
                 if xd == 0 {
                     let format = format!("Now we can skip multiplying 0 with {y_str} as 0 * {y_str} = 0");
                     let substep = SubStep::new(format);
-                    step.add_substep(substep);
+                    step1.add_substep(substep);
                     continue;
                 }
 
@@ -180,27 +188,90 @@ impl Describe<f64> for f64 {
                 let mut substep = SubStep::new(description);
                 substep.set_latex(latex);
 
-                step.add_substep(substep);
+                step1.add_substep(substep);
             }
         }
 
-        todo!("ADDDD");
+        solution.push(step1);
+
+        const START_ADD : &str = "Now lets add theh results of the mul together";        
+
+        let mut step2 = Step::new(START_ADD.to_string());
+        describe_add(&mut step2,sum);
+
+        solution.push(step2);
 
         if either_neg {
-            const INCLUDE_NEG : &str = "We previously omitted the negative sign, but now we've included it into the sum.";
-            let substep = SubStep::new(INCLUDE_NEG.to_string());
-            step.add_substep(substep);
+            const INCLUDE_NEG : &str = "We previously omitted the negative sign, but now we've included it into the sum. ";
+            let step3 = Step::new(INCLUDE_NEG.to_string());
+            solution.push(step3);
         }
         
-        Some(step)
+        Some(solution)
     }
 
     fn describe_div(self, other: f64, filter_level: FilterLevel) -> Option<Self::Output> {
+        if filter_level != FilterLevel::Beginner {
+            return None;
+        }
+
         todo!()
     }
 }
 
+fn describe_add(step : &mut Step,column : String) {
+    let c_aligned : Vec<_> = column.split(r"\\&").map(|s| s.trim_start_matches(SPACE)).collect();
+    
+    let c_pairs : Vec<_> = c_aligned[0].chars().enumerate().map(|(index,_)|{
+        c_aligned.iter().map(|item|{
+                item.chars().nth(index).unwrap_or(' ').to_digit(BASE)
+        }).collect::<Vec<_>>()
+    })
+    .collect();
 
+    let mut previous_carry = 0;
+
+    let mut sum_str = String::new();
+    let mut carry_str = String::from("0");
+
+    for pair in c_pairs.iter().rev() {
+        let mut description = String::from("Calculate ");
+
+        let mut c_sum = previous_carry;
+
+        for &n in pair.iter().flatten() {
+            c_sum += n;
+            description += &format!("{n} + ");
+        }
+
+        if c_sum == 0 {
+            description += &format!("\nSince sum is 0 we can skip this column");
+            continue;
+        }
+
+        if previous_carry != 0 {
+            description += &format!("{previous_carry} = {c_sum}\n{previous_carry} came from the previous carry forward");
+        }
+
+        else if c_sum >= 10 {
+            description += &format!("\nSince sum is greater than 10 we carry 1 forward");
+        }
+        
+        let c_rem = c_sum % 10;
+        sum_str.insert_str(0,&c_rem.to_string());
+
+        previous_carry = c_sum / 10;
+        carry_str.insert_str(0,&previous_carry.to_string());
+
+        let _latex = format!(r"& {carry_str} \\ {column} {SEPERATOR} & {sum_str} \\");
+        let latex = align_latex_end(&_latex);
+
+        let mut substep = SubStep::new(description);
+        substep.set_latex(latex);
+
+        step.add_substep(substep);
+    }
+}
 
 
 #[cfg(test)]
@@ -209,11 +280,7 @@ mod test {
 
     #[test]
     fn init_mul_unsigned_float() {
-        let step = 42_f64.describe_mul(32_f64,FilterLevel::Beginner);
-
-        for substep in step.unwrap().substeps() {
-            println!("Info = {}",substep.description());
-            println!("Latex = {}",substep.latex().clone().unwrap_or(String::from("NO LATEX")));
-        }
+        let solution = 42_f64.describe_mul(32_f64,FilterLevel::Beginner).unwrap();
+        println!("{:?}",solution);
     }
 }
