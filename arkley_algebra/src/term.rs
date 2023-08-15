@@ -1,7 +1,6 @@
 use std::ops::{Add,Sub,Mul,Div};
 use std::collections::{BTreeMap,BTreeSet};
 use std::cmp::Ordering;
-
 use arkley_numerics::Number;
 use arkley_traits::Power;
 
@@ -24,7 +23,7 @@ pub struct Term {
     /// The variables and their exponents in the term.
     variables: Variables,
 }
-
+/*
 impl Term {
     /// Creates new instance of Term using coefficient and variable
     pub const fn new_with_variable(coefficient: Number,variables: Variables) -> Self {
@@ -73,6 +72,7 @@ impl std::fmt::Display for Term {
     }
 }
 
+/*
 impl TryFrom<&str> for Term {
     /// temp return type
     type Error = ();
@@ -149,7 +149,7 @@ impl TryFrom<&str> for Term {
             }
         }
     }
-}
+}*/
 
 impl Add for Term {
     type Output = Expression;
@@ -184,7 +184,7 @@ impl Mul for Term {
         let coefficient = self.coefficient * other.coefficient;
         let mut variables = self.variables;
         for (&var,&ref exponent) in &other.variables {
-            *variables.entry(var).or_insert(Number::Decimal(0.0)) += exponent.clone();
+            *variables.entry(var).or_insert(Number::Decimal(0.0)) += exponent;//.clone();
         };
 
         Expression::new_term(Term::new_with_variable(coefficient,variables))
@@ -522,7 +522,7 @@ mod tests {
     }
 
 
-    #[test]
+    /*#[test]
     fn try_from_term_with_valid_input_no_variables() {
         let input = "123.45";
         let result = Term::try_from(input).unwrap();
@@ -558,5 +558,5 @@ mod tests {
         );
         let expected = Term::new_with_variable(Number::Decimal(1.0), ev);
         assert_eq!(result.unwrap(), expected);
-    }
-}
+    }*/
+}*/

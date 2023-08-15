@@ -11,4 +11,4 @@ homepage = "https://github.com/Deaths-Door/arkley"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-typst = { git = "https://github.com/typst/typst.git" }
+#fluent-templates = "0.8.0"

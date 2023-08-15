@@ -7,7 +7,7 @@ use crate::{StandardForm,ParsingNumberError};
 /// Represents a numeric value that can be decimal (aka f64) or Fraction or Standardform number
 ///
 /// `Note` : add fractions variant to is as well 
-#[derive(Debug,PartialEq,Clone)]
+#[derive(Debug, PartialEq)]
 pub enum Number {
     /// Represents a floating-point decimal number.
     Decimal(f64),

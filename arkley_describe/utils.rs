@@ -1,151 +1,170 @@
-use crate::{DescribeOperation,SubStep,Step};
+pub(super) const SEPERATOR : &str = r"& \hline\\";
+pub(super) const BASE : u32 = 10;
+pub(super) const SPACE : char = ' ';
 
-pub(super) fn describe_add_f64(x : f64,y : f64) -> Step {
-    let (_c_aligned,padding,_) = align(x,y,"+");
-    let c_aligned = _c_aligned.iter().map(|s| s.as_str()).collect();
-    let substeps = describe_add_numbers(&c_aligned,padding);
-    let mut step = Step::new("Start from left to right".to_string());
-    step.add_substeps(substeps);
-    step
+/* const DESCRIPTION : &str =  "Multiply each digit in the second number with the digits in the first number, and write the results below each digit in the second number.";
+
+        let mut solution = SolutionSteps::new();
+
+        let mut step1 = Step::new(DESCRIPTION.to_string());
+       
+        let x_neg = self.is_negative();
+        let y_neg = other.is_negative();
+
+        let mut either_neg : bool = false;
+        
+        if x_neg && x_neg {
+            step1.insert_to_description("\nSince both are negative we can simpilfy them into positive");
+        }
+        else if x_neg || y_neg {
+            either_neg = true;
+            step1.insert_to_description("\nSince we have a negative number lets ignore the sign for now.");
+        }
+
+        let (x,y) = swap_if_greater(self.abs(),other.abs());
+
+        let (padding,longest_decimal)  = figure_alignment(x,y);
+
+        let c_aligned = into_column(x,y,"+",padding,longest_decimal);
+
+        let c_aligned_joined = c_aligned.join("");
+
+        let space_index = c_aligned[0].find(' ').unwrap();
+
+        let _c_zero = &c_aligned[0];
+        let _c_one = &c_aligned[1];
+
+        // So only valid numbers are there in loop
+        let x_str = &_c_zero[space_index.._c_zero.len() - 3].trim_start_matches(SPACE);
+        let y_str = &_c_one[space_index + 2.._c_zero.len() - 3].trim_start_matches(SPACE);
+
+        // to take into account decimal points in numbers for the factor scaling so 10 to the power of index - (encounter as i32)
+        let mut x_dec_encounted = false;
+        let mut y_dec_encounted = false;
+
+        // for sums of mul
+        let mut sum = String::new();
+
+        for  (y_index,y_ch) in y_str.chars().rev().enumerate() {
+            if y_ch == '.' {
+                y_dec_encounted = true;
+                continue;
+            }
+
+            let yd = y_ch.to_digit(BASE).unwrap();
+
+            if yd == 0 {
+                if y_index == y_str.len() - 1 {
+                    continue;    
+                }
+                
+                let format = format!("Now we can skip multiplying {x_str} with 0 as {x_str} * 0 = 0");
+                let substep = SubStep::new(format);
+                step1.add_substep(substep);
+                continue;
+            }
+
+            let y_factor = 10_u32.pow(y_index as u32 - y_dec_encounted as u32);
+
+            let y_digit = yd * y_factor;
+
+            for (x_index,x_ch) in x_str.chars().rev().enumerate() {
+                if x_ch == '.' {
+                    x_dec_encounted = true;
+                    continue;
+                }
+
+                let xd = x_ch.to_digit(BASE).unwrap();
+
+                if xd == 0 {
+                    let format = format!("Now we can skip multiplying 0 with {y_str} as 0 * {y_str} = 0");
+                    let substep = SubStep::new(format);
+                    step1.add_substep(substep);
+                    continue;
+                }
+
+                let x_factor = 10_u32.pow(x_index as u32 - x_dec_encounted as u32);
+                
+                let x_digit = xd * x_factor;
+
+                let product = y_digit * x_digit;
+
+                sum += &align(product as f64,padding,longest_decimal);
+
+                let description = format!(r"Multiply ${y_digit} \times ${x_digit} which is {product}\nNow write the product down below");
+
+                let latex = align_latex_end(&format!("{c_aligned_joined}{sum}"));
+
+                let mut substep = SubStep::new(description);
+                substep.set_latex(latex);
+
+                step1.add_substep(substep);
+            }
+        }
+
+        solution.push(step1);
+
+        const START_ADD : &str = "Now lets add theh results of the mul together";        
+
+        let mut step2 = Step::new(START_ADD.to_string());
+        describe_add(&mut step2,sum);
+
+        solution.push(step2);
+
+        if either_neg {
+            const INCLUDE_NEG : &str = "We previously omitted the negative sign, but now we've included it into the sum. ";
+            let step3 = Step::new(INCLUDE_NEG.to_string());
+            solution.push(step3);
+        }
+        
+        Some(solution)*/
+    
+pub(super) fn swap_if_greater(x: f64, y: f64) -> (f64, f64) {
+    match x > y {
+        true => (x, y),
+        false => (y, x)
+    } 
 }
+pub(super) fn figure_alignment(x : f64,y : f64) -> (usize,usize) {
+    let x_str = x.to_string();
+    let y_str = y.to_string();
 
-fn describe_add_numbers(c_aligned : &Vec<&str>,padding : usize) -> Vec<SubStep> {        
-    let c_pairs = into_num_pairs(&c_aligned);
-    let column = c_aligned.join("\n");
+    let padding = x_str.len().max(y_str.len()) + 6;
 
-    let mut previous_carry = 0;
+    let mut longest_decimal : usize = 0 ;
 
-    let mut carry_str = String::from("0");
-    let mut sum_str = String::new();
+    let mut closure = |string : &str|{
+        let index = string.find('.').unwrap();
+        let dec_len = string.len() - index - 1;
 
-    let mut substeps : Vec<SubStep> = Vec::new();
-
-    for pair in c_pairs.iter().rev() {
-        if pair.iter().all(Option::is_none) {
-            continue;
-        }
-
-        let mut c_sum = previous_carry;
-
-        let mut info = String::from("Sum : ");
-
-        for &num in pair.iter().flatten() {
-            c_sum += num;
-            info += &format!("{num} + ");
-        }
-
-        if c_sum == 0 {
-            info += &format!("\nSince sum is 0 we can skip this column")
-        }
-
-        if previous_carry != 0 {
-            info += &format!("{} (carried forward)",previous_carry);
-        }
-
-        previous_carry = c_sum / 10;
-
-        info += &format!(" = {}",c_sum);
-
-        if c_sum >= 10 {
-            info += &format!("\nSince sum is greater than 10 we carry 1 forward");
-        }
-        /*else if c_sum == 0{
-            info += &format!("\nSince sum is less then 10 we dont carry forward anything")
-        }*/
-
-        let c_rem = c_sum % 10;
-
-        sum_str.insert_str(0,&c_rem.to_string());
-
-        carry_str.insert_str(0,&previous_carry.to_string());
-
-        let _temp_carry_str = match carry_str.parse::<u8>().unwrap() {
-            0 => "",
-            _ => &carry_str
-        };//carry_str.parse::<u64>().unwrap();
-
-        let latex = format!("{:>p$}\n{column}\n---------\n{:>p$}",_temp_carry_str,sum_str,p = padding);
-
-        let mut substep = SubStep::new(info);
-        substep.set_latex(latex);
-        substeps.push(substep);
+        if dec_len > longest_decimal {
+            longest_decimal = dec_len
+        };
+    };
+    
+    if x.fract() != 0.0 {
+        closure(&x_str);
     }
 
-    substeps
+    if y.fract() != 0.0 {
+        closure(&y_str);
+    }
+
+    (padding,longest_decimal)
 }
 
-pub fn into_num_pairs(vec :&Vec<&str>) -> Vec<Vec<Option<u32>>> {
-    vec[0].chars().enumerate().map(|(index,_)|{
-        vec.iter().map(|item|{
-                item.chars().nth(index).unwrap().to_digit(10)
-            }).collect::<Vec<_>>()
-    })
-    .collect()
-}  
-
-
-/*
-fn pair_numbers(vec : &Vec<String>) -> Vec<Vec<Option<u32>>> {
-    let strings : Vec<String> = vec.iter().map(|item| item.chars().rev().collect()).collect();
-    strings[0].chars().enumerate().map(|(index,_)|{
-        vec.iter().map(|item|{
-            item.chars().nth(index).unwrap().to_digit(10)
-        }).collect::<Vec<_>>()
-    }).collect::<Vec<_>>()
+pub(super) fn align(number : f64,padding : usize,longest_decimal : usize) -> String {
+    format!(r"& {:width$.dec$} \\",number,width = padding,dec = longest_decimal)
 }
 
-pub(super) fn describe_unsigned_float_addition(array : &mut [f64]) -> Vec<SubStep> {
-    let (c_aligned,padding) = align_numbers(array,"+");
-    let c_pairs = pair_numbers(&c_aligned);
+pub(super) fn into_column(x : f64,y : f64,op_str : &str,padding : usize,longest_decimal : usize) -> Vec<String> {
+    let padded_x = align(x,padding,longest_decimal);
+    let padded_y = format!(r"{} & {:width$.dec$} \\",op_str,y,width = padding - 2,dec = longest_decimal);
 
-    let column = c_aligned.join("\n");
 
-    let mut previous_carry = 0;
-
-    let mut carry_str = String::from("0");
-    let mut sum_str = String::new();
-
-    let mut substeps : Vec<SubStep> = Vec::new();
-    
-    for (index,vec_item) in c_pairs.iter().rev().enumerate() {
-        if vec_item.iter().all(Option::is_none) {
-            continue;
-        };
-          
-        let mut c_sum = previous_carry;
-
-        let mut info = String::from("Sum : ");
-
-        for &num in vec_item.iter().flatten() {
-            c_sum += num;
-            info += &format!("{num} + ");
-        }
-
-        if previous_carry != 0 {
-            info += &format!("{} (carried forward)",previous_carry);
-        }
-
-        previous_carry = c_sum / 10;
-
-        info += &format!(" = {}",c_sum);
-
-        if c_sum >= 10 {
-            info += &format!("\nSince sum is greater than 10 we carry 1 forward");
-        }
-
-        let c_rem = c_sum % 10;
-
-        sum_str.insert_str(0,&c_rem.to_string());
-
-        carry_str.insert_str(0,&previous_carry.to_string());
-
-        let latex = format!("{:>p$}\n{column}\n---------\n{:>p$}",carry_str,sum_str,p = padding);
-
-        
-        substeps.push(SubStep::new(info,latex));
-    }                                 
-
-    substeps
+    return vec![padded_x,padded_y,SEPERATOR.to_string()]
 }
 
-*/
+pub(super) fn align_latex_end(latex : &str) -> String {
+    format!(r"\begin{{alignat*}}{{1}} {latex} \end{{alignat*}}")
+}

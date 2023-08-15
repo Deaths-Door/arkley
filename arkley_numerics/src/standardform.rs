@@ -17,6 +17,7 @@ pub struct StandardForm  {
     exponent : i8
 }
 
+
 impl StandardForm {
     /// Creates a new instance of StandardForm with the given mantissa and exponent
     pub fn new(mantissa : f64,exponent : i8) -> Self {

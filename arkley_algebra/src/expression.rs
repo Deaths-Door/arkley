@@ -38,6 +38,7 @@ pub enum Expression {
     Nested(Box<Expression>),
 }
 
+/*
 impl Expression {
     /// Create a new `Expression` containing a single `Term`.
     ///
@@ -289,4 +290,4 @@ mod tests {
         let expected_expression = Expression::new_term(et);
         assert_eq!(expression, expected_expression);
     }
-}
+}*/
