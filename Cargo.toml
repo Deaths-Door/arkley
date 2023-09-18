@@ -3,29 +3,14 @@ name = "arkley"
 edition.workspace = true
 readme.workspace = true
 version.workspace = true
-description = "This crate provides several traits for common mathematical operations"
 documentation = "https://docs.rs/arkley"
 repository = "https://github.com/Deaths-Door/arkley"
-
 authors.workspace = true
 homepage.workspace = true
 license.workspace = true
 
-[dependencies]
-arkley_traits =  "0.0.2"
-arkley_numerics = "0.0.2"
-
 [workspace]
-members = [
-    "arkley_traits",
-    "arkley_numerics",
-    "arkley_algebra",
-    "arkley_describe",
-]
-
-[workspace.dependencies]
-arkley_traits =  "0.0.2"
-arkley_numerics = "0.0.2"
+members = ["arkley_algebra"]
 
 [workspace.package]
 version = "0.0.2"

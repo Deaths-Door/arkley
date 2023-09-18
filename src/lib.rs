@@ -1,32 +1,14 @@
-#![doc = include_str!("../README.md")]
-
-#![forbid(
-        missing_docs,
-        unsafe_code,
-        unused_imports,
-        unused_variables,
-        unused_mut,
-        unused_results,
-        unused_allocation,
-        unused_must_use,
-        unreachable_patterns,
-        trivial_casts,
-        unsafe_op_in_unsafe_fn,
-        overflowing_literals,
-)]
-
-/// # Arkley Traits
-///
-/// This module provides traits for Arkley traits crate.
-/// For more information, refer to the [README.md](https://docs.rs/arkley_traits).
-pub mod traits {
-    pub use arkley_traits::*;
+pub fn add(left: usize, right: usize) -> usize {
+    left + right
 }
 
-/// # Arkley Numerics
-///
-/// This module provides numbers for Arkley traits crate.
-/// For more information, refer to the [README.md](https://docs.rs/arkley_numerics).
-pub mod numerics {
-    pub use arkley_numerics::*;
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        let result = add(2, 2);
+        assert_eq!(result, 4);
+    }
 }

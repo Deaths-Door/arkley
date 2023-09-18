@@ -1,8 +1,8 @@
 use std::ops::{Add,Sub,Mul,Div};
 use std::collections::{BTreeMap,BTreeSet};
 use std::cmp::Ordering;
-use arkley_numerics::Number;
-use arkley_traits::Power;
+
+use num_notation::Number;
 
 use crate::Expression;
 
@@ -15,7 +15,7 @@ pub type Variables = BTreeMap<char,Number>;
 /// A `Term` is a basic unit in a mathematical expression. It consists of a coefficient
 /// (which can be any type that implements the `Numeric` trait) and variables represented
 /// as `BTreeMap<char,Number>` .
-#[derive(Debug,PartialEq,Clone)]
+#[derive(PartialEq,Clone)]
 pub struct Term {
     /// The coefficient of the term.
     coefficient: Number,
@@ -23,7 +23,7 @@ pub struct Term {
     /// The variables and their exponents in the term.
     variables: Variables,
 }
-/*
+
 impl Term {
     /// Creates new instance of Term using coefficient and variable
     pub const fn new_with_variable(coefficient: Number,variables: Variables) -> Self {
@@ -34,34 +34,30 @@ impl Term {
     pub const fn new(coefficient: Number) -> Self {
         Self { coefficient , variables : Variables::new() }
     }
+}
 
-    /// Tries to set the value of a variable in the `Term` object and updates the coefficient accordingly.
-    ///
-    /// # Parameters
-    ///
-    /// - `variable`: A reference to a `char` representing the variable whose value needs to be set.
-    /// - `value`: A `Number` representing the new value for the variable.
-    ///
-    /// # Returns
-    ///
-    /// - `Some(())`: If the variable is found in the `Term`, it sets the value of the variable and updates the coefficient accordingly.
-    /// - `None`: If the variable is not found in the `Term`, it returns `None`.
-    ///
-    pub fn try_set_variable_value(&mut self,variable : &char,value : Number) -> Option<()> {
-        match self.variables.remove(variable) {
-            None => None,
-            Some(exponent) => {
-                self.coefficient *= value.to_the_power_of(exponent);
-                Some(())
-            }
-        }
+impl From<Number> for Term {
+    fn from(value : Number) -> Self {
+        Term::new(value)
     }
 }
 
+impl From<Variables> for Term {
+    fn from(value : Variables) -> Self {
+        Term::new_with_variable(Number::Decimal(1.0),value)
+    }
+}
 
 impl std::fmt::Display for Term {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f,"{}",self.coefficient)?;
+        match self.coefficient == 1 {
+            false => write!(f, "{}", self.coefficient)?,
+            true => match self.variables.is_empty() {
+                true => write!(f, "{}", self.coefficient)?,
+                false => {}
+            }
+        }
+        
         for (name,exponent) in self.variables.iter() {
             write!(f,"{name}")?;
             if exponent > &1 {
@@ -72,131 +68,46 @@ impl std::fmt::Display for Term {
     }
 }
 
-/*
-impl TryFrom<&str> for Term {
-    /// temp return type
-    type Error = ();
-    fn try_from(value : &str) -> Result<Self, Self::Error> {        
-        match value.find(|c: char| c.is_ascii_alphabetic()) {
-            None => {
-                let number = Number::try_from(value).map_err(|_| ())?;
-                Ok(Term::new(number))
-            },
-            Some(v_index) => {
-                let v_str = &value[v_index..];
-
-                let mut variables = Variables::new();
-
-                let is_char = |c :char| -> bool {
-                    c >= 'a' && c <= 'z'
-                };
-
-                let mut v_iter = v_str.chars().peekable();
-                loop {
-                    match v_iter.next(){
-                        None => break,
-                        Some(ch) => match is_char(ch) {
-                            false => return Err(()),
-                            true => match v_iter.peek() {
-                                None => break,
-                                Some('^') => {
-                                    let n : &str =  &v_iter
-                                        .clone()
-                                        .take_while(|c| is_char(*c))
-                                        .map(|c| c.to_string())
-                                        .collect::<Vec<_>>()
-                                        .join("");
-
-                                    let number = Number::try_from(n).map_err(|_| ())?;
-                                    variables.insert(ch,number);
-                                }
-                                _ => return Err(())
-                            }
-                        }
-                    }
-                }
-                /*let v_vec : Vec<_> = v_str.split_inclusive(|c:char| c >= 'a' && c <= 'z').collect();
-            
-                for item in v_vec {
-                    let ch = item.chars().next().unwrap();
-                    if item.len() == 1 {
-                        variables.insert(ch,Number::Decimal(1.0));
-                        continue;
-                    }
-
-                    if &item[0..1] != "^" {
-                        return Err(());
-                    }
-
-                    let number = Number::try_from(&item[2..])?;
-                    variables.insert(ch,number);
-                }*/
-
-                // to handle cases like -x or +xy
-                let possible_sign_str = &value[..v_index];
-                
-                let term = if v_index == 1 || possible_sign_str.is_empty() ||possible_sign_str == "+" {
-                    Term::new_with_variable(Number::Decimal(1.0), variables)
-                }
-                else if v_index == 1 || possible_sign_str == "-" {
-                    Term::new_with_variable(Number::Decimal(-1.0), variables)
-                } 
-                else{
-                    let n = Number::try_from(possible_sign_str).map_err(|_| ())?;
-                    Term::new_with_variable(n,variables)
-                };
-                Ok(term)
-            }
-        }
-    }
-}*/
-
-impl Add for Term {
-    type Output = Expression;
-
-    fn add(self,other : Term) -> Self::Output {
-        if self.variables == other.variables {
-            let coefficient = self.coefficient + other.coefficient;
-            let variables = self.variables;
-            return Expression::new_term(Term::new_with_variable(coefficient,variables));
-        }
-        Expression::new_plus(self.into(),other.into())
+impl std::fmt::Debug for Term {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f,"{self}")
     }
 }
 
-impl Sub for Term {
-    type Output = Expression;
+mod operations {
+    use super::*;
 
-    fn sub(self,other : Term) -> Self::Output {
-        if self.variables == other.variables {
-            let coefficient = self.coefficient - other.coefficient;
-            let variables = self.variables;
+    pub(super) fn add(t1 : Term,t2 : Term) -> Expression {
+        if t1.variables == t2.variables {
+            let coefficient = t1.coefficient + t2.coefficient;
+            let variables = t1.variables;
             return Expression::new_term(Term::new_with_variable(coefficient,variables));
         }
-        Expression::new_minus(self.into(),other.into())
+        Expression::new_plus(t1.into(),t2.into())
     }
-}
 
-impl Mul for Term {
-    type Output = Expression;
+    pub(super) fn sub(t1 : Term,t2 : Term) -> Expression {
+        if t1.variables == t2.variables {
+            let coefficient = t1.coefficient - t2.coefficient;
+            let variables = t1.variables;
+            return Expression::new_term(Term::new_with_variable(coefficient,variables));
+        }
+        Expression::new_minus(t1.into(),t2.into())
+    }
 
-    fn mul(self,other : Term) -> Self::Output {
-        let coefficient = self.coefficient * other.coefficient;
-        let mut variables = self.variables;
-        for (&var,&ref exponent) in &other.variables {
-            *variables.entry(var).or_insert(Number::Decimal(0.0)) += exponent;//.clone();
+    pub(super) fn mul(t1 : Term,t2 : Term) -> Expression {
+        let coefficient = t1.coefficient * t2.coefficient;
+        let mut variables = t1.variables;
+        for (&var,&ref exponent) in &t2.variables {
+            *variables.entry(var).or_insert(Number::Decimal(0.0)) += exponent.clone();
         };
 
         Expression::new_term(Term::new_with_variable(coefficient,variables))
     }
-}
 
-impl Div for Term {
-    type Output = Expression;
-
-    fn div(self,other : Term) -> Self::Output {
-        let s_keys: BTreeSet<_> = self.variables.keys().cloned().collect();
-        let o_keys: BTreeSet<_> = other.variables.keys().cloned().collect();
+    pub(super) fn div(t1 : Term,t2 : Term) -> Expression {
+        let s_keys: BTreeSet<_> = t1.variables.keys().cloned().collect();
+        let o_keys: BTreeSet<_> = t2.variables.keys().cloned().collect();
 
         let common : BTreeSet<_> = s_keys.intersection(&o_keys).cloned().collect();
         let s_unique_keys: BTreeSet<_> = s_keys.difference(&common).collect();
@@ -206,16 +117,16 @@ impl Div for Term {
         let mut o_variables =Variables::new();
 
         for key in s_unique_keys {
-            s_variables.insert(*key,self.variables[key].clone());
+            s_variables.insert(*key,t1.variables[key].clone());
         }
 
         for key in o_unique_keys {
-            o_variables.insert(*key,other.variables[key].clone());
+            o_variables.insert(*key,t2.variables[key].clone());
         }
 
         for key in common {
-            let s_exponent = self.variables[&key].clone();
-            let o_exponent = other.variables[&key].clone();
+            let s_exponent = t1.variables[&key].clone();
+            let o_exponent = t2.variables[&key].clone();
 
             let result = s_exponent - o_exponent;
 
@@ -226,7 +137,7 @@ impl Div for Term {
                 Ordering::Greater => {
                     s_variables.insert(key,result);
                 },
-                // if top M bottom so x^2 - x^5 = x^-3 so bottom.variable(key).power = result
+                // if top < bottom so x^2 - x^5 = x^-3 so bottom.variable(key).power = result
                 Ordering::Less => {
                     o_variables.insert(key,result);
                 },
@@ -234,21 +145,121 @@ impl Div for Term {
         }
 
         match s_variables.is_empty() && o_variables.is_empty() {
-            true => Expression::new_term(Term::new(self.coefficient / other.coefficient)),
+            true => Expression::new_term(Term::new(t1.coefficient / t2.coefficient)),
             false => {
-                let t1 = Term::new_with_variable(self.coefficient,s_variables);
+                let _t1 = Term::new_with_variable(t1.coefficient,s_variables);
                 // so if x / 1 is equal to 1 so simplify it
-                match other.coefficient == 1 && o_variables.is_empty() {
-                    true => Expression::new_term(t1),
+                match t2.coefficient == 1 && o_variables.is_empty() {
+                    true => Expression::new_term(_t1),
                     false => {
-                        let t2 = Term::new_with_variable(other.coefficient,o_variables);
-                        Expression::new_durch(t1.into(),t2.into())
+                        let _t2 = Term::new_with_variable(t2.coefficient,o_variables);
+                        Expression::new_durch(_t1.into(),_t2.into())
                     }
                 }
             }
         }
     }
 }
+
+impl Add for Term {
+    type Output = Expression;
+
+    fn add(self,other : Term) -> Self::Output {
+        operations::add(self,other)
+    }
+}
+
+impl Sub for Term {
+    type Output = Expression;
+
+    fn sub(self,other : Term) -> Self::Output {
+        operations::sub(self,other)
+    }
+}
+
+impl Mul for Term {
+    type Output = Expression;
+
+    fn mul(self,other : Term) -> Self::Output {
+        operations::mul(self,other)
+    }
+}
+
+impl Div for Term {
+    type Output = Expression;
+
+    fn div(self,other : Term) -> Self::Output {
+        operations::div(self,other)
+    }
+}
+
+macro_rules! primitives {
+    (padd => $($t : ty),*) => {
+        $(
+            impl Add<$t> for Term {
+                type Output = Expression;
+                fn add(self, other: $t) -> Expression {
+                    let n = Number::Decimal(other as f64);
+                    let term = Term::from(n);
+
+                    operations::add(self,term)
+                }
+            }
+        )*
+    };
+
+    (psub => $($t : ty),*) => {
+        $(
+            impl Sub<$t> for Term {
+                type Output = Expression;
+                fn sub(self, other: $t) -> Expression {
+                    let n = Number::Decimal(other as f64);
+                    let term = Term::from(n);
+
+                    operations::sub(self,term)
+                }
+            }
+        )*
+    };
+
+    (pmul => $($t : ty),*) => {
+        $(
+            impl Mul<$t> for Term {
+                type Output = Expression;
+                fn mul(self, other: $t) -> Expression {
+                    let n = Number::Decimal(other as f64);
+                    let term = Term::from(n);
+
+                    operations::mul(self,term)
+                }
+            }
+        )*
+    };
+
+    (pdiv => $($t : ty),*) => {
+        $(
+            impl Div<$t> for Term {
+                type Output = Expression;
+                fn div(self, other: $t) -> Expression {
+                    let n = Number::Decimal(other as f64);
+                    let term = Term::from(n);
+
+                    operations::div(self,term)
+                }
+            }
+        )*
+    };
+    (operations => $($t:ty),*) => {
+        $(
+            primitives!(padd => $t);
+            primitives!(psub => $t);
+            primitives!(pmul => $t);
+            primitives!(pdiv => $t);
+        )*
+    }
+}
+
+primitives!(operations => i8, i16, i32, i64, u8, u16, u32, u64,f32,f64);
 
 #[cfg(test)]
 mod tests {
@@ -496,7 +507,7 @@ mod tests {
 
         assert_eq!(term.to_string(), "5");
     }
-
+/*
     #[test]
     fn try_set_variable_value_existing_variable() {
         // Create a term with the variable 'x' and exponent 2
@@ -522,7 +533,7 @@ mod tests {
     }
 
 
-    /*#[test]
+    #[test]
     fn try_from_term_with_valid_input_no_variables() {
         let input = "123.45";
         let result = Term::try_from(input).unwrap();
@@ -559,4 +570,4 @@ mod tests {
         let expected = Term::new_with_variable(Number::Decimal(1.0), ev);
         assert_eq!(result.unwrap(), expected);
     }*/
-}*/
+}
