@@ -1,6 +1,8 @@
-use std::ops::{Add,Sub,Mul,Div};
+use std::ops::{Add,Sub,Mul,Div,Neg};
 
-use crate::Term;
+use num_notation::Number;
+
+use crate::{Term,Variables};
 
 /// An enum representing a mathematical expression.
 ///
@@ -32,7 +34,6 @@ pub enum Expression {
     Durch(Box<Expression>,Box<Expression>),
 
     /// Represents a more complex expression that contains nested expressions that contain `()` 
-    /// `Note` : TODO Create function for it
     Nested(Box<Expression>),
 }
 
@@ -85,37 +86,6 @@ impl Expression {
     }
 }
 
-impl Expression {
-    fn search_matching_term(&self,target : &Term,on_found : impl Fn(&Term) -> Expression + Clone) -> Option<Expression> {
-        match self {
-            // stop searching just expression can't be operated on like (..) , (yes ik its not true and a limitation but thats a problem for later)
-            Expression::Nested(_) => None,
-            Expression::Term(term) => match term == target {
-                true => Some(on_found(term)),
-                false => Some(self.clone())
-            },
-            Expression::Plus(right, left)
-            | Expression::Minus(right, left)
-            | Expression::Mal(right, left)
-            | Expression::Durch(right, left) => {
-                // Try searching in the right subtree first
-                if let Some(expression) = right.search_matching_term(target,on_found.clone()) {
-                    // If found in the right subtree, add the current node to the path and return it
-                    return Some(expression);
-                }
-
-                // If not found in the left subtree, try searching in the left subtree
-                if let Some(expression) = left.search_matching_term(target,on_found) {
-                    // If found in the left subtree, add the current node to the path and return it
-                    return Some(expression);
-                }
-
-                // If not found in either subtree, return right operation left
-                None
-            }
-        }
-    }
-}
 
 impl std::fmt::Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -141,19 +111,55 @@ impl From<Term> for Expression {
         Expression::new_term(value)
     }
 }
-/*
-impl Add for Term {
-    type Output = Expression;
 
-    fn add(self,other : Term) -> Self::Output {
-        match (self, other) {
-            (Expression::Term(t1), Expression::Term(t2)) => t1 + t2
-            //(not_term, other @ Expression::Term(_)) => not_term.evaluate() + other,
-            //(self_ @ Expression::Term(_), not_term) => self_ + not_term.evaluate(),
-            //(not_term1, not_term2) => not_term1.evaluate() + not_term2.evaluate(),
+impl From<Number> for Expression {
+    fn from(value : Number) -> Self {
+        Term::new(value).into()
+    }
+}
+
+impl From<Variables> for Expression {
+    fn from(value : Variables) -> Self {
+        Term::new_with_variable(Number::Decimal(1.0),value).into()
+    }
+}
+
+impl Neg for Expression {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {     
+        match self {
+            Expression::Term(term) => Expression::new_term(-term),
+            Expression::Plus(right,left) => Expression::new_minus(-*right,-*left),
+            Expression::Minus(right,left) => Expression::new_plus(-*right,-*left),
+            Expression::Nested(inner) => Expression::new_nested(-*inner),
+            _ => self
         }
     }
+}
+
+/*
+impl Mul<Term> for Expression {
+    type Output = Self;
+
+    fn mul(self,other : Term) -> Expression {
+        match self {
+            Expression::Term(term) => (other * term).into(),
+            Expression::Nested(inner) => (*inner * other).into(),
+            //right * other *left + other  into expression .combine_all_terms.... is answer
+            Expression::Plus(right, left) | Expression::Minus(right, left) => 
+            _ => todo!()
+            //  Expression::Mal(right, left)| Expression::Durch(right, left) => {
+        }
+
+        // (2x)(2x +  ..1 + y) for + and - yes
+        // (2x)()
+    }
 }*/
+/*
+macro_rules! primitives! {
+    
+};*/
 
 #[cfg(test)]
 mod tests {
@@ -264,79 +270,28 @@ mod tests {
 
         assert_eq!(formatted, expected);
     }
-    
-    #[test]
-    fn test_search_matching_term_with_term_a() {
-        // Create a sample expression tree for testing
-        let term_a = create_term_with_variable(1.0,'x',1.0); // Define your Term here
 
-        // Build the expression tree
-        let expression_tree = Expression::new_plus(
-            Expression::new_term(term_a.clone()),
+    #[test]
+    fn test_neg() {
+        // x + x - (x)
+        let expression = Expression::new_plus(
+            create_term_with_variable(1.0,'x',1.0).into(),
             Expression::new_minus(
-                Expression::new_term(term_a.clone()), // Another Term for the right subtree
-                Expression::new_nested(Expression::Term(Term::new(Number::Decimal(1.0)))), // Nested Term
-            ),
+                create_term_with_variable(1.0,'x',1.0).into(),
+                Expression::new_nested(create_term_with_variable(1.0,'x',1.0).into())
+            )
         );
 
-        // aka x + x - (1)
-        // or in a more 'tree' form x plus x - (1) where brackets seperate terms
-        assert_eq!(&expression_tree.to_string(),"x + x - (1)");
+        let negated_expression = -expression;
 
-        // Define a closure to test the search_matching_term function
-        let on_found = |term : &Term| {
-            term.clone() + term_a.clone()
-        };
-
-        let result = expression_tree.search_matching_term(&term_a, on_found);
-
-      //  println!("{}", result.clone().map_or_else(|| "NONE".to_string(), |r| r.to_string()));
-
-        // Test case for searching for term_a
-        assert_eq!(result.is_some(),true);
-
-        // check if result correct
-        let expected = Expression::new_minus(
-            create_term_with_variable(2.0,'x',1.0).into(),
-            Term::new(Number::Decimal(1.0)).into()
+        let expected_expression = Expression::new_minus(
+            create_term_with_variable(-1.0,'x',1.0).into(),
+            Expression::new_plus(
+                create_term_with_variable(-1.0,'x',1.0).into(),
+                Expression::new_nested(create_term_with_variable(-1.0,'x',1.0).into())
+            )
         );
 
-        assert_eq!(result,Some(expected));
+        assert_eq!(negated_expression, expected_expression);
     }
-
-    /*
-    #[test]
-    fn test_try_set_variable_value_variable_not_found() {
-        // Create a simple expression: 2x^3 + 3y^2.
-        let term1 = Term::new_with_variable(Number::Decimal(2.0), Variables::from([('x', Number::Decimal(3.0))]));
-        let term2 = Term::new_with_variable(Number::Decimal(3.0), Variables::from([('y', Number::Decimal(2.0))]));
-        let mut expression = Expression::new_plus(term1.clone().into(), term2.clone().into());
-    
-        // Try to set the value of variable 'z' (not present in the expression).
-        let result = expression.try_set_variable_value(&'z', Number::Decimal(1.0));
-    
-        // Assert that the value of variable 'z' has not been updated in the expression.
-        assert_eq!(result, None);
-    
-        // Check if the expression remains unchanged.
-        assert_eq!(expression, Expression::new_plus(term1.into(), term2.into()));
-    }
-
-    #[test]
-    fn test_try_set_variable_value_single_variable() {
-        // Create a simple expression: 2x^3.
-        let term1 = Term::new_with_variable(Number::Decimal(2.0), Variables::from([('x', Number::Decimal(3.0))]));
-        let mut expression = Expression::Term(term1);
-
-        // Try to set the value of variable 'x' to 5.
-        let result = expression.try_set_variable_value(&'x', Number::Decimal(5.0));
-
-        // Assert that the value of variable 'x' has been updated in the expression.
-        assert_eq!(result, Some(()));
-
-        // Check if the updated expression is as expected: 2x^3 (x = 5) which is 250.
-        let et = Term::new(Number::Decimal(250.0));
-        let expected_expression = Expression::new_term(et);
-        assert_eq!(expression, expected_expression);
-    }*/
 }
