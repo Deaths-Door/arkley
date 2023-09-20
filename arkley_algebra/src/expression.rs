@@ -140,14 +140,14 @@ impl Neg for Expression {
 
 impl Expression {
     pub(crate) fn combine_terms(&mut self) {
-        let mut terms: Vec<Term> = Vec::new();
-        self.collect_terms(&mut terms);
+        let mut terms : Vec<(Term,Option<bool>)> = Vec::new();
+        self.collect_terms(&mut terms,None);
 
-        let mut grouped_terms: Vec<Term> = Vec::new();
+        let mut grouped_terms: Vec<(Term,Option<bool>)> = Vec::new();
 
-        for term in terms {
+        for (term,sign) in terms {
             let mut combined = false;
-            for grouped_term in &mut grouped_terms {
+            for (grouped_term,_) in &mut grouped_terms {
                 if term.variables == grouped_term.variables {
                     grouped_term.coefficient += term.coefficient.clone();
                     combined = true;
@@ -155,7 +155,7 @@ impl Expression {
                 }
             }
             if !combined {
-                grouped_terms.push(term.clone()); // Clone the term to keep the original
+                grouped_terms.push((term,sign)); // Clone the term to keep the original
             }
         }
 
@@ -167,13 +167,19 @@ impl Expression {
         // Or create a new function to remove all 0s from the expression tree to further improve expression simplification.
         let mut new_expression = None;
 
-        for term in grouped_terms {
+        for (term,sign) in grouped_terms {
             if term.coefficient != 0.0 {
                 let term_expression = Expression::new_term(term.clone());
-                if let Some(expr) = new_expression {
-                    new_expression = Some(Expression::new_plus(expr,term_expression));
-                } else {
-                    new_expression = Some(term_expression);
+
+                new_expression = match new_expression {
+                    None => Some(term_expression),
+                    Some(expr) => match sign {
+                        None => Some(term_expression),
+                        Some(is_add) => Some(match is_add {
+                            true => Expression::new_plus(expr,term_expression),
+                            false => Expression::new_minus(expr,term_expression)
+                        })
+                    }
                 }
             }
         }
@@ -181,22 +187,25 @@ impl Expression {
         *self = new_expression.unwrap();
     }
 
-    fn collect_terms(&self, terms: &mut Vec<Term>) {
+    fn collect_terms(&self, terms: &mut Vec<(Term,Option<bool>)>,parent_sign : Option<bool>) {
         match self {
             Expression::Term(term) => {
-                terms.push(term.clone());
-            }
-            Expression::Plus(right, left) | Expression::Minus(right, left) => {
-                right.collect_terms(terms);
-                left.collect_terms(terms);
-            }
-            Expression::Mal(_, _) | Expression::Durch(_, _) => {
-                todo!("NOT DONE YET")
-                // Handle multiplication and division if needed
-            }
+                terms.push((term.clone(),parent_sign));
+            },
+            Expression::Plus(right, left) => {
+                right.collect_terms(terms,Some(true));
+                left.collect_terms(terms,Some(true));
+            },
+            Expression::Minus(right, left) => {
+                right.collect_terms(terms,Some(false));
+                left.collect_terms(terms,Some(false));
+            },
             Expression::Nested(inner) => {
-                inner.collect_terms(terms);
+                inner.collect_terms(terms,None);
             }
+
+            //Not done as i dont think i neeed to do anything here
+            Expression::Mal(_, _) | Expression::Durch(_, _) => {}
         }
     }
 }
