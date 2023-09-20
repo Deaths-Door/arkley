@@ -86,7 +86,6 @@ impl Expression {
     }
 }
 
-
 impl std::fmt::Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
@@ -138,6 +137,70 @@ impl Neg for Expression {
     }
 }
 
+
+impl Expression {
+    pub(crate) fn combine_terms(&mut self) {
+        let mut terms: Vec<Term> = Vec::new();
+        self.collect_terms(&mut terms);
+
+        let mut grouped_terms: Vec<Term> = Vec::new();
+
+        for term in terms {
+            let mut combined = false;
+            for grouped_term in &mut grouped_terms {
+                if term.variables == grouped_term.variables {
+                    grouped_term.coefficient += term.coefficient.clone();
+                    combined = true;
+                    break;
+                }
+            }
+            if !combined {
+                grouped_terms.push(term.clone()); // Clone the term to keep the original
+            }
+        }
+
+        // Reconstruct the expression.
+        // We use `None` here because creating `let mut new_expression = Expression::new_term(Term::new(Number::Decimal(0.0)));`
+        // would result in an expression like `0 + ...`. To avoid this, we "ignore" zero coefficients and aim to simplify the
+        // reconstructed expression. 
+        // In the future, consider updating the implementation of the `Display` trait to remove all terms with zero coefficients from resulting string
+        // Or create a new function to remove all 0s from the expression tree to further improve expression simplification.
+        let mut new_expression = None;
+
+        for term in grouped_terms {
+            if term.coefficient != 0.0 {
+                let term_expression = Expression::new_term(term.clone());
+                if let Some(expr) = new_expression {
+                    new_expression = Some(Expression::new_plus(expr,term_expression));
+                } else {
+                    new_expression = Some(term_expression);
+                }
+            }
+        }
+
+        *self = new_expression.unwrap();
+    }
+
+    fn collect_terms(&self, terms: &mut Vec<Term>) {
+        match self {
+            Expression::Term(term) => {
+                terms.push(term.clone());
+            }
+            Expression::Plus(right, left) | Expression::Minus(right, left) => {
+                right.collect_terms(terms);
+                left.collect_terms(terms);
+            }
+            Expression::Mal(_, _) | Expression::Durch(_, _) => {
+                todo!("NOT DONE YET")
+                // Handle multiplication and division if needed
+            }
+            Expression::Nested(inner) => {
+                inner.collect_terms(terms);
+            }
+        }
+    }
+}
+
 /*
 impl Mul<Term> for Expression {
     type Output = Self;
@@ -172,6 +235,10 @@ mod tests {
         let mut variables = Variables::new();
         variables.insert(var, Number::Decimal(exp));
         Term::new_with_variable(Number::Decimal(coeff), variables)
+    }
+
+    fn check_expression_str(expression : &Expression,_str : &str) {
+        assert_eq!(&expression.clone().to_string(),_str)
     }
 
     #[test]
@@ -294,4 +361,79 @@ mod tests {
 
         assert_eq!(negated_expression, expected_expression);
     }
+
+    #[test]
+    fn test_combine_terms() {
+        let mut expression = Expression::new_plus(
+            Expression::new_term(create_term_with_variable(2.0,'x',1.0)),
+            Expression::new_minus(
+                Expression::new_term(create_term_with_variable(1.0,'x',1.0)),
+                Expression::new_term(create_term_with_variable(3.0,'y',1.0)),
+            )
+        );
+
+        check_expression_str(&expression,"2x + x - 3y");
+
+        // Call the combine_terms function to combine like terms
+        expression.combine_terms();
+
+        // Define the expected result
+        let expected_expression = Expression::new_minus(
+            Expression::new_term(create_term_with_variable(3.0,'x',1.0)),
+            Expression::new_term(create_term_with_variable(3.0,'y',1.0)),
+        );
+
+        check_expression_str(&expression,"3x - 3y");
+
+        // Check if the expression matches the expected result
+        assert_eq!(expression, expected_expression);
+    }
+
+    #[test]
+    fn test_combine_terms_same_variables() {
+        // Test combining terms with the same variables
+        let mut expression = Expression::new_plus(
+            Expression::new_term(create_term_with_variable(2.0, 'x', 1.0)),
+            Expression::new_term(create_term_with_variable(3.0, 'x', 1.0)),
+        );
+
+        check_expression_str(&expression, "2x + 3x");
+
+        // Call the combine_terms function to combine like terms
+        expression.combine_terms();
+
+        // Define the expected result
+        let expected_expression = Expression::new_term(create_term_with_variable(5.0, 'x', 1.0));
+
+        check_expression_str(&expression, "5x");
+
+        // Check if the expression matches the expected result
+        assert_eq!(expression, expected_expression);
+    }
+
+    #[test]
+    fn test_combine_terms_different_variables() {
+        // Test combining terms with different variables
+        let mut expression = Expression::new_plus(
+            Expression::new_term(create_term_with_variable(2.0, 'x', 1.0)),
+            Expression::new_term(create_term_with_variable(3.0, 'y', 1.0)),
+        );
+
+        check_expression_str(&expression, "2x + 3y");
+
+        // Call the combine_terms function to combine like terms
+        expression.combine_terms();
+
+        // Since the terms have different variables, they should not be combined
+        let expected_expression = Expression::new_plus(
+            Expression::new_term(create_term_with_variable(2.0, 'x', 1.0)),
+            Expression::new_term(create_term_with_variable(3.0, 'y', 1.0)),
+        );
+
+        check_expression_str(&expression, "2x + 3y");
+
+        // Check if the expression matches the expected result
+        assert_eq!(expression, expected_expression);
+    }
+
 }

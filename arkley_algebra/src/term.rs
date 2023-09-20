@@ -18,10 +18,10 @@ pub type Variables = BTreeMap<char,Number>;
 #[derive(PartialEq,Clone)]
 pub struct Term {
     /// The coefficient of the term.
-    coefficient: Number,
+    pub(crate) coefficient: Number,
 
     /// The variables and their exponents in the term.
-    variables: Variables,
+    pub(crate) variables: Variables,
 }
 
 impl Term {
