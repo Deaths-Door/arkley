@@ -10,7 +10,7 @@ homepage.workspace = true
 license.workspace = true
 
 [workspace]
-members = ["arkley_algebra"]
+members = ["arkley_algebra","arkley_describe"]
 
 [workspace.package]
 version = "0.0.2"

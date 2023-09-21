@@ -16,6 +16,8 @@
 
 mod expression;
 mod term;
+mod operation;
 
 pub use self::expression::*;
 pub use self::term::*;
+pub use self::operation::*;

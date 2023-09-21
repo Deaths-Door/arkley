@@ -1,0 +1,15 @@
+[package]
+name = "arkley_describe"
+documentation = "https://docs.rs/arkley_describe"
+repository = "https://github.com/Deaths-Door/arkley/tree/main/arkley_describe"
+
+version.workspace = true
+edition.workspace = true
+readme.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+
+[features]
+default = []
+build = []

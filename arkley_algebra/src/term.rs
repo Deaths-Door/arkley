@@ -12,10 +12,10 @@ pub type Variables = BTreeMap<char,Number>;
 
 /// A struct representing a mathematical term.
 ///
-/// A `Term` is a basic unit in a mathematical expression. It consists of a coefficient
-/// (which can be any type that implements the `Numeric` trait) and variables represented
+/// A `Term` is a basic unit in a mathematical expression. It consists of a coefficient and variables represented
 /// as `BTreeMap<char,Number>` .
-#[derive(PartialEq,Clone)]
+#[derive(Clone)]
+#[cfg_attr(test,derive(PartialEq))]
 pub struct Term {
     /// The coefficient of the term.
     pub(crate) coefficient: Number,

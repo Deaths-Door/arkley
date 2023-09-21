@@ -1,11 +1,11 @@
 [package]
 name = "arkley_algebra"
+documentation = "https://docs.rs/arkley_algebra"
+repository = "https://github.com/Deaths-Door/arkley/tree/main/arkley_algebra"
 version.workspace = true
 edition.workspace = true
 readme.workspace = true
 authors.workspace = true
-documentation = "https://docs.rs/arkley_algebra"
-repository = "https://github.com/Deaths-Door/arkley/tree/main/arkley_algebra"
 homepage.workspace = true
 license.workspace = true
 
