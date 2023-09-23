@@ -1,84 +1,14 @@
-use std::ops::{Add,Sub,Mul,Div,Neg};
-use std::collections::{BTreeMap,BTreeSet};
+use std::ops::{Add,Sub,Mul,Div};
+use std::collections::BTreeSet;
 use std::cmp::Ordering;
 
 use num_notation::Number;
 
-use crate::Expression;
-
-/// Represents a collection of variables, each associated with a numerical value.
-/// The `Variables` type is an alias for `BTreeMap<char, Number>`.
-pub type Variables = BTreeMap<char,Number>;
-
-/// A struct representing a mathematical term.
-///
-/// A `Term` is a basic unit in a mathematical expression. It consists of a coefficient and variables represented
-/// as `BTreeMap<char,Number>` .
-#[derive(Clone)]
-#[cfg_attr(test,derive(PartialEq))]
-pub struct Term {
-    /// The coefficient of the term.
-    pub(crate) coefficient: Number,
-
-    /// The variables and their exponents in the term.
-    pub(crate) variables: Variables,
-}
+use crate::{Term,Expression,Variables};
 
 impl Term {
-    /// Creates new instance of Term using coefficient and variable
-    pub const fn new_with_variable(coefficient: Number,variables: Variables) -> Self {
-        Self { coefficient , variables }
-    }
-
-    /// Creates new instance of Term using coefficient
-    pub const fn new(coefficient: Number) -> Self {
-        Self { coefficient , variables : Variables::new() }
-    }
-}
-
-impl From<Number> for Term {
-    fn from(value : Number) -> Self {
-        Term::new(value)
-    }
-}
-
-impl From<Variables> for Term {
-    fn from(value : Variables) -> Self {
-        Term::new_with_variable(Number::Decimal(1.0),value)
-    }
-}
-
-impl std::fmt::Display for Term {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self.coefficient == 1 {
-            false => write!(f, "{}", self.coefficient)?,
-            true => match self.variables.is_empty() {
-                true => write!(f, "{}", self.coefficient)?,
-                false => {}
-            }
-        }
-
-        for (name,exponent) in self.variables.iter() {
-            write!(f,"{name}")?;
-            if exponent > &1 {
-                write!(f,"^{exponent}")?;
-            }
-        }
-        Ok(())
-    }
-}
-
-impl std::fmt::Debug for Term {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f,"{self}")
-    }
-}
-
-impl Neg for Term {
-    type Output = Self;
-
-    fn neg(self) -> Self {
-        Term::new_with_variable(-self.coefficient,self.variables.clone())
+    pub(in crate::arithmetics) fn is_combinable_with(&self,other : &Self) -> bool {
+        self.variables == other.variables
     }
 }
 
@@ -86,7 +16,7 @@ impl Add for Term {
     type Output = Expression;
 
     fn add(self,other : Term) -> Self::Output {
-        if self.variables == other.variables {
+        if self.is_combinable_with(&other) {
             let coefficient = self.coefficient + other.coefficient;
             let variables = self.variables;
             return Expression::new_term(Term::new_with_variable(coefficient,variables));
@@ -99,7 +29,7 @@ impl Sub for Term {
     type Output = Expression;
 
     fn sub(self,other : Term) -> Self::Output {
-        if self.variables == other.variables {
+        if self.is_combinable_with(&other) {
             let coefficient = self.coefficient - other.coefficient;
             let variables = self.variables;
             return Expression::new_term(Term::new_with_variable(coefficient,variables));
@@ -112,12 +42,14 @@ impl Mul for Term {
     type Output = Expression;
 
     fn mul(self,other : Term) -> Self::Output {
-        let coefficient = self.coefficient * other.coefficient;
         let mut variables = self.variables;
-        for (&var,&ref exponent) in &other.variables {
-            *variables.entry(var).or_insert(Number::Decimal(0.0)) += exponent.clone();
+        for (var,exponent) in other.variables {
+            variables.entry(var)
+                .and_modify(|e| *e += exponent.clone())
+                .or_insert(exponent);
         };
 
+        let coefficient = self.coefficient * other.coefficient;
         Expression::new_term(Term::new_with_variable(coefficient,variables))
     }
 }
@@ -151,13 +83,20 @@ impl Div for Term {
             let result = s_exponent - o_exponent;
 
             match result.partial_cmp(&0).unwrap() {
-                // if equal so x^2 - x^2 then just ignore it
+                // If the result is equal to zero, it means the exponents cancel each other out:
+                // e.g., x^2 - x^2 = 0 (the terms cancel), so we ignore it.
                 Ordering::Equal => {}
-                // if top > bottom so x^5 - x^3 = x^2 so top.variable(key).power = result
+
+                // If the result is greater than zero, it means the exponent from the left term
+                // is greater than the right term:
+                // e.g., x^5 - x^3 = x^2, so we update the left term's exponent accordingly.
                 Ordering::Greater => {
                     s_variables.insert(key,result);
                 },
-                // if top < bottom so x^2 - x^5 = x^-3 so bottom.variable(key).power = result
+                
+                // If the result is less than zero, it means the exponent from the right term
+                // is greater than the left term:
+                // e.g., x^2 - x^5 = x^-3, so we update the right term's exponent accordingly.
                 Ordering::Less => {
                     o_variables.insert(key,result);
                 },
@@ -165,10 +104,12 @@ impl Div for Term {
         }
 
         match s_variables.is_empty() && o_variables.is_empty() {
+            // If both sets of variables are empty, it means there are no variables left,
+            // and we have a simple division of coefficients:
             true => Expression::new_term(Term::new(self.coefficient / other.coefficient)),
             false => {
                 let _t1 = Term::new_with_variable(self.coefficient,s_variables);
-                // so if x / 1 is equal to 1 so simplify it
+                // If the divisor is 1 and o_variables is empty (e.g., x / 1), the result is simply the dividend (x).
                 match other.coefficient == 1 && o_variables.is_empty() {
                     true => Expression::new_term(_t1),
                     false => {
@@ -309,22 +250,8 @@ macro_rules! primitives_operations {
     }
 }
 
-macro_rules! primitives_others {
-    (pfrom => $($t :ty),*) => {
-        $(
-            impl From<$t> for Term {
-                fn from(value : $t) -> Self {
-                    Term::new(Number::Decimal(value as f64))
-                }
-            }
-        )*
-    };
-}
-
 primitives_operations!(pops => i8, i16, i32, i64, u8, u16, u32, u64,f32,f64);
 primitives_operations!(nvops => Number,Variables);
-
-primitives_others!(pfrom => i8, i16, i32, i64, u8, u16, u32, u64,f32,f64 );
 
 #[cfg(test)]
 mod tests {
@@ -548,28 +475,5 @@ mod tests {
         );
 
         assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn display_term() {
-        let variables: Variables = [('x',Number::Decimal(2.0)), ('y', Number::Decimal(3.0))].iter().cloned().collect();
-        let term = Term::new_with_variable(Number::Decimal(2.5),variables);
-        assert_eq!(term.to_string(), "2.5x^2y^3");
-        println!("{}",term.to_string());
-    }
-
-    #[test]
-    fn display_term_single_variable() {
-        let variables: Variables = [('x', Number::Decimal(1.0))].iter().cloned().collect();
-        let term = Term::new_with_variable(Number::Decimal(3.0),variables);
-        assert_eq!(term.to_string(), "3x");
-    }
-
-    #[test]
-    fn display_term_constant() {
-        let variables: Variables = Variables::new();
-        let term = Term::new_with_variable(Number::Decimal(5.0),variables);
-
-        assert_eq!(term.to_string(), "5");
     }
 }

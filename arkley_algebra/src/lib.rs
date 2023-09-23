@@ -2,22 +2,25 @@
 
 #![forbid(
     missing_docs,
+    missing_debug_implementations,
+
     unsafe_code,
     unused_variables,
     unused_mut,
     unused_allocation,
     unused_must_use,
     unreachable_patterns,
-    trivial_casts,
+
+    unstable_features,
     unsafe_op_in_unsafe_fn,
+
+    trivial_casts,
     overflowing_literals,
+    non_snake_case
 )]
 
+mod core;
+mod arithmetics;
 
-mod expression;
-mod term;
-mod operation;
-
-pub use self::expression::*;
-pub use self::term::*;
-pub use self::operation::*;
+pub use core::*;
+pub use arithmetics::*;

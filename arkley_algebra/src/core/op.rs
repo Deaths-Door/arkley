@@ -18,13 +18,14 @@ pub enum ArithmeticOperation {
     Durch
 }
 
-impl ArithmeticOperation {
-    pub(crate) const fn negate_if_plus_or_minus(self) -> Self {
+impl std::fmt::Debug for ArithmeticOperation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use ArithmeticOperation::*;
-        match self {
-            Plus => Minus,
-            Minus => Plus,
-            _ => self
-        }
+        write!(f,"{}",match self {
+            Plus => "+",
+            Minus => "-",
+            Mal => "*",
+            Durch => "/",
+        })
     }
 }
