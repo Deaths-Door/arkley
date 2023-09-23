@@ -206,12 +206,16 @@ mod tests {
     fn combine_terms_with_mul() {
         let expr1 : Expression = Term::new(Number::Decimal(1.0)).into();
         let expr2 : Expression = Expression::new_mal(
-            Expression::new_term(create_term_with_variable(2.0, 'x', 1.0)),
             Expression::new_term(create_term_with_variable(3.0, 'x', 1.0)),
+            Expression::new_minus(
+                Expression::new_term(create_term_with_variable(2.0, 'x', 1.0)),
+                Expression::new_term(create_term_with_variable(2.0, 'x', 1.0)),
+            )
         );
 
+        
         let result = expr1 - expr2;
 
-        check_expression_str(result,"1 + 2x(3x)");
+        check_expression_str(result,"1 + 3x(4x)");
     }
 }
