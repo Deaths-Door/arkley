@@ -1,4 +1,6 @@
 use num_notation::Number;
+use std::ops::{Add,Sub,Mul,Div};
+
 
 use crate::{Expression,Term,ArithmeticOperation};
 
@@ -6,10 +8,6 @@ type AddSubTermPairs = (Term,ArithmeticOperation);
 
 impl Expression {        
     /// Collects all terms of addition (+) or subtraction (-) variants into 'vec' along with 'parent_op'.
-    /// 
-    /// # Arguments
-    ///
-    /// * `vec` - A mutable reference to a vector of term-operation pairs.
     ///
     /// # Returns
     ///
@@ -33,31 +31,31 @@ impl Expression {
                 }        
             },
             Expression::Binary { operation , left , right} => {
-                let lexpr = left.combine_terms();
-                let rexpr = right.combine_terms();
+                let lexpr = left.combine_terms(true); //idk should work
+                let rexpr = right.combine_terms(true); // idk should work
                 Some(Expression::new_binary(operation,lexpr,rexpr))
             },
-            Expression::Nested(inner) => Some(Expression::new_nested(inner.combine_terms()))
+            Expression::Nested(inner) => Some(Expression::new_nested(inner.combine_terms(true))) //idk should work
         }
     }
 
     /// Groups terms based on addition (+) or subtraction (-) operations.
     ///
-    /// # Arguments
-    ///
-    /// * `vec` - A reference to a vector of term-operation pairs.
-    ///
     /// # Returns
     ///
     /// A vector containing grouped term-operation pairs.
-    fn group_terms(vec : &[AddSubTermPairs]) -> Vec<AddSubTermPairs> {
+    fn group_terms(vec : &[AddSubTermPairs],is_addition : bool) -> Vec<AddSubTermPairs> {
         let mut grouped_terms : Vec<AddSubTermPairs> = Vec::new();
 
         for (term,op) in vec {
             let mut is_combined = || -> bool {
                 for (grouped_term,_) in &mut grouped_terms {
                     if term.is_combinable_with(grouped_term) {
-                        grouped_term.coefficient += term.coefficient.clone();
+                        match is_addition {
+                            true => grouped_term.coefficient += term.coefficient.clone(),
+                            false => grouped_term.coefficient -= term.coefficient.clone(),
+                        }
+
                         return true
                     }
                 } 
@@ -75,11 +73,6 @@ impl Expression {
     }
 
     /// Reconstructs the expression based on grouped terms and an optional nested expression.
-    ///
-    /// # Arguments
-    ///
-    /// * `grouped_terms` - A reference to a vector containing grouped term-operation pairs.
-    /// * `nested_expr` - An optional nested expression.
     ///
     /// # Returns
     ///
@@ -109,13 +102,29 @@ impl Expression {
     /// # Returns
     ///
     /// The expression with combined terms.
-    fn combine_terms(self) -> Self {
+    fn combine_terms(self,is_addition : bool) -> Self {
         let mut vterms = Vec::new();
         let nested_expr = self.collect_terms(&mut vterms);
 
-        let grouped_terms = Self::group_terms(&vterms);
+        let grouped_terms = Self::group_terms(&vterms,is_addition);
 
         Self::reconstruct_expression(&grouped_terms,nested_expr)
+    }
+}
+
+impl Add for Expression {
+    type Output = Expression;
+
+    fn add(self,other : Expression) -> Self::Output {
+        Expression::new_plus(self,other).combine_terms(true)
+    }
+}
+
+impl Sub for Expression {
+    type Output = Expression;
+
+    fn sub(self,other : Expression) -> Self::Output {
+        Expression::new_minus(self,other).combine_terms(false)
     }
 }
 
@@ -149,58 +158,59 @@ mod tests {
         check_expression_str(expression.clone(),"2x + x - 3y");
 
         // Call the combine_terms function to combine like terms
-        let result = expression.combine_terms();
+        let result = expression.combine_terms(true);
 
         check_expression_str(result,"3x + 3y");
     }
 
     #[test]
-    fn combine_terms_same_variables() {
-        // Test combining terms with the same variables
-        let expression = Expression::new_plus(
-            Expression::new_term(create_term_with_variable(2.0, 'x', 1.0)),
-            Expression::new_term(create_term_with_variable(3.0, 'x', 1.0)),
-        );
+    fn combine_terms_add_same_variables() {
+        let expr1 : Expression = create_term_with_variable(2.0, 'x', 1.0).into();
+        let expr2 : Expression = create_term_with_variable(3.0, 'x', 1.0).into();
 
-        check_expression_str(expression.clone(), "2x + 3x");
-
-        // Call the combine_terms function to combine like terms
-        let result = expression.combine_terms();
+        let result = expr1 + expr2;
 
         check_expression_str(result,"5x");
     }
 
     #[test]
-    fn combine_terms_different_variables() {
-        // Test combining terms with different variables
-        let expression = Expression::new_minus(
-            Expression::new_term(create_term_with_variable(3.0, 'x', 1.0)),
-            Expression::new_term(create_term_with_variable(3.0, 'y', 1.0)),
-        );
+    fn combine_terms_add_different_variables() {
+        let expr1 : Expression = create_term_with_variable(3.0, 'x', 1.0).into();
+        let expr2 : Expression = create_term_with_variable(3.0, 'y', 1.0).into();
 
-        check_expression_str(expression.clone(), "3x - 3y");
+        let result = expr1 + expr2;
+        check_expression_str(result, "3x + 3y");
+    }
 
-        // Call the combine_terms function to combine like terms
-        let result = expression.combine_terms();
+    #[test]
+    fn combine_terms_subtract_same_variables() {
+        let expr1 : Expression = create_term_with_variable(2.0, 'x', 1.0).into();
+        let expr2 : Expression = create_term_with_variable(5.0, 'x', 1.0).into();
 
-        check_expression_str(result, "3x - 3y");
+        let result = expr1 - expr2;
+
+        check_expression_str(result,"-3x");
+    }
+
+    #[test]
+    fn combine_terms_subtract_different_variables() {
+        let expr1 : Expression = create_term_with_variable(3.0, 'x', 1.0).into();
+        let expr2 : Expression = create_term_with_variable(2.0, 'y', 1.0).into();
+
+        let result = expr1 - expr2;
+
+        check_expression_str(result, "3x - 2y");
     }
 
     #[test]
     fn combine_terms_with_mul() {
-        // Test combining terms with different variables
-        let expression = Expression::new_plus(
-            Term::new(Number::Decimal(1.0)).into(),
-            Expression::new_mal(
-                Expression::new_term(create_term_with_variable(2.0, 'x', 1.0)),
-                Expression::new_term(create_term_with_variable(3.0, 'x', 1.0)),
-            )
+        let expr1 : Expression = Term::new(Number::Decimal(1.0)).into();
+        let expr2 : Expression = Expression::new_mal(
+            Expression::new_term(create_term_with_variable(2.0, 'x', 1.0)),
+            Expression::new_term(create_term_with_variable(3.0, 'x', 1.0)),
         );
 
-        check_expression_str(expression.clone(), "1 + 2x(3x)");
-
-        // Call the combine_terms function to combine like terms
-        let result = expression.combine_terms();
+        let result = expr1 - expr2;
 
         check_expression_str(result,"1 + 2x(3x)");
     }
