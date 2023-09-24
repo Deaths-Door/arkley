@@ -6,33 +6,8 @@ impl ArithmeticOperation {
             Minus => Plus,
             _ => self
         }
-    }
-}
-
-impl Neg for Term {
-    type Output = Self;
-
-    fn neg(self) -> Self {
-        Term::new_with_variable(-self.coefficient,self.variables.clone())
-    }
-}
-/*
-impl Expression {
-  
-
-
-    fn collect_terms(&self, vec: &mut Vec<(Term,Option<ArithmeticOperation>)>,parent_operation : Option<ArithmeticOperation>) {
-        match self {
-            Expression::Term(term) => vec.push((term.clone(),parent_operation)),
-            Expression::Nested(_) => todo!("MAYBE RETURN Option<Expression> for nested variants and then construct it all together"),
-            Expression::Binary { operation , left , right } => {
-                left.collect_terms(vec,Some(operation.clone()));
-                right.collect_terms(vec,Some(operation.clone()))
-            }
         }
     }
-}*/
-
 
 impl Neg for Expression {
     type Output = Self;

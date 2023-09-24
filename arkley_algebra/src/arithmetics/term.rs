@@ -1,4 +1,4 @@
-use std::ops::{Add,Sub,Mul,Div};
+use std::ops::{Add,Sub,Mul,Div,Neg};
 use std::collections::BTreeSet;
 use std::cmp::Ordering;
 
@@ -9,6 +9,14 @@ use crate::{Term,Expression,Variables};
 impl Term {
     pub(in crate::arithmetics) fn is_combinable_with(&self,other : &Self) -> bool {
         self.variables == other.variables
+    }
+}
+
+impl Neg for Term {
+    type Output = Self;
+
+    fn neg(self) -> Self {
+        Term::new_with_variable(-self.coefficient,self.variables)
     }
 }
 
