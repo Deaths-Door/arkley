@@ -21,6 +21,8 @@
 
 mod core;
 mod arithmetics;
+mod manipulation;
 
 pub use core::*;
 pub use arithmetics::*;
+pub use manipulation::*;
