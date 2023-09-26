@@ -21,8 +21,8 @@ fn test_hours_to_days() {
 }
 
 #[test]
-fn test_days_to_seconds() {
-    let time = Time::new(1.0 / 24.0, TimeUnits::Days);
+fn test_hours_to_seconds() {
+    let time = Time::new(1.0, TimeUnits::Hours);
     let converted = time.convert_to(TimeUnits::Seconds);
     assert_eq!(*converted.number(), 3600.0);
 }

@@ -22,18 +22,19 @@
 use strum::*;
 
 
-pub(crate) static TIME_UNITS_TABLE : [f64;TimeUnits::COUNT - 1] = [
-    100.0,      // Conversion from centuries to decades
-    10.0,       // Conversion from decades to years
-    12.0,       // Conversion from years to months
-    4.34524,    // Conversion from months to weeks (average)
-    7.0,        // Conversion from weeks to days
-    24.0,       // Conversion from days to hours
-    60.0,       // Conversion from hours to minutes
-    60.0,       // Conversion from minutes to seconds
-    1000.0,     // Conversion from seconds to milliseconds
-    1000.0,     // Conversion from milliseconds to microseconds
+static TIME_UNITS_TABLE: [f64; TimeUnits::COUNT - 1] = [
+    1000.0,    // Conversion from milliseconds to microseconds
+    1000.0,    // Conversion from seconds to milliseconds
+    60.0,      // Conversion from minutes to seconds
+    60.0,      // Conversion from hours to minutes
+    24.0,      // Conversion from days to hours
+    7.0,       // Conversion from weeks to days
+    4.34812,   // Conversion from months to weeks (average)
+    12.0,      // Conversion from years to months
+    10.0,      // Conversion from decades to years
+    100.0,     // Conversion from centuries to decades
 ];
+
 
 macro_rules! generate_convertor {
     ($name : ident => $units : ident => { $( $variant:ident($($value:expr),* => $short : expr => $fn : ident) ),* } => $table : ident => $array_type : ty) => {
@@ -93,28 +94,32 @@ macro_rules! generate_convertor {
             ///
             /// This method takes the current value and converts it to the specified `to_unit`.
             /// The conversion is performed in place, and the method returns the updated converter.
-            pub fn convert_to(mut self,to_unit : $units) -> Self {
+            pub fn convert_to(mut self, to_unit: $units) -> Self {
                 if self.current_unit == to_unit {
+                    println!("{} is same as {to_unit}",self.current_unit);
                     return self;
                 }
+            
+                let index_from = self.current_unit as usize;
+                let index_to = to_unit as usize;
 
-                let mut index = self.current_unit as usize;
-                let target = to_unit as usize;
-                
-                match index < target {
-                    true => while index < target{
-                        self.number *= ($table [index]).into();
-                        index += 1;
+                println!("{index_from}..{index_to}");
+            
+                match index_from < index_to {
+                    true => for index in index_from..index_to {
+                        println!("/= {}",$table[index]);
+                        self.number /= $table[index].into();
                     },
-                    false => while index > target {
-                        self.number /= ($table [index - 1]).into();
-                        index -= 1;
-                    }
-                };
-
+                    false => for index in (index_to..index_from) {
+                        println!("*= {}",$table[index - 1]);
+                        self.number *= $table[index].into();
+                    },
+                }
+            
                 self.current_unit = to_unit;
                 self
             }
+            
 
             $(
                 #[doc = concat!(" A utility providing a convenient way to convert from the current unit to `",stringify!($variant),"`")]
@@ -147,17 +152,17 @@ macro_rules! generate_convertor {
 }
 
 generate_convertor!(Time => TimeUnits => {
-    Centuries("century","centuries" => "centuries" => to_centuries),
-    Decades("decade","decades" => "decades"  => to_decades),
-    Years("year","years","yr" => "years" => to_years),
-    Months("month","months" => "months" => to_months),
-    Weeks("week","weeks" => "weeks" => to_weeks),
-    Days("day","days" => "days" => to_days),
-    Seconds("second","seconds","s" => "s" => to_seconds),
-    Hours("hour","hours","hr" => "hr" => to_hours),
-    Minutes("minute","minutes","min" => "min" => to_minutes),
+    Microseconds("microsecond" ,"microseconds" ,"μs" => "μs" => to_microseconds),
     Milliseconds("millisecond" ,"milliseconds" ,"ms" => "ms" => to_milliseconds),
-    Microseconds("microsecond" ,"microseconds" ,"μs" => "μs" => to_microseconds)
+    Seconds("second","seconds","s" => "s" => to_seconds),
+    Minutes("minute","minutes","min" => "min" => to_minutes),
+    Hours("hour","hours","hr" => "hr" => to_hours),
+    Days("day","days" => "days" => to_days),
+    Weeks("week","weeks" => "weeks" => to_weeks),
+    Months("month","months" => "months" => to_months),
+    Years("year","years","yr" => "years" => to_years),
+    Decades("decade","decades" => "decades"  => to_decades),
+    Centuries("century","centuries" => "centuries" => to_centuries)
 } => TIME_UNITS_TABLE => f64);
 
 /*=> TIME_UNITS_TABLE => f64 =>
