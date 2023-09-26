@@ -137,7 +137,6 @@ macro_rules! generate_convertor {
             }
         }
     };
-
     (self_op => $name : ident , $array_type : ty) => {
         impl<N> std::ops::Add for $name <N> where N : std::ops::Add<Output = N> + From<$array_type> + std::ops::MulAssign + std::ops::DivAssign {
             type Output = Self;
