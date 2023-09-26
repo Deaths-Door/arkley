@@ -1,0 +1,13 @@
+[package]
+name = "arkley_unit_convertor"
+version.workspace = true
+edition.workspace = true
+readme.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+
+[dependencies]
+arkley_algebra.workspace = true
+
+strum = { version = "0.25", features = ["derive"] }

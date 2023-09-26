@@ -10,7 +10,7 @@ homepage.workspace = true
 license.workspace = true
 
 [workspace]
-members = ["arkley_algebra","arkley_describe"]
+members = ["arkley_algebra","arkley_describe","arkley_unit_convertor"]
 
 [workspace.package]
 version = "0.0.2"
@@ -19,3 +19,6 @@ readme = "README.md"
 authors = ["Aarav Shah <aaravaditya51@gmail.com>"]
 homepage = "https://github.com/Deaths-Door/arkley"
 license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+arkley_algebra = { path = "../arkley/arkley_algebra" }
