@@ -21,21 +21,6 @@
 
 use strum::*;
 
-
-static TIME_UNITS_TABLE: [f64; TimeUnits::COUNT - 1] = [
-    1000.0,    // Conversion from milliseconds to microseconds
-    1000.0,    // Conversion from seconds to milliseconds
-    60.0,      // Conversion from minutes to seconds
-    60.0,      // Conversion from hours to minutes
-    24.0,      // Conversion from days to hours
-    7.0,       // Conversion from weeks to days
-    4.34812,   // Conversion from months to weeks (average)
-    12.0,      // Conversion from years to months
-    10.0,      // Conversion from decades to years
-    100.0,     // Conversion from centuries to decades
-];
-
-
 macro_rules! generate_convertor {
     ($name : ident => $units : ident => { $( $variant:ident($($value:expr),* => $short : expr => $fn : ident) ),* } => $table : ident => $array_type : ty) => {
         #[doc = concat!(" A utility providing a convenient way to convert from and to `",stringify!($units),"`")]
@@ -89,7 +74,7 @@ macro_rules! generate_convertor {
 
         }
 
-        impl<N> $name <N> where N : Into<$array_type> + std::ops::MulAssign + std::ops::DivAssign , f64 : Into<N> {
+        impl<N> $name <N> where N : From<$array_type> + std::ops::MulAssign + std::ops::DivAssign {
             /// Converts the current value to the specified unit.
             ///
             /// This method takes the current value and converts it to the specified `to_unit`.
@@ -163,13 +148,29 @@ generate_convertor!(Time => TimeUnits => {
     Years("year","years","yr" => "years" => to_years),
     Decades("decade","decades" => "decades"  => to_decades),
     Centuries("century","centuries" => "centuries" => to_centuries)
-} => TIME_UNITS_TABLE => f64);
+} => TIME_TABLE => f64);
 
-/*=> TIME_UNITS_TABLE => f64 =>
-    to_centuries and TimeUnits::Centuries
-*/
-/*
-generate_units_enum!(TimeUnits =>
-    
-);*/
+static DATA_STORAGE_TABLE: [i32; DataStorageUnits::COUNT - 1] = [
+    8, 
+    1024,
+    1024,
+    1024,
+    1024,
+    1024,
+    1024,
+    1024,
+    1024,
+];
 
+generate_convertor!(DataStorage => DataStorageUnits => {
+    Bits("bit", "bits" => "b" => to_bits),
+    Bytes("byte", "bytes" => "B" => to_bytes),
+    Kilobytes("kilobyte", "kilobytes" => "KB" => to_kilobytes),
+    Megabytes("megabyte", "megabytes" => "MB" => to_megabytes),
+    Gigabits("gigabit", "gigabits" => "Gb" => to_gigabits),
+    Terabytes("terabyte", "terabytes" => "TB" => to_terabytes),
+    Petabytes("petabyte", "petabytes" => "PB" => to_petabytes),
+    Exabytes("exabyte", "exabytes" => "EB" => to_exabytes),
+    Zettabytes("zettabyte", "zettabytes" => "ZB" => to_zettabytes),
+    Yottabytes("yottabyte", "yottabytes" => "YB" => to_yottabytes)
+} => DATA_STORAGE_TABLE => i64);
