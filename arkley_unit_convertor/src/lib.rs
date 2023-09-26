@@ -24,6 +24,7 @@ use strum::*;
 macro_rules! generate_convertor {
     ($name : ident => $units : ident => { $( $variant:ident($($value:expr),* => $short : expr => $fn : ident) ),* } => $table : ident => $array_type : ty) => {
         #[doc = concat!(" A utility providing a convenient way to convert from and to `",stringify!($units),"`")]
+        #[derive(Clone)]
         pub struct $name <N>{
             number : N ,
             current_unit : $units
@@ -114,6 +115,8 @@ macro_rules! generate_convertor {
             )*
         }
 
+        generate_convertor!(self_op => $name , $array_type);
+
         #[doc = concat!("Enum representing the units of ", stringify!($name))]
         #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash, Debug, EnumString, FromRepr, AsRefStr, IntoStaticStr, EnumVariantNames, EnumCount, EnumIter)]
         pub enum $units {
@@ -133,8 +136,45 @@ macro_rules! generate_convertor {
                 }
             }
         }
+    };
+
+    (self_op => $name : ident , $array_type : ty) => {
+        impl<N> std::ops::Add for $name <N> where N : std::ops::Add<Output = N> + From<$array_type> + std::ops::MulAssign + std::ops::DivAssign {
+            type Output = Self;
+            fn add(self,other : Self) -> Self::Output {
+                let value = other.convert_to(self.current_unit);
+
+                let number = self.number + value.number;
+
+                Self::new(number,self.current_unit)
+            }
+        }
+
+        impl<N> std::ops::Sub for $name <N> where N : std::ops::Sub<Output = N> + From<$array_type> + std::ops::MulAssign + std::ops::DivAssign{ 
+            type Output = Self;
+            fn sub(self,other : Self) -> Self::Output {
+                let value = other.convert_to(self.current_unit);
+
+                let number = self.number - value.number;
+
+                Self::new(number,self.current_unit)
+            }
+        }
     }
 }
+
+static TIME_TABLE: [f64; TimeUnits::COUNT - 1] = [
+    1000.0,    // Conversion from milliseconds to microseconds
+    1000.0,    // Conversion from seconds to milliseconds
+    60.0,      // Conversion from minutes to seconds
+    60.0,      // Conversion from hours to minutes
+    24.0,      // Conversion from days to hours
+    7.0,       // Conversion from weeks to days
+    4.34812,   // Conversion from months to weeks (average)
+    12.0,      // Conversion from years to months
+    10.0,      // Conversion from decades to years
+    100.0,     // Conversion from centuries to decades
+];
 
 generate_convertor!(Time => TimeUnits => {
     Microseconds("microsecond" ,"microseconds" ,"μs" => "μs" => to_microseconds),
@@ -150,7 +190,7 @@ generate_convertor!(Time => TimeUnits => {
     Centuries("century","centuries" => "centuries" => to_centuries)
 } => TIME_TABLE => f64);
 
-static DATA_STORAGE_TABLE: [i32; DataStorageUnits::COUNT - 1] = [
+static DATA_STORAGE_TABLE: [i64; DataStorageUnits::COUNT - 1] = [
     8, 
     1024,
     1024,
