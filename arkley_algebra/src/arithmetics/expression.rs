@@ -1,28 +1,143 @@
-use num_notation::Number;
 use std::ops::{Add,Sub,Mul,Div};
+use std::collections::BTreeMap;
+use num_notation::{
+    Number,
+    fraction::Signed
+};
+use crate::{Expression,Term,Variables,ArithmeticOperation};
 
-
-use crate::{Expression,Term,ArithmeticOperation};
-
-type AddSubTermPairs = (Term,ArithmeticOperation);
-
-impl Expression {        
+impl Expression { 
     /// Collects all terms of addition (+) or subtraction (-) variants into 'vec' along with 'parent_op'.
     ///
     /// # Returns
     ///
     /// An optional Expression representing the result of combining terms from nested (Nested), multiplication (*),
     /// and division (/) variants.
-    fn collect_terms(self,vec : &mut Vec<AddSubTermPairs>) -> Option<Expression> {
+    fn collect_terms(self,treemap : &mut BTreeMap<Variables,Number>) -> Option<Expression> {
+        match self {
+            Expression::Nested(inner) => Some(Expression::new_nested(inner.combine_terms())),
+            Expression::Term(term) => {
+                treemap.entry(term.variables)
+                    .and_modify(|value| *value += term.coefficient.clone())
+                    .or_insert(term.coefficient);
+                None
+            }
+            Expression::Binary { operation , left , right} if operation == ArithmeticOperation::Plus => {
+                let lexpr = left.collect_terms(treemap);
+                let rexpr = right.collect_terms(treemap);
+
+                match (lexpr,rexpr) {
+                    (None,None) => None,
+                    (Some(expr),None) | (None,Some(expr)) => Some(expr),
+                    (Some(expr1),Some(expr2)) => Some(Expression::new_binary(operation,expr1,expr2))
+                }   
+            },
+
+            Expression::Binary { operation , left , right} if operation == ArithmeticOperation::Minus => {
+                let lexpr = left.collect_terms(treemap);
+                let rexpr = if let Expression::Term(term) = *right {
+                    treemap.entry(term.variables)
+                        .and_modify(|value| *value -= term.coefficient.clone()) // as +- equals -
+                        .or_insert(-term.coefficient); // as operations is - so -number
+                    None
+                } else { right.collect_terms(treemap) };
+
+                match (lexpr,rexpr) {
+                    (None,None) => None,
+                    (Some(expr),None) | (None,Some(expr)) => Some(expr),
+                    (Some(expr1),Some(expr2)) => Some(Expression::new_binary(operation,expr1,expr2))
+                }  
+            },
+            Expression::Binary { operation , left , right} => {
+                let lexpr = left.combine_terms(); 
+                let rexpr = right.combine_terms(); 
+                Some(Expression::new_binary(operation,lexpr,rexpr))
+            },
+        }
+    }
+
+    /// Reconstructs the expression based on grouped terms and an optional nested expression.
+    ///
+    /// # Returns
+    ///
+    /// The reconstructed expression.
+    fn reconstruct_expression(terms : BTreeMap<Variables,Number>,nested_expr : Option<Expression>) -> Self {
+        let mut expression : Expression = Term::new(Number::Decimal(0.0)).into();
+
+        for (variables,coefficient) in terms.into_iter() {
+            let (sign,term) = match coefficient.is_positive() {
+                true => (ArithmeticOperation::Plus,Term::new_with_variable(coefficient,variables)),
+                // If the coefficient is negative (-coefficient), the sign can be '-', but the number itself is positive. 
+                // For example, -3 represents a negative number, whereas --3 is not equal to -3; it represents a positive number.
+                false => (ArithmeticOperation::Minus,Term::new_with_variable(-coefficient,variables))
+            };
+
+            expression = Expression::new_binary(sign,expression,term.into());
+        }
+
+        if let Some(nested) = nested_expr {
+            expression = Expression::new_binary(ArithmeticOperation::Plus,expression,nested);
+        }
+        
+        expression
+    }
+    /// Combines terms within the expression.
+    ///
+    /// # Returns
+    ///
+    /// The expression with combined terms.
+    fn combine_terms(self) -> Expression {
+        let mut treemap = BTreeMap::new();
+
+        let nested_expr = self.collect_terms(&mut treemap);
+    
+        Self::reconstruct_expression(treemap,nested_expr)
+    }
+}
+
+impl Add for Expression {
+    type Output = Expression;
+
+    fn add(self,other : Expression) -> Self::Output {
+        Expression::new_plus(self,other).combine_terms()
+    }
+}
+
+impl Sub for Expression {
+    type Output = Expression;
+
+    fn sub(self,other : Expression) -> Self::Output {
+        Expression::new_minus(self,other).combine_terms()
+    }
+}
+/*
+impl Expression { 
+    /// Collects all terms of addition (+) or subtraction (-) variants into 'vec' along with 'parent_op'.
+    ///
+    /// # Returns
+    ///
+    /// An optional Expression representing the result of combining terms from nested (Nested), multiplication (*),
+    /// and division (/) variants.
+    fn collect_terms(self,set : &mut BTreeMap<&Variables,Term>) -> Option<Expression> {
+        let mut handle_groupings = |term : Term| {
+            match set.get(&term) {
+                None => set.insert(term),
+                Some(old_term) => set.insert(old_term.force_add_terms(term))
+            }
+        };
+
         match self {
             Expression::Term(term) => {
-                vec.push((term,vec.last().map(|(_,o)| o.clone()).unwrap_or(ArithmeticOperation::Plus)));
+                
                 None
             },           
             Expression::Binary { operation , left , right} if operation == ArithmeticOperation::Plus || operation == ArithmeticOperation::Minus => {
+                todo negate it so 3x - 5 will be 3x + -5 in vec so cuz eg 3 + - 5 = -2 so it will work
                 let lexpr = left.collect_terms(vec);
                 let rexpr = right.collect_terms(vec);
 
+                3x - 5x + 7y => 3x + (-5x -7y) => 3x - 5x - 7y
+                2x - 3x + 3y => 2x + - (3x - 3y)
                 match (lexpr,rexpr) {
                     (None,None) => None,
                     (Some(expr),None) | (None,Some(expr)) => Some(expr),
@@ -30,11 +145,11 @@ impl Expression {
                 }        
             },
             Expression::Binary { operation , left , right} => {
-                let lexpr = left.combine_terms(true); //idk should work
-                let rexpr = right.combine_terms(true); // idk should work
+                let lexpr = left.combine_terms(); 
+                let rexpr = right.combine_terms(); 
                 Some(Expression::new_binary(operation,lexpr,rexpr))
             },
-            Expression::Nested(inner) => Some(Expression::new_nested(inner.combine_terms(true))) //idk should work
+            Expression::Nested(inner) => Some(Expression::new_nested(inner.combine_terms())) 
         }
     }
 
@@ -43,9 +158,8 @@ impl Expression {
     /// # Returns
     ///
     /// A vector containing grouped term-operation pairs.
-    fn group_terms(vec : &[AddSubTermPairs],is_addition : bool) -> Vec<AddSubTermPairs> {
-        let mut grouped_terms : Vec<AddSubTermPairs> = Vec::new();
-
+    fn group_terms(vec : &[Term],is_addition : bool) -> Vec<Term> {
+        let mut grouped_terms : Vec<Term> = Vec::new();
         for (term,op) in vec {
             let mut combined = false;
 
@@ -102,31 +216,14 @@ impl Expression {
     ///
     /// The expression with combined terms.
     fn combine_terms(self,is_addition : bool) -> Self {
-        let mut vterms = Vec::new();
-        let nested_expr = self.collect_terms(&mut vterms);
+        let mut terms = BTreeSet::new();
+        let nested_expr = self.collect_terms(&mut terms);
 
-        let grouped_terms = Self::group_terms(&vterms,is_addition);
-
-        Self::reconstruct_expression(&grouped_terms,nested_expr)
+        Self::reconstruct_expression(&terms,nested_expr)
     }
-}
+}*/
 
-impl Add for Expression {
-    type Output = Expression;
-
-    fn add(self,other : Expression) -> Self::Output {
-        Expression::new_plus(self,other).combine_terms(true)
-    }
-}
-
-impl Sub for Expression {
-    type Output = Expression;
-
-    fn sub(self,other : Expression) -> Self::Output {
-        Expression::new_minus(self,other).combine_terms(false)
-    }
-}
-
+/*
 impl Mul<Term> for Expression {
     type Output = Self;
 
@@ -143,14 +240,11 @@ impl Mul<Term> for Expression {
 
         expr.combine_terms(true)
     }
-}
-
+}*/
 
 #[cfg(test)]
-mod tests {
+mod addition {
     use super::*;
-
-    use crate::Variables;
 
     // Helper function to create a Term with a single variable.
     fn create_term_with_variable(coeff: f64, var: char, exp: f64) -> Term {
@@ -196,6 +290,23 @@ mod tests {
         check_expression_str(result, "3x + 3y");
     }
 
+}
+
+#[cfg(test)]
+mod subtraction {
+    use super::*;
+
+    // Helper function to create a Term with a single variable.
+    fn create_term_with_variable(coeff: f64, var: char, exp: f64) -> Term {
+        let mut variables = Variables::new();
+        variables.insert(var, Number::Decimal(exp));
+        Term::new_with_variable(Number::Decimal(coeff), variables)
+    }    
+
+    fn check_expression_str(expression : Expression,_str : &str) {
+        assert_eq!(&expression.to_string(),_str)
+    }
+    
     #[test]
     fn combine_terms_subtract_same_variables() {
         let expr1 : Expression = create_term_with_variable(2.0, 'x', 1.0).into();
@@ -225,8 +336,9 @@ mod tests {
 
         check_expression_str(result, "2x - 2y");
     }
+}
 
-    #[test]
+    /*#[test]
     fn combine_terms_with_mul() {
         let expr1 : Expression = Term::new(Number::Decimal(1.0)).into();
         let expr2 : Expression = Expression::new_mal(
@@ -303,5 +415,4 @@ mod tests {
         let result = expression * term_to_multiply;
 
         check_expression_str(result, "10wz - 4wx + 6wy");
-    }
-}
+    }*/

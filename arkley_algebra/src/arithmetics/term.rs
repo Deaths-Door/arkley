@@ -20,15 +20,23 @@ impl Neg for Term {
     }
 }
 
+impl Term {
+    pub(crate) fn force_add_terms(self,other : Term) -> Self {
+        let coefficient = self.coefficient + other.coefficient;
+        let variables = self.variables;
+        Term::new_with_variable(coefficient,variables)
+    }
+}
+
+
 impl Add for Term {
     type Output = Expression;
 
     fn add(self,other : Term) -> Self::Output {
         if self.is_combinable_with(&other) {
-            let coefficient = self.coefficient + other.coefficient;
-            let variables = self.variables;
-            return Expression::new_term(Term::new_with_variable(coefficient,variables));
+            return self.force_add_terms(other).into();
         }
+
         Expression::new_plus(self.into(),other.into())
     }
 }

@@ -10,4 +10,4 @@ homepage.workspace = true
 license.workspace = true
 
 [dependencies]
-num-notation = "0.1.0"
+num-notation = { version = "0.1.1" , features = ["num"] }
