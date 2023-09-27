@@ -81,6 +81,7 @@ impl Expression {
         
         expression
     }
+    
     /// Combines terms within the expression.
     ///
     /// # Returns
@@ -110,118 +111,6 @@ impl Sub for Expression {
         Expression::new_minus(self,other).combine_terms()
     }
 }
-/*
-impl Expression { 
-    /// Collects all terms of addition (+) or subtraction (-) variants into 'vec' along with 'parent_op'.
-    ///
-    /// # Returns
-    ///
-    /// An optional Expression representing the result of combining terms from nested (Nested), multiplication (*),
-    /// and division (/) variants.
-    fn collect_terms(self,set : &mut BTreeMap<&Variables,Term>) -> Option<Expression> {
-        let mut handle_groupings = |term : Term| {
-            match set.get(&term) {
-                None => set.insert(term),
-                Some(old_term) => set.insert(old_term.force_add_terms(term))
-            }
-        };
-
-        match self {
-            Expression::Term(term) => {
-                
-                None
-            },           
-            Expression::Binary { operation , left , right} if operation == ArithmeticOperation::Plus || operation == ArithmeticOperation::Minus => {
-                todo negate it so 3x - 5 will be 3x + -5 in vec so cuz eg 3 + - 5 = -2 so it will work
-                let lexpr = left.collect_terms(vec);
-                let rexpr = right.collect_terms(vec);
-
-                3x - 5x + 7y => 3x + (-5x -7y) => 3x - 5x - 7y
-                2x - 3x + 3y => 2x + - (3x - 3y)
-                match (lexpr,rexpr) {
-                    (None,None) => None,
-                    (Some(expr),None) | (None,Some(expr)) => Some(expr),
-                    (Some(expr1),Some(expr2)) => Some(Expression::new_binary(operation,expr1,expr2))
-                }        
-            },
-            Expression::Binary { operation , left , right} => {
-                let lexpr = left.combine_terms(); 
-                let rexpr = right.combine_terms(); 
-                Some(Expression::new_binary(operation,lexpr,rexpr))
-            },
-            Expression::Nested(inner) => Some(Expression::new_nested(inner.combine_terms())) 
-        }
-    }
-
-    /// Groups terms based on addition (+) or subtraction (-) operations.
-    ///
-    /// # Returns
-    ///
-    /// A vector containing grouped term-operation pairs.
-    fn group_terms(vec : &[Term],is_addition : bool) -> Vec<Term> {
-        let mut grouped_terms : Vec<Term> = Vec::new();
-        for (term,op) in vec {
-            let mut combined = false;
-
-            for (grouped,_) in &mut grouped_terms {
-                if !term.is_combinable_with(grouped) {
-                    continue
-                }
-
-                match is_addition {
-                    true => grouped.coefficient += term.coefficient.clone(),
-                    false => grouped.coefficient -= term.coefficient.clone()
-                }
-
-                combined = true;
-
-            }
-
-            if !combined {
-                grouped_terms.push((term.clone(),op.clone()));
-            }
-        }
-
-        grouped_terms
-    }
-
-    /// Reconstructs the expression based on grouped terms and an optional nested expression.
-    ///
-    /// # Returns
-    ///
-    /// The reconstructed expression.
-    fn reconstruct_expression(grouped_terms : &[AddSubTermPairs],nested_expr : Option<Expression>) -> Self {
-        let mut expression : Expression = Term::new(Number::Decimal(0.0)).into();
-
-        for (term,sign) in grouped_terms {
-            if term.coefficient == 0.0 {
-                continue
-            }
-
-            let term_expr : Expression = (*term).clone().into();
-
-            expression = Expression::new_binary(sign.clone(),expression,term_expr);
-        }
-
-        if let Some(nested) = nested_expr {
-            expression = Expression::new_binary(ArithmeticOperation::Plus,expression,nested);
-        }
-        
-        expression
-    }
-    
-    /// Combines terms within the expression.
-    ///
-    /// # Returns
-    ///
-    /// The expression with combined terms.
-    fn combine_terms(self,is_addition : bool) -> Self {
-        let mut terms = BTreeSet::new();
-        let nested_expr = self.collect_terms(&mut terms);
-
-        Self::reconstruct_expression(&terms,nested_expr)
-    }
-}*/
 
 /*
 impl Mul<Term> for Expression {
