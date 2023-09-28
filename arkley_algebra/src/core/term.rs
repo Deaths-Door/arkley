@@ -29,6 +29,12 @@ impl Term {
     pub const fn new(coefficient: Number) -> Self {
         Self { coefficient , variables : Variables::new() }
     }
+
+    /// Method to create a Term with a single variable.
+    pub fn create_single_variable_term(coeff: Number, var: char, exp: Number) -> Self {
+        let variables = Variables::from([(var,exp)]);
+        Term::new_with_variable(coeff, variables)
+    }
 }
 
 impl From<Number> for Term {

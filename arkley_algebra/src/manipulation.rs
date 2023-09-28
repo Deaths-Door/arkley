@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, BTreeMap};
+use std::collections::BTreeSet;
 use num_notation::Number;
 
 use crate::{Expression,Term,Variables};
@@ -164,6 +164,8 @@ impl Expression {
 #[cfg(test)]
 mod term {
     use super::*;
+    use std::collections::BTreeMap;
+    
 
     #[test]
     fn try_replace_single_variable_success() {
