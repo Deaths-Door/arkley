@@ -62,6 +62,7 @@ impl std::ops::Mul for Expression {
             (Expression::Term(term),x @ _) | (x @ _,Expression::Term(term)) => x * term, 
             (Expression::Nested(inner),x @ _) | (x @ _,Expression::Nested(inner)) => *inner * x,
 
+            _ => unimplemented!()
             /*// if both + + => nichts,
             // if + - or - + => smth ,
             // if + and * then add then * then * ,
