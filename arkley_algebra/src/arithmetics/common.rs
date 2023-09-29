@@ -19,7 +19,7 @@ impl Term {
 
 /// Used to combine terms like 2x + x into 3x 
 impl Expression { 
-    /// Collects all terms of addition (+) or subtraction (-) variants into 'vec' along with 'parent_op'.
+    /// Collects all terms of addition (+) or subtraction (-) variants into 'treemap'
     ///
     /// # Returns
     ///

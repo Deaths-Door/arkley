@@ -1,25 +1,30 @@
-use num_notation::Number;
+use std::collections::BTreeMap;
+use num_notation::{Number,Pow};
 
-use crate::{Expression,Term,Variables};
+use crate::{Variables, Expression, Term, VariableOperations};
 
-impl Term {
-    /// Attempts to replace a single variable in the term with a specified value.
+/// Create a type alias for BTreeMap<char, Expression> 
+pub type VariableExpressions = BTreeMap<char,Expression>;
+
+/// A trait for types that support variable replacement.
+///
+/// Types implementing this trait can perform variable substitution in various ways.
+pub trait ReplaceVariables : VariableOperations {
+    /// Attempts to replace a single variable with a specified value.
     ///
     /// # Arguments
     ///
-    /// - `variable`: A reference to the variable (char) to be replaced in the term.
+    /// - `variable`: A reference to the variable (char) to be replaced.
     /// - `value`: The value (Number) to replace the variable with.
     ///
     /// # Returns
     ///
     /// An `Option<()>` where:
     /// - `Some(())` indicates the variable was found and successfully replaced.
-    /// - `None` indicates the variable did not exist in the term, and no replacement occurred.
-    pub fn try_replace_single_variable_with_value(&mut self,variable : &char,_value : Number) -> Option<()> {
-        self.variables.remove(variable).and_then(|_exponent| unimplemented!("Implement `Pow` for Number so self.coeffiecent * (value ^ exponent)"))
-    }
+    /// - `None` indicates the variable did not exist, and no replacement occurred.
+    fn try_replace_single_variable_with_value(&mut self,variable : &char,value : Number) -> Option<()>;
 
-    /// Attempts to replace multiple variables in the term with specified values.
+    /// Attempts to replace multiple variables with specified values.
     ///
     /// # Arguments
     ///
@@ -29,32 +34,57 @@ impl Term {
     ///
     /// The updated term with the specified variables replaced. Variables that do not exist in the term
     /// are left unchanged in the `variable_values` map given.
-    pub fn try_replace_variables_with_value(&mut self,variable_values : &mut Variables) {
-        let keys_to_remove: Vec<_> = variable_values.keys()
-            .filter(|var| self.variables.contains_key(var))
-            .collect();
+    fn try_replace_variables_with_value(&mut self,variable_values : &mut Variables);
 
-        for var in &keys_to_remove {
-            let _exponent = self.variables.remove(var).unwrap();
-            unimplemented!("Implement `Pow` for Number so self.coeffiecent * (value ^ exponent)");
+    /// Attempts to replace a single variable with a specified expression.
+    ///
+    /// # Arguments
+    ///
+    /// - `variable`: A reference to the variable (char) to be replaced.
+    /// - `value`: The expression (Expression) to replace the variable with.
+    fn try_replace_single_variable_with_expr(&mut self,_variable : &char,_value : Expression) -> Expression {
+        todo!("power for expression needs to be implemented")
+    }
+
+    /// Attempts to replace multiple variables with specified expressions.
+    ///
+    /// # Arguments
+    ///
+    /// - `variable_values`: A reference to a `BTreeMap<char, Expression>` containing variables and their expressions.
+    fn try_replace_variables_with_expression(&mut self,_variable_values : &mut VariableExpressions) -> Expression {
+        todo!("power for expression needs to be implemented")
+    }
+}
+
+impl ReplaceVariables for Term {
+    fn try_replace_single_variable_with_value(&mut self,variable : &char,value : Number) -> Option<()> {
+        self.variables.remove(variable).and_then(|exponent| {
+            self.coefficient = self.coefficient.clone() * value.pow(exponent);
+            Some(())
+        })
+    }
+
+    fn try_replace_variables_with_value(&mut self,variable_values : &mut Variables) {
+        let mut to_remove = Vec::new();
+
+        for (key,value) in &mut self.variables {
+            match variable_values.remove(&key) {
+                Some(exponent) => {
+                    self.coefficient = self.coefficient.clone() * value.clone().pow(exponent);
+                    to_remove.push(key.clone());
+                }
+                _ => ()
+            }
+        }
+
+        for key in to_remove {
+            self.variables.remove(&key);
         }
     }
 }
 
-impl Expression {
-    /// Attempts to replace a single variable in the expression with a specified value.
-    ///
-    /// # Arguments
-    ///
-    /// - `variable`: A reference to the variable (char) to be replaced in the term.
-    /// - `value`: The value (Number) to replace the variable with.
-    ///
-    /// # Returns
-    ///
-    /// An `Option<()>` where:
-    /// - `Some(())` indicates the variable was found and successfully replaced.
-    /// - `None` indicates the variable did not exist in the term, and no replacement occurred.
-    pub fn try_replace_single_variable_with_value(&mut self,variable : &char,value : Number) -> Option<()> {
+impl ReplaceVariables for Expression {
+    fn try_replace_single_variable_with_value(&mut self,variable : &char,value : Number) -> Option<()> {
         match self {
             Expression::Term(term) => term.try_replace_single_variable_with_value(variable,value),
             Expression::Nested(inner) => inner.try_replace_single_variable_with_value(variable,value),
@@ -70,17 +100,7 @@ impl Expression {
         }
     }
 
-    /// Attempts to replace multiple variables in the expression with specified values.
-    ///
-    /// # Arguments
-    ///
-    /// - `variable_values`: A reference to a `Variables` map containing variables and their values.
-    ///
-    /// # Returns
-    ///
-    /// The updated term with the specified variables replaced. Variables that do not exist in the term
-    /// are left unchanged in the `variable_values` map given.
-    pub fn try_replace_variables_with_value(&mut self,variable_values : &mut Variables) {
+    fn try_replace_variables_with_value(&mut self,variable_values : &mut Variables) {
         match self {
             Expression::Term(term) => term.try_replace_variables_with_value(variable_values),
             Expression::Nested(inner) => inner.try_replace_variables_with_value(variable_values),
