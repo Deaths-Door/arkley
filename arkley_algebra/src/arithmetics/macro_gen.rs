@@ -15,12 +15,32 @@ macro_rules! primitives_operations {
                     self + term
                 }
             }
+
+            impl Add<$t> for Expression {
+                type Output = Expression;
+                fn add(self, other: $t) -> Expression {
+                    let n = Number::Decimal(other as f64);
+                    let term = Term::from(n);
+
+                    self + term
+                }
+            }
         )*
     };
 
     (psub => $($t : ty),*) => {
         $(
             impl Sub<$t> for Term {
+                type Output = Expression;
+                fn sub(self, other: $t) -> Expression {
+                    let n = Number::Decimal(other as f64);
+                    let term = Term::from(n);
+
+                    self - term
+                }
+            }
+
+            impl Sub<$t> for Expression {
                 type Output = Expression;
                 fn sub(self, other: $t) -> Expression {
                     let n = Number::Decimal(other as f64);
@@ -70,6 +90,15 @@ macro_rules! primitives_operations {
                     self + term
                 }
             }
+
+            impl Add<$t> for Expression {
+                type Output = Expression;
+                fn add(self, other: $t) -> Expression {
+                    let term = Term::from(other);
+
+                    self + term
+                }
+            }
         )*
     };
 
@@ -79,6 +108,15 @@ macro_rules! primitives_operations {
                 type Output = Expression;
                 fn sub(self, n: $t) -> Expression {
                     let term = Term::from(n);
+
+                    self - term
+                }
+            }
+
+            impl Sub<$t> for Expression {
+                type Output = Expression;
+                fn sub(self, other: $t) -> Expression {
+                    let term = Term::from(other);
 
                     self - term
                 }

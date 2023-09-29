@@ -78,10 +78,11 @@ impl std::ops::Div<Term> for Expression {
     }
 }
 
+
 impl std::ops::Div for Expression {
     type Output = Self;
-    fn div(self,other : Expression) -> Self::Output {
-        Expression::new_durch(self,other)
+    fn div(self,_ : Expression) -> Self::Output {
+        unimplemented!()
     }
 }
 

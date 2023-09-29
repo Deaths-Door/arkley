@@ -21,6 +21,15 @@ impl std::ops::Add for Expression {
     }
 }
 
+
+impl std::ops::Add<Term> for Expression {
+    type Output = Expression;
+
+    fn add(self,other : Term) -> Self::Output {
+        Expression::new_plus(self,other.into()).combine_terms()
+    }
+}
+
 #[cfg(test)]
 mod term {
     use super::*;

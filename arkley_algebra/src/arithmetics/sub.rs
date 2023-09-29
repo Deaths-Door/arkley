@@ -22,6 +22,14 @@ impl std::ops::Sub for Expression {
     }
 }
 
+impl std::ops::Sub<Term> for Expression {
+    type Output = Expression;
+
+    fn sub(self,other : Term) -> Self::Output {
+        Expression::new_minus(self,other.into()).combine_terms()
+    }
+}
+
 #[cfg(test)]
 mod term {
     use super::*;
