@@ -100,6 +100,20 @@ impl From<Variables> for Expression {
     }
 }
 
+macro_rules! from {
+    ($($t:ty),*) => {
+        $(
+            impl From<$t> for Expression {
+                fn from(value : $t) -> Self {
+                    Expression::new_term(num_notation::Number::Decimal(value as f64).into())
+                }
+            } 
+        )*
+    };
+}
+
+from!(u8,u16,u32,u64,i8,i16,i32,i64,f32,f64,usize);
+
 impl std::fmt::Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {

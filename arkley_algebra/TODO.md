@@ -1,4 +1,2 @@
 - add replace variable with expr eg for quad formula and K 
-- add evalute with expr 
 - impl mul and div for expr
-- impl replace variable src/manipulation/with_value.rs with Number.pow(...)

@@ -8,7 +8,7 @@ pub type VariableExpressions = BTreeMap<char,Expression>;
 
 /// A trait for types that support variable replacement.
 ///
-/// Types implementing this trait can perform variable substitution in various ways.
+/// Types implementing this trait can perform variable substitution in various ways (this is done for optimzation reasons).
 pub trait ReplaceVariables : VariableOperations {
     /// Attempts to replace a single variable with a specified value.
     ///
