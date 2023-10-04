@@ -8,7 +8,7 @@ use nom::{
 };
 use num_notation::{Number, parse_number, Num};
 
-use crate::{Term, VariableOperations, Variables};
+use crate::{Term, Variables};
 
 
 

@@ -2,7 +2,6 @@ use nom::{IResult, sequence::{delimited, tuple, preceded},character::complete::{
 
 use crate::{Expression, ArithmeticOperation, parse_term};
 
-/*
 /// Parses a mathematical expression from the input string.
 ///
 /// This function takes an input string and parses it into a mathematical expression. It handles
@@ -12,7 +11,18 @@ use crate::{Expression, ArithmeticOperation, parse_term};
 /// # Arguments
 ///
 /// * `input`: A string containing the mathematical expression to be parsed.
-pub fn parse_expression(input: &str) -> IResult<&str, Expression> {
+pub fn parse_expression(_input: &str) -> IResult<&str, Expression> {
+    let _parser = tuple((
+        parse_term,
+
+    ));
+
+    todo!()
+}
+
+/*
+/*
+fn parse_expression(input: &str) -> IResult<&str, Expression> {
     todo!()/*delimited(
         multispace0,
         alt((
@@ -90,4 +100,4 @@ mod tests {
             )
         );
     }
-}
+}*/
