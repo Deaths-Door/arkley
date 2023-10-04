@@ -39,8 +39,11 @@ impl std::ops::Mul<Term> for Expression {
             },
             Expression::Binary { operation , left , right } /*if operation == ArithmeticOperation::Minus*/ => {
                 let lexpr = *left * other.clone();
-                // don't change if true statement so term * other
-                let rexpr = if let Expression::Term(term) = *right { term * other } else { *right * other };
+                // don't change if true statement so term * other for optimzation
+                let rexpr = match *right {
+                    Expression::Term(term) => term * other,
+                    _ => *right * other,
+                };
                 Expression::new_binary(operation,lexpr,rexpr)
             },
         };
@@ -49,6 +52,8 @@ impl std::ops::Mul<Term> for Expression {
     }
 }
 
+
+/*
 impl std::ops::Mul for Expression {
     type Output = Expression;
 
@@ -58,82 +63,102 @@ impl std::ops::Mul for Expression {
 
             (Expression::Term(t1),Expression::Term(t2)) => t1 * t2,
             (Expression::Term(term),Expression::Nested(inner)) | (Expression::Nested(inner),Expression::Term(term)) => *inner * term,
+            
+            (Expression::Term(term),expr @_) | (expr @_,Expression::Term(term)) => term * expr,
 
-            (Expression::Term(term),x @ _) | (x @ _,Expression::Term(term)) => x * term, 
-            (Expression::Nested(inner),x @ _) | (x @ _,Expression::Nested(inner)) => *inner * x,
+            (Expression::Binary { operation, left, right }, Expression::Nested(_)) => todo!(),
+            (Expression::Nested(inner),expr @_) | (expr @_,Expression::Nested(inner)) => inner * expr,
 
-            _ => unimplemented!()
-            /*// if both + + => nichts,
-            // if + - or - + => smth ,
-            // if + and * then add then * then * ,
-            // if - and * then sub then * then * ,
-            // if + and / then add then / then * ,
-            // if - and / then sub then / then *
-            (Expression::Binary { operation: operation1, left : left1, right : right1 },Expression::Binary { operation: operation2, left : left2, right : right2 }) => match (operation1,operation2) {
-                (ArithmeticOperation::Plus,ArithmeticOperation::Plus) => {
-                    // Basically doing (x+2)(x+2)
-                    let lexpr1 = *left1 * *left2;
-                    let lexpr2 = *left1 * *right2;
+            // + - or - + 
+            (Expression::Binary { operation : op1, left : left1, right : right1 }, 
+                Expression::Binary { operation : op2, left : left2, right : right2 }
+            ) |
+            (Expression::Binary { operation : op2, left : left1, right : right1 }, 
+                Expression::Binary { operation : op1, left : left2, right : right2 }
+            ) if op1 == ArithmeticOperation::Minus && op2 == ArithmeticOperation::Plus => {
+                // Basically doing (x-2)(x+2)
+                let _lexpr1 = *left1 * *left2;
+                let _lexpr2 = *left1 * *right2;
+   
+                let (_rexpr1,_rexpr2) = if let Expression::Term(_term) = *right1 { 
+                    let term = -_term;
+                    let _rexpr1 = term * *left2;
+                    let _rexpr2 = term * *right2;
+                    (_rexpr1,_rexpr2)
+                } 
+                else { 
+                    let _rexpr1 = *right1 * *left2;
+                    let _rexpr2 = *right1 * *right2;
+                    (_rexpr1,_rexpr2)
+                };
+                    
+                let lexpr = Expression::new_plus(_lexpr1, _lexpr2);
+                let rexpr = Expression::new_plus(_rexpr1, _rexpr2);
+   
+                lexpr + rexpr
+            }
 
-                    let rexpr1 = *right1 * *left2;
-                    let rexpr2 = *right1 * *right2;
+            // + + 
+            (Expression::Binary { operation : op1, left : left1, right : right1 }, 
+                Expression::Binary { operation : op2, left : left2, right : right2 }
+            ) if op1 == ArithmeticOperation::Plus && op2 == ArithmeticOperation::Plus => {
+                // Basically doing (x+2)(x+2) even thught its - , - 
+                let _lexpr1 = *left1 * *left2;
+                let _lexpr2 = *left1 * *right2;
 
-                    lexpr1 + lexpr2 + rexpr1 + rexpr2
-                }
-                
-                // (x+1)(x*x2) => so evalute * then left1 * eval and right1 * eval    
-                (ArithmeticOperation::Plus,ArithmeticOperation::Mal) => {
-                    let _reval_expr = *left2 * *right2;
+                let _rexpr1 = *right1 * *left2;
+                let _rexpr2 = *right1 * *right2;
 
-                    let lexpr = _reval_expr * *left1;
-                    let rexpr = _reval_expr * *right1;
+                let lexpr = Expression::new_plus(_lexpr1, _lexpr2);
+                let rexpr = Expression::new_plus(_rexpr1, _rexpr2);
 
-                    lexpr + rexpr
-                }
-                (ArithmeticOperation::Mal,ArithmeticOperation::Plus) => {
-                    let _leval_expr = *left1 * *right1;
+                lexpr + rexpr
+            },
 
-                    let lexpr = _leval_expr * *left2;
-                    let rexpr = _leval_expr * *right2;
+            // - -
+            (Expression::Binary { operation : op1, left : left1, right : right1 }, 
+                Expression::Binary { operation : op2, left : left2, right : right2 }
+            ) if op1 == ArithmeticOperation::Minus && op2 == ArithmeticOperation::Minus => {
+                todo!()
+               /* // Basically doing (x-2)(x-2)
+                // - is right1 & right2
+                let _lexpr1 = *left1 * *left2;
+                let _lexpr2 = *left1 * *right2;
+   
+                let (_rexpr1,_rexpr2) = if let Expression::Term(_term) = *right1 { 
+                    let term = -_term;
+                    let _rexpr1 = term * *left2;
+                    let _rexpr2 = term * *right2;
+                    (_rexpr1,_rexpr2)
+                } 
+                else { 
+                    let _rexpr1 = *right1 * *left2;
+                    let _rexpr2 = *right1 * *right2;
+                    (_rexpr1,_rexpr2)
+                };
+                    
+                let lexpr = Expression::new_plus(_lexpr1, _lexpr2);
+                let rexpr = Expression::new_plus(_rexpr1, _rexpr2);
+   
+                lexpr + rexpr*/
+            },
 
-                    lexpr + rexpr
-                }
-        
-                (ArithmeticOperation::Plus,ArithmeticOperation::Durch) => {
-                    let _reval_expr = *left2 / *right2;
+            // div , div
+            (Expression::Binary { operation : op2, left : left1, right : right1 }, 
+                Expression::Binary { operation : op1, left : left2, right : right2 }
+            ) if op1 == ArithmeticOperation::Durch && op2 == ArithmeticOperation::Durch => Expression::new_durch(left1 * left2, right1 * right2),
+            
+            // div , anythin or anything div 
+            (Expression::Binary { operation, left, right },expr @_)
+             | (expr @_,Expression::Binary { operation, left , right })
+             if operation == ArithmeticOperation::Durch => Expression::new_durch(left * expr, right),
+            
 
-                    let lexpr = _reval_expr * *left1;
-                    let rexpr = _reval_expr * *right1;
-
-                    lexpr + rexpr
-                }
-                (ArithmeticOperation::Durch,ArithmeticOperation::Plus) => {
-                    let _leval_expr = *left1 / *right1;
-
-                    let lexpr = _leval_expr * *left2;
-                    let rexpr = _leval_expr * *right2;
-
-                    lexpr + rexpr
-                }
-                
-                (ArithmeticOperation::Plus,ArithmeticOperation::Minus) => todo!(),
-                (ArithmeticOperation::Minus,ArithmeticOperation::Plus) => todo!(),
-
-                (ArithmeticOperation::Mal,ArithmeticOperation::Minus) => todo!(),
-                (ArithmeticOperation::Minus,ArithmeticOperation::Mal) => todo!(),
-
-                (ArithmeticOperation::Minus,ArithmeticOperation::Durch) => todo!(),
-                (ArithmeticOperation::Durch,ArithmeticOperation::Minus) => todo!(),
-                (ArithmeticOperation::Minus, ArithmeticOperation::Minus) => todo!(),
-                (ArithmeticOperation::Mal, ArithmeticOperation::Mal) => todo!(),
-                (ArithmeticOperation::Mal, ArithmeticOperation::Durch) => todo!(),
-                (ArithmeticOperation::Durch, ArithmeticOperation::Mal) => todo!(),
-                (ArithmeticOperation::Durch, ArithmeticOperation::Durch) => todo!(),
-            },*/
-        }
+            _ => unreachable!("should be unreachable")
+        } 
     }
 }
-
+*/
 #[cfg(test)]
 mod term {
     use super::*;

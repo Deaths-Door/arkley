@@ -51,7 +51,7 @@ pub trait ReplaceVariables : VariableOperations {
     /// # Arguments
     ///
     /// - `variable_values`: A reference to a `BTreeMap<char, Expression>` containing variables and their expressions.
-    fn try_replace_variables_with_expression(&mut self,_variable_values : &mut VariableExpressions) -> Expression {
+    fn try_replace_variables_with_expr(&mut self,_variable_values : &mut VariableExpressions) -> Expression {
         todo!("power for expression needs to be implemented")
     }
 }

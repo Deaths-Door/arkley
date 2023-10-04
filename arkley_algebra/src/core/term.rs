@@ -49,6 +49,13 @@ impl From<Variables> for Term {
     }
 }
 
+impl From<char> for Term {
+    fn from(value :char) -> Self {
+        Term::new_with_variable(Number::Decimal(1.0),Variables::from([(value,Number::Decimal(1.0))]))
+    }
+}
+
+
 impl std::fmt::Display for Term {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self.coefficient == 1 {

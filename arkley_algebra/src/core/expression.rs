@@ -100,6 +100,12 @@ impl From<Variables> for Expression {
     }
 }
 
+impl From<char> for Expression {
+    fn from(value :char) -> Self {
+        Term::from(value).into()
+    }
+}
+
 macro_rules! from {
     ($($t:ty),*) => {
         $(
