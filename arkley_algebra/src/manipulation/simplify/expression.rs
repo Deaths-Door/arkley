@@ -1,7 +1,5 @@
 use crate::Expression;
 
-pub use self::remove_unnecessary_parentheses::*;
-
 use super::Simplify;
 
 impl Simplify for Expression {

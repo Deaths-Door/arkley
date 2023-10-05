@@ -21,8 +21,10 @@
 
 mod core;
 mod arithmetics;
-mod manipulation;
 mod parser;
+
+/// Module contains manipulations for algebra
+pub mod manipulation;
 
 pub use core::*;
 pub use arithmetics::*;

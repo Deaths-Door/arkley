@@ -1,6 +1,5 @@
 mod term;
-
-pub use term::*;
+mod expression;
 
 use std::collections::BTreeMap;
 use num_notation::Number;
@@ -8,12 +7,12 @@ use num_notation::Number;
 use crate::{Variables, Expression};
 
 /// Create a type alias for BTreeMap<char, Expression> 
-pub type VariableWithExpressions = BTreeMap<char,Expression>;
+pub type VariableExpressionAssociation = BTreeMap<char,Expression>;
 
 /// A trait for types that support variable replacement.
 ///
 /// Types implementing this trait can perform variable substitution in various ways (this is done for optimzation reasons).
-pub trait ReplaceVariables {
+pub trait VariableSubstitution {
     /// Attempts to replace a single variable with a specified value.
     ///
     /// # Arguments
@@ -55,7 +54,7 @@ pub trait ReplaceVariables {
     /// # Arguments
     ///
     /// - `variable_values`: A reference to a `BTreeMap<char, Expression>` containing variables and their expressions.
-    fn try_replace_variables_with_expr(&mut self,_variable_values : &mut VariableWithExpressions) -> Expression {
+    fn try_replace_variables_with_expr(&mut self,_variable_values : &mut VariableExpressionAssociation) -> Expression {
         todo!("power for expression needs to be implemented")
     }
 }
