@@ -1,12 +1,12 @@
 use nom::{
     IResult, 
     sequence::{tuple, preceded, delimited}, 
-    multi::{many1, many0}, 
+    multi::many0, 
     combinator::{map, opt},
     branch::alt, 
-    character::complete::{alpha1,char, satisfy}
+    character::complete::{char, satisfy}
 };
-use num_notation::{Number, parse_number, Num};
+use num_notation::{Number, parse_number};
 
 use crate::{Term, Variables};
 
@@ -30,8 +30,8 @@ pub fn parse_term(input : &str) -> IResult<&str,Term> {
     let parse_opt_sign_and_vars = tuple((opt(alt((char('+'), char('-')))), parse_variables));
     let map_opt_sign_and_vars = map(parse_opt_sign_and_vars, |(sign, variable)| {
          let coefficient = match sign {
-             Some('+') | None   => Number::Decimal(1.0), // Default to 1.0 for '+' sign
-             Some('-') => Number::Decimal(-1.0), // Default to -1.0 for '-' sign
+            Some('+') | None   => Number::Decimal(1.0), // Default to 1.0 for '+' sign
+            Some('-') => Number::Decimal(-1.0), // Default to -1.0 for '-' sign
             _ => unreachable!()
          };
          Term::new_with_variable(coefficient, variable)

@@ -18,6 +18,21 @@ pub enum ArithmeticOperation {
     Durch
 }
 
+impl TryFrom<char> for ArithmeticOperation {
+    type Error = ();
+
+    fn try_from(value: char) -> Result<Self, Self::Error> {
+        use ArithmeticOperation::*;
+        match value {
+            '+' => Ok(Plus),
+            '-' => Ok(Minus),
+            '*' => Ok(Mal),
+            '/' => Ok(Durch),
+            _ => panic!()
+        }
+    }
+}
+
 impl std::fmt::Debug for ArithmeticOperation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use ArithmeticOperation::*;
