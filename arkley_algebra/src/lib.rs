@@ -21,10 +21,9 @@
 
 mod core;
 mod arithmetics;
-//mod simplify;
+mod manipulation;
 mod parser;
 
 pub use core::*;
 pub use arithmetics::*;
-//pub use simplify::*;
 pub use parser::*;

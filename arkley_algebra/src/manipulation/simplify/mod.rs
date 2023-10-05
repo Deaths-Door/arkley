@@ -1,8 +1,8 @@
 use crate::{Expression, ArithmeticOperation};
 
-mod expr;
+mod expression;
 
-pub use self::expr::*;
+pub use expression::*;
 
 /// A trait for types that can be simplified.
 ///
@@ -16,10 +16,12 @@ pub use self::expr::*;
 pub trait Simplify<Output = Self> {
     /// Simplify the implementing type.
     ///
-    /// This method should return a simplified instance of the implementing type.
+    /// This method should return a simplified instance of the implementing type. 
+    /// 
+    /// *Note* : This method is for simplifying the structure for example by removing unneccessary parentheses
     ///
     /// # Returns
     ///
     /// The simplified result of the implementing type.
-    fn simplify(self) -> Output;
+    fn simplify_structure(self) -> Output;
 }

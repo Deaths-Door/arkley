@@ -1,5 +1,5 @@
 - add replace variable with expr eg for quad formula and K 
 - impl mul and div for expr
-- expand on simpilify
- - finish parser
- - add equations ...
+- expand on simpilify structure for expr
+- add equations ...
+- add implicid mul like 2(3) and bracket support to parser
