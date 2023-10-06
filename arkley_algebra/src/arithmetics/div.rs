@@ -91,14 +91,7 @@ impl std::ops::Div for Expression {
     fn div(self,other : Expression) -> Self::Output {
         match (self,other) {
             (Expression::Term(t1), Expression::Term(t2)) => t1 / t2,
-            (Expression::Term(_), Expression::Binary { operation, left, right }) => todo!(),
-            (Expression::Term(_), Expression::Nested(_)) => todo!(),
-            (Expression::Binary { operation, left, right }, Expression::Term(_)) => todo!(),
-            (Expression::Binary { operation, left, right }, Expression::Binary { operation, left, right }) => todo!(),
-            (Expression::Binary { operation, left, right }, Expression::Nested(_)) => todo!(),
-            (Expression::Nested(_), Expression::Term(_)) => todo!(),
-            (Expression::Nested(_), Expression::Binary { operation, left, right }) => todo!(),
-             => todo!(),
+            _ => todo!()
         }
     }
 }
