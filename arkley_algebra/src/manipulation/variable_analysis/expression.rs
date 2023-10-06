@@ -10,6 +10,18 @@ impl VariableAnalysis for Expression {
 
         // Helper function to recursively traverse the Expression.
         fn extract_variables(expr: &Expression, unique_vars: &mut BTreeSet<char>) {
+            match expr {
+                Expression::Term(term) => {
+                    unique_vars.extend(term.variables.keys().cloned());
+                },
+                Expression::Binary { left, right, .. } => {
+                    extract_variables(left, unique_vars);
+                    extract_variables(right, unique_vars);
+                },
+                Expression::Nested(inner) => {
+                    extract_variables(inner, unique_vars);
+                },
+            }
         }
 
         extract_variables(self, &mut unique_variables);

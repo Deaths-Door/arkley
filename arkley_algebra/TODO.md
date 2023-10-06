@@ -3,3 +3,4 @@
 - expand on simpilify structure for expr
 - add equations ...
 - add implicid mul like 2(3) and bracket support to parser
+- maybe add simpilicfier to remove unneeded zeros eg 0 + 5 can be written as 5 (in the tree)

@@ -1,18 +1,16 @@
 mod term;
 mod expression;
 
-use std::collections::BTreeMap;
 use num_notation::Number;
 
 use crate::{Variables, Expression};
 
-/// Create a type alias for BTreeMap<char, Expression> 
-pub type VariableExpressionAssociation = BTreeMap<char,Expression>;
+use super::{VariableExpressionAssociation, VariableAnalysis};
 
 /// A trait for types that support variable replacement.
 ///
 /// Types implementing this trait can perform variable substitution in various ways (this is done for optimzation reasons).
-pub trait VariableSubstitution<Output = Expression> : Sized {
+pub trait VariableSubstitution : VariableAnalysis {
     /// Attempts to replace a single variable with a specified value.
     ///
     /// # Arguments
@@ -45,7 +43,7 @@ pub trait VariableSubstitution<Output = Expression> : Sized {
     ///
     /// - `variable`: A reference to the variable (char) to be replaced.
     /// - `value`: The expression (Expression) to replace the variable with.
-    fn try_replace_single_variable_with_expr(self,_variable : &char,_value : Expression) -> Output {
+    fn try_replace_single_variable_with_expr(&mut self,_variable : &char,_value : Expression) -> Option<()> {
         todo!("power for expression needs to be implemented")
     }
 
@@ -54,7 +52,7 @@ pub trait VariableSubstitution<Output = Expression> : Sized {
     /// # Arguments
     ///
     /// - `variable_values`: A reference to a `BTreeMap<char, Expression>` containing variables and their expressions.
-    fn try_replace_variables_with_expr(self,_variable_values : &mut VariableExpressionAssociation) -> Output {
+    fn try_replace_variables_with_expr(&mut self,_variable_values : &mut VariableExpressionAssociation) {
         todo!("power for expression needs to be implemented")
     }
 }
