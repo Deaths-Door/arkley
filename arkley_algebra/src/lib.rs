@@ -21,11 +21,21 @@
 
 mod core;
 mod arithmetics;
-mod parser;
 
 /// Module contains manipulations for algebra
 pub mod manipulation;
 
 pub use core::*;
 pub use arithmetics::*;
+
+#[cfg(feature="parse")]
+mod parser;
+
+#[cfg(feature="parse")]
 pub use parser::*;
+
+#[cfg(feature="equation")]
+mod equation;
+
+#[cfg(feature="equation")]
+pub use equation::*;

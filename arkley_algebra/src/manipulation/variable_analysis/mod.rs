@@ -4,6 +4,12 @@ mod expression;
 pub use term::*;
 pub use expression::*;
 
+#[cfg(feature="equation")]
+mod equation;
+
+#[cfg(feature="equation")]
+pub use equation::*;
+
 use std::collections::BTreeSet;
 
 /// A trait for operations related to variables within expressions.

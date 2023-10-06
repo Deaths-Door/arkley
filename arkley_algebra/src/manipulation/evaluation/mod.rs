@@ -1,5 +1,12 @@
 mod expression;
 
+#[cfg(feature="equation")]
+mod equation;
+
+#[cfg(feature="equation")]
+pub use equation::*;
+
+
 use num_notation::Number;
 
 use crate::{Variables, Expression};

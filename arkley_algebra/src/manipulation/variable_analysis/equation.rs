@@ -1,0 +1,15 @@
+use crate::Equation;
+
+use super::VariableAnalysis;
+
+impl VariableAnalysis for Equation {
+    fn get_unique_variables(&self) -> std::collections::BTreeSet<char> {
+        let mut set = self.left.get_unique_variables();
+        set.extend(self.right.get_unique_variables().into_iter());
+        set
+    }
+
+    fn contains_any_variable(&self,variables : &[&char]) -> bool {
+        self.left.contains_any_variable(variables) || self.right.contains_any_variable(variables) 
+    }
+}

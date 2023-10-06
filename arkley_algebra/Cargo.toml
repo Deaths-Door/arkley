@@ -10,9 +10,12 @@ homepage.workspace = true
 license.workspace = true
 
 [features]
-default = ["parse"]
+default = ["parse","equation"]
 parse = ["num-notation/nom"]
+equation = []
 
 [dependencies]
 num-notation = { version = "0.1.3" , features = ["num"] }
 nom = "7.1.3"
+
+strum = { version = "0.25", features = ["derive"] }
