@@ -48,4 +48,15 @@ pub trait VariableAnalysis {
     fn contains_variable(&self, variable: &char) -> bool {
         self.contains_any_variable(&[variable])
     }
+
+    /// Checks if all of the specified variables are present in the expression.
+    ///
+    /// # Arguments
+    ///
+    /// * `variables`: A slice containing references to variables (char) to check for in the expression.
+    ///
+    /// # Returns
+    ///
+    /// `true` if all of the specified variables are present in the expression, `false` otherwise.
+    fn contains_all(&self,variables : &[&char]) -> bool;
 }

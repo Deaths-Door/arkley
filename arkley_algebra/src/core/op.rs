@@ -37,6 +37,16 @@ impl TryFrom<char> for ArithmeticOperation {
     }
 }
 
+
+impl ArithmeticOperation {
+    pub(crate) const fn precedence(&self) -> i32 {
+        match self {
+            ArithmeticOperation::Plus | ArithmeticOperation::Minus => 1,
+            ArithmeticOperation::Mal | ArithmeticOperation::Durch => 2,
+        }
+    }
+}
+
 impl std::fmt::Debug for ArithmeticOperation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{self}")

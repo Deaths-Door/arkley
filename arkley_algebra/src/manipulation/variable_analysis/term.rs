@@ -12,4 +12,8 @@ impl VariableAnalysis for Term {
     fn contains_any_variable(&self,variables : &[&char]) -> bool {
         variables.iter().any(|&key| self.variables.contains_key(key))
     }
+    
+    fn contains_all(&self,variables : &[&char]) -> bool {
+       variables.iter().all(|c| self.variables.contains_key(*c))
+    }
 }

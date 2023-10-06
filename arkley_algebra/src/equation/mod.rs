@@ -1,5 +1,5 @@
 mod relation;
-
+mod rearrange;
 pub use relation::*;
 
 use crate::Expression;
@@ -19,6 +19,13 @@ impl Equation {
     /// Create a new equation with the specified left and right expressions and a relational operator.
     pub const fn new(left: Expression, relation: RelationalOperator, right: Expression) -> Self {
         Equation { left, relation, right }
+    }
+}
+
+
+impl std::fmt::Display for Equation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f,"{} {} {}",self.left,self.relation,self.right)
     }
 }
 

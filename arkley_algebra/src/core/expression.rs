@@ -167,7 +167,7 @@ impl std::fmt::Display for Expression {
     }
 }
 
-/// Debug does not remove any extra 0s in the expression tree , eg used to represent -5 as a expression tree would be 0 - 5 where the 0 is ignored by the expression tree
+/// Debug does not remove any extra 0s in the expression tree , eg used to represent (-5)(x + 1) as a expression tree would be (0 - 5)(x + 1) where the 0 is ignored by the expression tree
 impl std::fmt::Debug for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {

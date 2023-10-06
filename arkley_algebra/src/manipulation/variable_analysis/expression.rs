@@ -36,4 +36,12 @@ impl VariableAnalysis for Expression {
             Expression::Nested(inner) => inner.contains_any_variable(variables)
         }
     }
+
+    fn contains_all(&self,variables : &[&char]) -> bool {
+        match self {
+            Expression::Term(term) => term.contains_all(variables),
+            Expression::Binary { left, right, .. } => left.contains_all(variables) && right.contains_all(variables)   ,
+            Expression::Nested(inner) => inner.contains_all(variables)
+        }
+    }
 }

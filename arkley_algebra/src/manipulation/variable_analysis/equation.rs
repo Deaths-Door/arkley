@@ -10,6 +10,20 @@ impl VariableAnalysis for Equation {
     }
 
     fn contains_any_variable(&self,variables : &[&char]) -> bool {
-        self.left.contains_any_variable(variables) || self.right.contains_any_variable(variables) 
+        self.left_contains_variable(variables) || self.right.contains_any_variable(variables) 
+    }
+
+    fn contains_all(&self,variables : &[&char]) -> bool {
+        self.right_contains_variable(variables) && self.right.contains_all(variables)
+    }
+}
+
+impl Equation {
+    pub(in crate::manipulation) fn left_contains_variable(&self,variables : &[&char]) -> bool {
+        self.left.contains_any_variable(variables)
+    }
+
+    pub(in crate::manipulation) fn right_contains_variable(&self,variables : &[&char]) -> bool {
+        self.right.contains_any_variable(variables)
     }
 }
