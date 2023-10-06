@@ -74,15 +74,32 @@ impl std::ops::Div for Term {
 impl std::ops::Div<Term> for Expression {
     type Output = Self;
     fn div(self,other : Term) -> Self::Output {
-        Expression::new_durch(self,other.into())
+        if other.variables.is_empty() && other.coefficient == 1 {
+            return self;
+        }
+
+        match self {
+            Expression::Term(t1) => t1 / other,
+            _ => Expression::new_durch(self, other.into())
+        }
     }
 }
 
 
 impl std::ops::Div for Expression {
     type Output = Self;
-    fn div(self,_ : Expression) -> Self::Output {
-        unimplemented!()
+    fn div(self,other : Expression) -> Self::Output {
+        match (self,other) {
+            (Expression::Term(t1), Expression::Term(t2)) => t1 / t2,
+            (Expression::Term(_), Expression::Binary { operation, left, right }) => todo!(),
+            (Expression::Term(_), Expression::Nested(_)) => todo!(),
+            (Expression::Binary { operation, left, right }, Expression::Term(_)) => todo!(),
+            (Expression::Binary { operation, left, right }, Expression::Binary { operation, left, right }) => todo!(),
+            (Expression::Binary { operation, left, right }, Expression::Nested(_)) => todo!(),
+            (Expression::Nested(_), Expression::Term(_)) => todo!(),
+            (Expression::Nested(_), Expression::Binary { operation, left, right }) => todo!(),
+             => todo!(),
+        }
     }
 }
 
@@ -99,6 +116,17 @@ mod term {
             variables.insert(var,Number::Decimal(exp as f64));
             Term::new_with_variable(Number::Decimal(coeff as f64), variables)
         }
+    
+    #[test]
+    fn basic() {
+        let term = create_term_with_variable(1, 'x', 1);
+        let n :Number = 1.0.into();
+
+        let result = term.clone() / n;
+        
+        let expected = term.into();
+        assert_eq!(result, expected);
+    }
     
         #[test]
         fn division_with_single_variable() {
@@ -171,4 +199,59 @@ mod term {
     
             assert_eq!(result, expected);
         }
+}
+
+#[cfg(test)]
+mod expression_tests {
+    use super::*;
+    use crate::parse_expression;
+
+    fn from_str(input :&str) -> Expression {
+        parse_expression(input).unwrap().1.unwrap()
+    }
+
+    #[test]
+    fn division_between_expressions() {
+        // Create expressions.
+        let expr1 = from_str("2x^2");
+        let expr2 = from_str("x");
+
+        // (2x^2) / (x) = 2x
+        let result = expr1 / expr2;
+
+        let expected = from_str("2x");
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn division_between_expression_and_term() {
+        let term2 = from_str("2x");
+
+        // Create an expression.
+        let expr = from_str("2x^2");
+
+        // (2x^2) / (2x) = x
+        let result = expr / term2;
+
+        let expected = from_str("x");
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn division_between_expression_and_constant_over1(){
+        let expr = from_str("2x + 1");
+        let num : Term = 1.0.into();
+
+        let result = expr.clone() / num.clone();
+        assert_eq!(result,expr);
+    }
+
+    #[test]
+    fn division_between_expression_and_constant(){
+        let expr = from_str("2x + 1");
+        let num : Term = 3.0.into();
+
+        let result = expr.clone() / num.clone();
+        assert_eq!(result,Expression::new_durch(expr, num.into()));
+    }
 }
