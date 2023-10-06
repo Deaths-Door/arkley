@@ -208,7 +208,7 @@ mod expr {
     use super::*;
 
     use num_notation::Number;
-    use crate::Variables;
+    use crate::{Variables, manipulation::Simplify};
     // Helper function to create a Term with a single variable.
     fn create_term_with_variable(coeff: f64, var: char, exp: f64) -> Term {
         let mut variables = Variables::new();
@@ -297,7 +297,7 @@ mod expr {
         // 2w (5z - (2x + 3y))
         // 2w (5z - 2x + 3y)
         // 10wz - 4xw + 6wy
-        let result = expression * term_to_multiply;
+        let result = expression.simplify_structure() * term_to_multiply;
 
         check_expression_str(result, "10wz - 4wx + 6wy");
     }

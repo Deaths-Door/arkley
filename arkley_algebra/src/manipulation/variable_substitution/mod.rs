@@ -12,7 +12,7 @@ pub type VariableExpressionAssociation = BTreeMap<char,Expression>;
 /// A trait for types that support variable replacement.
 ///
 /// Types implementing this trait can perform variable substitution in various ways (this is done for optimzation reasons).
-pub trait VariableSubstitution {
+pub trait VariableSubstitution<Output = Expression> : Sized {
     /// Attempts to replace a single variable with a specified value.
     ///
     /// # Arguments
@@ -45,7 +45,7 @@ pub trait VariableSubstitution {
     ///
     /// - `variable`: A reference to the variable (char) to be replaced.
     /// - `value`: The expression (Expression) to replace the variable with.
-    fn try_replace_single_variable_with_expr(&mut self,_variable : &char,_value : Expression) -> Expression {
+    fn try_replace_single_variable_with_expr(self,_variable : &char,_value : Expression) -> Output {
         todo!("power for expression needs to be implemented")
     }
 
@@ -54,7 +54,7 @@ pub trait VariableSubstitution {
     /// # Arguments
     ///
     /// - `variable_values`: A reference to a `BTreeMap<char, Expression>` containing variables and their expressions.
-    fn try_replace_variables_with_expr(&mut self,_variable_values : &mut VariableExpressionAssociation) -> Expression {
+    fn try_replace_variables_with_expr(self,_variable_values : &mut VariableExpressionAssociation) -> Output {
         todo!("power for expression needs to be implemented")
     }
 }

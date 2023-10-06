@@ -15,9 +15,9 @@ impl Expression {
         match self {
             Expression::Binary { operation,left, right } if *operation == ArithmeticOperation::Plus || *operation == ArithmeticOperation::Minus => {
                 if let Expression::Nested(ref mut _inner) = &mut **left {
-                    let inner: Box<Expression> = mem::replace(&mut *_inner, Box::new('x'.into()));
+                    let inner: Expression = mem::replace(&mut **_inner, 'x'.into());
 
-                    *left = inner;
+                    **left = inner;
                 }
 
                 left.remove_unnecessary_parentheses();

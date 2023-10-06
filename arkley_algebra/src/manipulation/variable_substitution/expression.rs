@@ -1,3 +1,5 @@
+use num_notation::Number;
+
 use crate::{Expression, Variables};
 
 use super::VariableSubstitution;
@@ -34,6 +36,8 @@ impl VariableSubstitution for Expression {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::Term;
+    
     use num_notation::Number;
     use std::collections::BTreeMap;
 
