@@ -1,5 +1,6 @@
 use crate::{Equation, Term, manipulation::VariableAnalysis, Expression, ArithmeticOperation};
 
+/*
 #[derive(Debug)]
 pub enum RearrangeError {
     UnknownVariblesInTerm
@@ -9,16 +10,17 @@ impl Equation {
     /// todo 
     pub fn with_subject(mut self,term : Term) -> Result<Self,RearrangeError> {
         let _ = term;
+        
+        let iter = term.variables.keys();
 
-        let variable_keys: Vec<&char> = term.variables.keys().collect();
-        if !self.contains_all(&variable_keys) {
+        if !self.contains_all(iter) {
             // TODO add more info as to whats missing maybe
             return Err(RearrangeError::UnknownVariblesInTerm);
         };
 
        // traverse_until_higher_precedence(&mut self.left)
 
-        self.left = self.left.clone().traverse_term_mut(&variable_keys,&mut self);
+        //self.left = self.left.clone().traverse_term_mut(&term.variables,&mut self);
         todo!()
     }
 }
@@ -34,36 +36,77 @@ impl ArithmeticOperation {
     }
 } 
 
+/*
+impl Equation {
+    fn traverse_term_mut(mut self,variable_keys : &[&char]) {
+        match self.left {
+            Expression::Binary { operation,left, right } => {
+                self.right = match *right {
+                    Expression::Term(term) if !term.contains_any_variable(variable_keys) => 
+                        Expression::new_binary(operation.inverse(),self.right,*right),
+                    Expression::Term(term) => {},
+                    Expression::Nested(inner) => Expression::new_binary(operation.inverse(),self.right,*right),
+                    Expression::Binary { operation, left, right } => todo!(),
+                };
+            },
+            Expression::Term(term) if !term.contains_any_variable(variable_keys) => {
+                self.right = Expression::new_plus(self.right, (-term).into());
+            },
+            Expression::Term(term) => {},
+            Expression::Nested(_) => todo!(),
+           /* Expression::Binary { operation,left, right } => {
+                self.right = match &*right {
+                    Expression::Term(term) if !term.contains_any_variable(variable_keys) =>
+                        Expression::new_binary(operation.inverse(),self.right,(*right).clone()) ,
+                    Expression::Nested(inner) => 
+                        Expression::new_binary(operation.inverse(),self.right.clone(),(**inner).clone()) ,
+                    _ => self.left.traverse_term_mut(variable_keys,se)
+                };
+            }
+            Expression::Term(term) if !term.contains_any_variable(variable_keys) => {
+                self.right = Expression::new_plus(equation.right.clone(), (-term).into());
+                0.0.into()
+            },
+            _ => todo!(),*/
+        }
+    }
+}
+*/
 impl Expression {
-    // Define the method to traverse an expression and apply operations for a specific term.
+    /// Traverse an expression and apply operations to rearrange terms related to a specific variable.
+    ///
+    /// This method recursively traverses the expression tree and rearranges terms related to the specified
+    /// variable based on the provided equation. It returns the modified expression after rearrangement. (used to overcome double mutable borrow error)
+    ///
+    /// # Arguments
+    ///
+    /// * `variable_keys`: A slice containing references to variables (char) to consider for rearrangement.
+    /// * `equation`: A mutable reference to the equation containing the left and right sides for rearrangement.
+    ///
+    /// # Returns
+    ///
+    /// The modified expression after rearranging terms related to the specified variable.
+    #[deprecated(note = "FIGURE OUT A BETTER WAY THEN THIS")]
     fn traverse_term_mut(self /* equation left */,variable_keys : &[&char],equation :&mut Equation) -> Self {
-        match self {
+        /*match self {
             Expression::Binary { operation,left, right } => {
                 equation.right = match &*right {
-                    Expression::Term(term) if !term.contains_any_variable(variable_keys) =>
+                    Expression::Term(term) if !term.contains_any_variable(variable_keys.iter()) =>
                         Expression::new_binary(operation.inverse(),equation.right.clone(),(*right).clone()) ,
                     Expression::Nested(inner) => 
                         Expression::new_binary(operation.inverse(),equation.right.clone(),(**inner).clone()) ,
                     _ => equation.left.clone().traverse_term_mut(variable_keys,equation)
                 };
-                /*if operation.precedence() <= operation.inverse().precedence() {
-                    Expression::new_binary(operation.inverse(), equation.right.clone(), (*right).clone())
-                } else {
-           //         Expression::new_binary(operation.inverse(), equation.right.clone(), Expression::new_nested((*right).clone()))
-                   Expression::new_binary(operation.inverse(), equation.right.clone(), (*right).clone())
-
-                };*/
 
                 *left
             }
-            Expression::Term(term) if !term.contains_any_variable(variable_keys) => {
+            Expression::Term(term) if !term.contains_any_variable(variable_keys.iter()) => {
                 equation.right = Expression::new_plus(equation.right.clone(), (-term).into());
                 0.0.into()
             },
-            _ => {
-                todo!()           
-            },
-        }
+            _ => todo!(),
+        }*/
+        todo!()
     }
 }
 
@@ -306,3 +349,4 @@ mod mul_tests {
         check_expression_str(equation, "6y = 2(4)");
     }
 }
+*/

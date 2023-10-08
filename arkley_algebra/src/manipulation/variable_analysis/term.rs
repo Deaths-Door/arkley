@@ -4,16 +4,20 @@ use crate::Term;
 
 use super::VariableAnalysis;
 
-impl VariableAnalysis for Term {
-    fn get_unique_variables(&self) -> BTreeSet<char> {
-        self.variables.keys().cloned().collect()   
+impl VariableAnalysis for Term{
+    fn get_unique_variables(&self) -> BTreeSet<&char> {
+        self.variables.keys().collect()   
     }
 
-    fn contains_any_variable(&self,variables : &[&char]) -> bool {
-        variables.iter().any(|&key| self.variables.contains_key(key))
+    fn contains_any_variable<'a,I>(&self,variables : &mut I) -> bool where I : Iterator<Item = &'a char> {
+        variables.any(|key| self.variables.contains_key(key))
     }
-    
-    fn contains_all(&self,variables : &[&char]) -> bool {
-       variables.iter().all(|c| self.variables.contains_key(*c))
+
+    fn contains_all<'a,I>(&self,variables : &mut I) -> bool where I : Iterator<Item = &'a char>{
+       variables.all(|c| self.variables.contains_key(c))
+    }
+
+    fn contains_variable(&self, variable: &char) -> bool {
+        self.variables.contains_key(variable)
     }
 }

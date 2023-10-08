@@ -11,12 +11,12 @@ use num_notation::Number;
 
 use crate::{Variables, Expression};
 
-use super::{VariableExpressionAssociation, VariableAnalysis};
+use super::VariableExpressionAssociation;
 
 /// A trait for types that support variable replacement.
 ///
 /// Types implementing this trait can perform variable substitution in various ways (this is done for optimzation reasons).
-pub trait VariableSubstitution : VariableAnalysis {
+pub trait VariableSubstitution {
     /// Attempts to replace a single variable with a specified value.
     ///
     /// # Arguments

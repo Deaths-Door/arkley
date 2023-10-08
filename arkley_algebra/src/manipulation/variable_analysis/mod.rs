@@ -23,40 +23,26 @@ pub trait VariableAnalysis {
     /// # Returns
     ///
     /// A `BTreeSet<char>` containing the unique variables present in the expression.
-    fn get_unique_variables(&self) -> BTreeSet<char>;
+    fn get_unique_variables(&self) -> BTreeSet<&char>;
    
     /// Checks if any of the specified variables are present in the expression.
-    ///
-    /// # Arguments
-    ///
-    /// * `variables`: A slice containing references to variables (char) to check for in the expression.
     ///
     /// # Returns
     ///
     /// `true` if at least one of the specified variables is present in the expression, `false` otherwise.
-    fn contains_any_variable(&self,variables : &[&char]) -> bool;
+    fn contains_any_variable<'a,I>(&self,variables : &mut I) -> bool where I : Iterator<Item = &'a char>;
 
     /// Checks if a variable is present in the expression.
-    ///
-    /// # Arguments
-    ///
-    /// * `variable`: The variable (char) to check for in the expression.
     ///
     /// # Returns
     ///
     /// `true` if the variable is present in the expression, `false` otherwise.
-    fn contains_variable(&self, variable: &char) -> bool {
-        self.contains_any_variable(&[variable])
-    }
+    fn contains_variable(&self, variable: &char) -> bool;
 
     /// Checks if all of the specified variables are present in the expression.
-    ///
-    /// # Arguments
-    ///
-    /// * `variables`: A slice containing references to variables (char) to check for in the expression.
     ///
     /// # Returns
     ///
     /// `true` if all of the specified variables are present in the expression, `false` otherwise.
-    fn contains_all(&self,variables : &[&char]) -> bool;
+    fn contains_all<'a,I>(&self,variables : &mut I) -> bool where I : Iterator<Item = &'a char>;    
 }
