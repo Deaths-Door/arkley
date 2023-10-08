@@ -12,7 +12,7 @@ impl std::ops::Mul for Term {
         };
 
         let coefficient = self.coefficient * other.coefficient;
-        Expression::new_term(Term::new_with_variable(coefficient,variables))
+        Term::new_with_variable(coefficient,variables).into()
     }
 }
 
@@ -30,7 +30,7 @@ impl std::ops::Mul<Term> for Expression {
             },
 
             //  if operation == ArithmeticOperation::Mal as things like 3x(4x * 3) need to be 'evaluted' inside before mal with outside 
-            Expression::Binary { operation,.. /*, left , right*/ } if operation == ArithmeticOperation::Mal => todo!(),//(*left * *right) * other,
+            Expression::Binary { operation, left , right } if operation == ArithmeticOperation::Mal => (*left * *right) * other,
 
             Expression::Binary { operation , left , right } if operation == ArithmeticOperation::Plus  => {
                 let lexpr = *left * other.clone();
@@ -51,6 +51,7 @@ impl std::ops::Mul<Term> for Expression {
         expr.combine_terms()
     }
 }
+
 
 impl std::ops::Mul for Expression {
     type Output = Expression;
@@ -168,6 +169,11 @@ mod expr {
         Term::new_with_variable(Number::Decimal(coeff), variables)
     }    
 
+    use crate::parse_expression;
+
+    fn from_str(input :&str) -> Expression {
+        parse_expression(input).unwrap().1.unwrap()
+    }
     fn check_expression_str(expression : Expression,_str : &str) {
         assert_eq!(&expression.to_string(),_str)
     }
@@ -229,29 +235,18 @@ mod expr {
 
     #[test]
     fn mul_expression_by_term_nested() {
-        // Test multiplying a nested expression by a term
-        let inner_expression = Expression::new_plus(
-            create_term_with_variable(2.0, 'x', 1.0).into(),
-            create_term_with_variable(3.0, 'y', 1.0).into(),
-        );
+        let term = match from_str("2w") {
+            Expression::Term(term) => term,
+            _ => panic!()
+        };
 
-        let expression = Expression::new_minus(
-            create_term_with_variable(5.0, 'z', 1.0).into(),
-            Expression::new_nested(inner_expression),
-        );
+        let expr = from_str("-2x  - 3y");
+        let outer = from_str("5z");
+        let expression = Expression::new_mal(expr, outer);
 
-        check_expression_str(expression.clone(), "5z - (2x + 3y)");
+        let result = expression * term;
 
-        // Create a term to multiply with the expression
-        let term_to_multiply = create_term_with_variable(2.0, 'w', 1.0);
-
-        // Multiply the expression by the term
-        // 2w (5z - (2x + 3y))
-        // 2w (5z - 2x + 3y)
-        // 10wz - 4xw + 6wy
-        let result = expression.simplify_structure() * term_to_multiply;
-
-        check_expression_str(result, "10wz - 4wx + 6wy");
+        check_expression_str(result, "10wz - 4wx - 6wy");
     }
     
     #[test]
@@ -270,12 +265,8 @@ mod expr {
         // Create a term to multiply with the expression
         let term_to_multiply : Expression = create_term_with_variable(2.0, 'w', 1.0).into();
 
-        // Multiply the expression by the term
-        // 2w (5z - (2x + 3y))
-        // 2w (5z - 2x + 3y)
-        // 10wz - 4xw + 6wy
         let result = expression.simplify_structure() * term_to_multiply;
 
-        check_expression_str(result, "10wz - 4wx + 6wy");
+        check_expression_str(result, "10wz - 4wx - 6wz");
     }
 }

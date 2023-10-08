@@ -1,9 +1,9 @@
-use std::collections::{BTreeSet,BTreeMap, HashMap};
+use std::collections::{BTreeSet,BTreeMap};
 use std::cmp::Ordering;
 
-use num_notation::{Number, Num};
+use num_notation::Number;
 
-use crate::{Term, Expression, manipulation::VariableAnalysis, Variables};
+use crate::{Term, Expression, manipulation::VariableAnalysis};
 
 impl std::ops::Div for Term {
     type Output = Expression;

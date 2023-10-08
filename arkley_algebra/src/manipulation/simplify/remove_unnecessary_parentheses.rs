@@ -1,9 +1,6 @@
 use std::mem;
 
-use num_notation::Num;
-
 use crate::{Expression, ArithmeticOperation};
-
 
 impl Expression {
     /// Removes unnecessary parentheses from the expression, focusing on addition and subtraction operations.
@@ -11,6 +8,7 @@ impl Expression {
     /// This method is designed to simplify expressions with addition and subtraction operations by removing
     /// unnecessary parentheses around sub-expressions. Parentheses are retained only when they are necessary
     /// for correct evaluation according to the order of operations.
+    #[deprecated(note="Maybe not be the best way eg 1 - (2x + 3y) would be done wrong with this method")]
     pub(in crate::manipulation::simplify) fn remove_unnecessary_parentheses(&mut self){
         match self {
             Expression::Binary { operation,left, right } if *operation == ArithmeticOperation::Plus || *operation == ArithmeticOperation::Minus => {
@@ -47,8 +45,6 @@ impl Expression {
 #[cfg(test)]
 mod tests {
     use crate::Expression;
-
-    use super::*;
     
     #[test]
     fn remove_unnecessary_parentheses_addition() {

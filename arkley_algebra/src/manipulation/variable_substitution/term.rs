@@ -1,8 +1,6 @@
-use std::process::Output;
-
 use num_notation::{Number, Pow};
 
-use crate::{Term, Variables, Expression};
+use crate::{Term, Variables};
 
 use super::VariableSubstitution;
 

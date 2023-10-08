@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use crate::{Expression, Term};
+use crate::Expression;
 
 use super::VariableAnalysis;
 
