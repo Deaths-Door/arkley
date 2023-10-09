@@ -94,6 +94,12 @@ impl From<Term> for Expression {
     }
 }
 
+impl From<Number> for Expression {
+    fn from(value : Number) -> Self {
+        Expression::new_term(value.into())
+    }
+}
+
 impl From<Variables> for Expression {
     fn from(value : Variables) -> Self {
         Term::new_with_variable(Number::Decimal(1.0),value).into()
@@ -151,14 +157,14 @@ impl std::fmt::Display for Expression {
                 },
                 ArithmeticOperation::Durch => {
                     match **left {
-                        Expression::Term(_) => write!(f,"{left}"),
+                        Expression::Term(_) | Expression::Nested(_) => write!(f,"{left}"),
                         _ => write!(f,"({left})")
                     }?;
 
                     write!(f,"/")?;
 
                     match **right {
-                        Expression::Term(_) => write!(f,"{right}"),
+                        Expression::Term(_) | Expression::Nested(_) => write!(f,"{right}"),
                         _ => write!(f,"({right})")
                     }
                 }

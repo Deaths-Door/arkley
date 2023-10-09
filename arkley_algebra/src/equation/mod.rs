@@ -6,6 +6,7 @@ use crate::Expression;
 
 /// A struct representing an equation with left and right expressions and a relational operator.
 #[derive(Clone)]
+#[cfg_attr(test, derive(PartialEq))]
 pub struct Equation {
     /// The left-hand side expression.
     pub(crate) left: Expression,
