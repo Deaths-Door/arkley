@@ -39,11 +39,7 @@ impl std::ops::Mul<Term> for Expression {
             },
             Expression::Binary { operation , left , right } /*if operation == ArithmeticOperation::Minus*/ => {
                 let lexpr = *left * other.clone();
-                // don't change if true statement so term * other for optimzation
-                let rexpr = match *right {
-                    Expression::Term(term) => term * other,
-                    _ => *right * other,
-                };
+                let rexpr = -*right * other;
                 Expression::new_binary(operation,lexpr,rexpr)
             },
         };
@@ -65,7 +61,7 @@ impl std::ops::Mul for Expression {
             
             (Expression::Term(term),expr @_) | (expr @_,Expression::Term(term)) => expr * term,
 
-            (Expression::Binary { operation:_, left:_, right:_ }, Expression::Nested(_)) => todo!(),
+            (expr @_, Expression::Nested(inner)) |
             (Expression::Nested(inner),expr @_) => *inner * expr,
 
             // div , div
@@ -74,38 +70,38 @@ impl std::ops::Mul for Expression {
             ) if op1 == ArithmeticOperation::Durch && op2 == ArithmeticOperation::Durch => Expression::new_durch(*left2 * *left1, *right1 * *right2),
         
             (
-                Expression::Binary { operation : op1, left : _left1, right : _right1 }, 
-                Expression::Binary { operation : op2, left : _left2, right : _right2 }
+                Expression::Binary { operation : op1, left : left1, right : right1 }, 
+                Expression::Binary { operation : op2, left : left2, right : right2 }
             ) => {
-                // given (x-2)(x-2)
+                /*
+                (left1)   (right1)  (left2)   (right2)
+                  x   -    2      *    (x   -    2)
 
-                // does x * x
-                let lexpr1 = *_left1 * (&*_left2).clone();
+                    left1 * left2 so x * x = x^2
 
-                // -2 * (x)
-                let lexpr2 = match op1 {
-                    ArithmeticOperation::Minus => match (&*_left2).clone() {
-                        Expression::Term(term) => (&*_right1).clone() * -term,
-                        expr @_ => expr * (&*_right1).clone()
-                    },
-                    _ => *_left2 * (&*_right1).clone()
-                };
+                    if minus
 
-                // x * (-2)
-                let rexpr1 = lexpr2.clone();
+                    -rightt1 * left2 so -2 * x
+                    lfet * -right1 so -x * -2
 
-                // -2 * (-2)
-                let rexpr2 =  match op2 {
-                    ArithmeticOperation::Minus => match *_right1 {
-                        Expression::Term(term) => *_right2 * -term,
-                        expr @_ => expr * *_right2
-                    },
-                    _ => *_right1 * *_right2
-                };
-               
-                let lexpr = Expression::new_plus(lexpr1, lexpr2);
-                let rexpr = Expression::new_plus(rexpr1, rexpr2);
-   
+                    -right1 * right2 so -2 * -2
+
+                    so x^2 - 2x - 2x + 4
+                */
+                               
+                let expr1 = *left1 * (*left2).clone();
+
+                let new_right1 = if op1 == ArithmeticOperation::Minus { -*right1 } else { *right1 };
+
+                let expr2 = new_right1.clone() * *left2;
+                let expr3 = expr2.clone();
+
+                let new_right2 = if op2 == ArithmeticOperation::Minus { -*right2 } else { *right2 };
+                let expr4 = new_right1 * new_right2;
+
+                let lexpr = Expression::new_plus(expr1, expr2);
+                let rexpr = Expression::new_plus(expr3, expr4);
+
                 lexpr + rexpr
             }
         } 
@@ -240,23 +236,16 @@ mod expr {
             _ => panic!()
         };
 
-        let expr = from_str("-2x  - 3y");
-        let outer = from_str("5z");
-        let expression = Expression::new_mal(expr, outer);
-
+        let expression = from_str("5z - 2x  - 3y");
         let result = expression * term;
 
-        check_expression_str(result, "10wz - 4wx - 6wy");
+        check_expression_str(result, "-4wx - 6wy + 10wz");
     }
     
     #[test]
     fn mul_expression_by_term_nested_expr() {
-        // Test multiplying a nested expression by a term
-        let inner_expression = Expression::new_plus(
-            create_term_with_variable(2.0, 'x', 1.0).into(),
-            create_term_with_variable(3.0, 'y', 1.0).into(),
-        );
-
+        // Test multiplying a nested expression by a term2
+        let inner_expression = from_str("2x + 3y");
         let expression = Expression::new_minus(
             create_term_with_variable(5.0, 'z', 1.0).into(),
             Expression::new_nested(inner_expression),
@@ -267,6 +256,6 @@ mod expr {
 
         let result = expression.simplify_structure() * term_to_multiply;
 
-        check_expression_str(result, "10wz - 4wx - 6wz");
+        check_expression_str(result, "-4wx - 6wy + 10wz");
     }
 }

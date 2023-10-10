@@ -1,6 +1,6 @@
 - add replace variable with expr eg for quad formula and K 
-- impl mul and div for expr
 - expand on simpilify structure for expr
 - add implicid mul like 2(3) and bracket support to parser
 - maybe add simpilicfier to remove unneeded zeros eg 0 + 5 can be written as 5 (in the tree)
 - intergate equation with simpilify trait
+- Finsih rearranger for equation

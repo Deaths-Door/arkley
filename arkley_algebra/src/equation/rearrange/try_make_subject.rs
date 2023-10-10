@@ -42,6 +42,7 @@ impl Equation {
                 return Err(RearrangeError::NonDivisibleCoefficients(equation));
             }
             else {
+                // TODO : Move variables with the number over
                 term.coefficient /= target.coefficient.clone();
                 equation.right = Expression::new_durch(equation.right, target.coefficient.into())
             }

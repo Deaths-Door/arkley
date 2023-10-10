@@ -22,3 +22,4 @@ license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
 arkley_algebra = { path = "../arkley/arkley_algebra" }
+arkley_describe = { path = "../arkley/arkley_describe" }

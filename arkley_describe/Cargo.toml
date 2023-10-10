@@ -11,5 +11,9 @@ homepage.workspace = true
 license.workspace = true
 
 [features]
-default = []
+default = ["build"]
 build = []
+
+[dependencies]
+fluent-templates = "0.8.0"
+num-traits = "0.2.17"
