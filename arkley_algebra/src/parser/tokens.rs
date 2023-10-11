@@ -1,10 +1,11 @@
 use std::vec;
 
 use nom::{
-    IResult, 
-    sequence::{tuple, delimited},
+    IResult, Parser, 
+    sequence::{tuple, delimited, pair},
     multi::fold_many0, 
-    character::complete::{multispace0,char}, combinator::{map, opt}, branch::alt
+    character::complete::{multispace0,char},
+    combinator::{map, opt}
 };
 
 use crate::{
@@ -17,7 +18,7 @@ use crate::{
 use super::parse_final_add_sub;
 
 #[cfg_attr(test, derive(PartialEq,Debug))]
-pub(in crate::parser) enum Token {
+pub(super) enum Token {
     Term(Term),
     Operator(ArithmeticOperation),
     OpenParenthesis,
@@ -37,48 +38,39 @@ impl From<ArithmeticOperation> for Token {
 }
 
 impl Token {
-    // TODO : Handle case like (x - 2)(x + 2) while parsing
-    fn parse_implicit_mul(input: &str) -> IResult<&str, Vec<Token>> {
-        let implicit_mul_parser = tuple((
-            parse_term,
-            multispace0,
-            char('('),
-            multispace0,
-            Token::parse_expression,
-            multispace0,
-            char(')')
-        ));
-
-        map(implicit_mul_parser,|(t1,_,_,_,tokens,_,_)|{
-            let mut vec = Vec::with_capacity(3);
-
-            vec.push(t1.into());
-
-            vec.push(ArithmeticOperation::Mal.into());
-
-            vec.extend(tokens.into_iter());
-
-            vec
-        })(input)
-    }
-    
     fn parse_expression(input: &str) -> IResult<&str, Vec<Token>> {
         let (input,first_term) = parse_term(input)?;
 
-        // TODO : Handle nested expr + implicit mul in this then should work like a charm
+        let implicit_mul = delimited(
+            tuple((multispace0,char('('),multispace0)), 
+            parse_term, 
+            tuple((multispace0,char(')'))), 
+        );
+
+        // TODO : Handle case like (x - 2)(x + 2) while parsing
         let parser = tuple((
             multispace0,
             parse_operator,
             multispace0,
-            alt((
-                Token::parse_implicit_mul,
-                map(parse_term,|v| vec![v.into()]),
-                Token::parse_nested_expression
-            ))
+            Token::parse_nested_expression.or(
+                map(
+                    pair(parse_term, opt(implicit_mul)),
+                    |(term,optional_implicit_mul_term)| {
+                        let mut vec = vec![term.into()];
+
+                        if let Some(value) = optional_implicit_mul_term {
+                            vec.push(ArithmeticOperation::Mal.into());
+                            vec.push(value.into());
+                        }
+
+                        vec
+                    }
+                )
+            )
         ));
 
-        fold_many0(parser,  move || vec![first_term.clone().into()],|mut vec: Vec<Token>,(_,op,_,tokens)| {
-            vec.push(op.into());
+        fold_many0(parser,move || vec![first_term.clone().into()],|mut vec : Vec<Token>,(_,operation,_,tokens)|{
+            vec.push(operation.into());
 
             vec.extend(tokens.into_iter());
 
@@ -86,7 +78,7 @@ impl Token {
         })(input)
     }
 
-    fn parse_nested_expression(input: &str) -> IResult<&str, Vec<Token>> {        
+    fn parse_nested_expression(input: &str) -> IResult<&str, Vec<Token>> {    
         let parse = tuple((
             opt(parse_final_add_sub),
             char('('),
@@ -94,18 +86,18 @@ impl Token {
             Token::parse_expression,
             multispace0,
             char(')'),
-        ));
+        ));    
 
-        map(parse,|(op,_,_,expr_tokens,_,_)|{
+        map(parse,|(operation,_,_,inner_expr_tokens,_,_)|{
             let mut vec = vec![];
             
-            if let Some(value) = op {
+            if let Some(value) = operation {
                 vec.push(value.into())
             };
 
             vec.push(Token::OpenParenthesis);
 
-            vec.extend(expr_tokens.into_iter());
+            vec.extend(inner_expr_tokens.into_iter());
 
             vec.push(Token::CloseParenthesis);
 
@@ -127,11 +119,8 @@ impl Token {
     ///
     /// - If the parsing is successful, it returns a `Result` with the remaining input and a
     ///   vector of `Token` representing the parsed tokens.
-    pub(in crate::parser) fn into_tokens(input: &str) -> IResult<&str,Vec<Token>>  {  
-        alt((
-            Token::parse_expression,
-            Token::parse_nested_expression
-        ))(input)
+    pub(super) fn into_tokens(input: &str) -> IResult<&str,Vec<Token>>  {  
+        Token::parse_expression(input)
     }
 
     /// Converts an infix expression represented by a vector of `Token` into Reverse Polish Notation (RPN).
@@ -146,7 +135,7 @@ impl Token {
     /// # Returns
     ///
     /// A vector of `Token` representing the RPN expression.
-    pub(in crate::parser) fn to_rpn(vec : Vec<Token>) -> Vec<Token> {
+    pub(super) fn to_rpn(vec : Vec<Token>) -> Vec<Token> {
         let mut output: Vec<Token> = Vec::new();
         let mut operator_stack: Vec<Token> = Vec::new();
 
@@ -165,6 +154,8 @@ impl Token {
                 }
                 Token::OpenParenthesis => operator_stack.push(token),
                 Token::CloseParenthesis => {
+                    output.push(Token::CloseParenthesis);
+                    
                     while let Some(top) = operator_stack.pop() {
                         if let Token::OpenParenthesis = top {
                             break;
@@ -172,6 +163,8 @@ impl Token {
              
                         output.push(top);
                     }
+
+                    output.push(Token::OpenParenthesis);
                 }
 
             }
@@ -198,10 +191,12 @@ impl Token {
     ///
     /// An `Option<Expression>` containing the expression tree if the conversion is successful.
     /// If the RPN expression is invalid or incomplete, `None` is returned.
-    pub(in crate::parser) fn into_expression_tree(rpn_tokens  : Vec<Token>) -> Option<Expression> {
+    pub(super) fn into_expression_tree(rpn_tokens  : Vec<Token>) -> Option<Expression> {
         let mut stack: Vec<Expression> = Vec::new();
 
-        for token in rpn_tokens {
+        // TODO : MAYBE give more infomation , why give expr is invalid instead of just None
+        // TODO : Figure out technique without cloning the contents
+        for token in rpn_tokens.into_iter() {
             match token {
                 Token::Term(term) => stack.push(term.into()),
                 Token::Operator(operator) => {
@@ -209,13 +204,62 @@ impl Token {
                     let left = stack.pop()?;
                     stack.push(Expression::new_binary(operator, left, right));  
                 },
-                Token::OpenParenthesis | Token::CloseParenthesis => todo!(),
+                _ => todo!()
+                /* TODO : Opposite of what I did 
+                [Term(1), Operator(+), OpenParenthesis, Term(2), Operator(*), Term(3), CloseParenthesis]
+                [Term(1), Term(2), Term(3), CloseParenthesis, Operator(*), OpenParenthesis, Operator(+)]CloseParenthesis is true so None
+                thread 'parser::expression::tests::parse_complex_expression' panicked at 'assertion failed: `(left == right)`
+                left: `None`,
+                right: `Some(1 + (2(3)))`', arkley_algebra\src\parser\expression.rs:53:9
+                note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+                 */
+               /* Token::OpenParenthesis => { 
+                    /*let corresponding_bracket_index = || -> Option<usize> {
+                        let mut brackets = 1;
+
+                        for (new_index, token) in rpn_tokens.iter().enumerate().skip(index + 1) {
+                            match token {
+                                Token::OpenParenthesis => brackets += 1,
+                                Token::CloseParenthesis => {
+                                    brackets -= 1;
+                                    if brackets == 0 {
+                                        return Some(index + 1 + new_index);
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                        None
+                    };
+
+                    match corresponding_bracket_index() {
+                        None => {
+                            println!("corresponding_bracket_index is None");
+                            return None
+                        }
+                        Some(end_index) => match Token::into_expression_tree(&rpn_tokens[index..end_index]) {
+                            None => {
+                                println!("into_expression_tree is None");
+
+                                return None;
+                            }//return None,
+                            Some(inner) => stack.push(Expression::new_nested(inner))
+                        }
+                    }*/
+                },
+                Token::CloseParenthesis => {
+                    println!("CloseParenthesis is true so None");
+                    return None
+                },*/
             }
         }
 
         match stack.len() {
             1 => Some(stack.pop().unwrap()),
-            _ => None
+            _ => {
+                println!(" stack.len() != 1 so None");
+                None
+            }
         }
     }
 }

@@ -22,7 +22,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_and_build_simple_addition() {
+    fn parse_simple_addition() {
         let input_str = "3 + 4";
         let parsed = parse_expression(input_str);
         let expected_expression = Expression::new_plus( 3.0.into(),  4.0.into());
@@ -32,7 +32,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_and_build_complex_expression() {
+    fn parse_complex_expression() {
         let input_str = "1 + (2 * 3)";
         let parsed = parse_expression(input_str);
 
@@ -42,13 +42,25 @@ mod tests {
                 Expression::new_mal(2.0.into(), 3.0.into())
             )
         );
-      //  let expected_expression = Expression::new_plus(1.0.into(), Expression::new_mal(2.0.into(), 3.0.into()));
         assert!(parsed.is_ok());
         assert_eq!(parsed.unwrap().1,Some(expected_expression));
     }
 
     #[test]
-    fn test_parse_and_build_expression_with_unary_minus() {
+    fn parse_with_implicit_mul() {
+        let input_str = "1 + 2(4)";
+        let parsed = parse_expression(input_str);
+
+        let expected_expression = Expression::new_plus(
+            1.0.into(), 
+            Expression::new_mal(2.0.into(), 4.0.into())
+        );
+        assert!(parsed.is_ok());
+        assert_eq!(parsed.unwrap().1,Some(expected_expression));
+    }
+
+    #[test]
+    fn parse_expression_with_unary_minus() {
         let input_str = "-5 + 2";
         let parsed = parse_expression(input_str);
         let expected_expression =  Expression::new_plus((-5.0).into(),  2.0.into());
@@ -58,7 +70,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_and_build_invalid_expression() {
+    fn parse_invalid_expression() {
         let input_str = "1 + (2 * 3";
         let parsed = parse_expression(input_str);
        
@@ -68,7 +80,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_and_build_expression_with_multiple_operators() {
+    fn parse_expression_with_multiple_operators() {
         let input_str = "2 + 3 * 4 - 5 / 1";
         let parsed = parse_expression(input_str);
         let expected_expression = Expression::new_minus(
