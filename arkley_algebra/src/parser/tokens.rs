@@ -1,18 +1,21 @@
+use std::vec;
+
 use nom::{
     IResult, 
-    sequence::tuple,
-    multi::fold_many0, character::complete::multispace0
+    sequence::{tuple, delimited},
+    multi::fold_many0, 
+    character::complete::{multispace0,char}, combinator::{map, opt}, branch::alt
 };
 
 use crate::{
     Expression, 
     ArithmeticOperation, 
     parse_term, parse_operator, 
-    Term
+    Term,
 };
 
+use super::parse_final_add_sub;
 
-#[derive(Clone)]
 #[cfg_attr(test, derive(PartialEq,Debug))]
 pub(in crate::parser) enum Token {
     Term(Term),
@@ -34,11 +37,87 @@ impl From<ArithmeticOperation> for Token {
 }
 
 impl Token {
+    // TODO : Handle case like (x - 2)(x + 2) while parsing
+    fn parse_implicit_mul(input: &str) -> IResult<&str, Vec<Token>> {
+        let implicit_mul_parser = tuple((
+            parse_term,
+            multispace0,
+            char('('),
+            multispace0,
+            Token::parse_expression,
+            multispace0,
+            char(')')
+        ));
+
+        map(implicit_mul_parser,|(t1,_,_,_,tokens,_,_)|{
+            let mut vec = Vec::with_capacity(3);
+
+            vec.push(t1.into());
+
+            vec.push(ArithmeticOperation::Mal.into());
+
+            vec.extend(tokens.into_iter());
+
+            vec
+        })(input)
+    }
+    
+    fn parse_expression(input: &str) -> IResult<&str, Vec<Token>> {
+        let (input,first_term) = parse_term(input)?;
+
+        // TODO : Handle nested expr + implicit mul in this then should work like a charm
+        let parser = tuple((
+            multispace0,
+            parse_operator,
+            multispace0,
+            alt((
+                Token::parse_implicit_mul,
+                map(parse_term,|v| vec![v.into()]),
+                Token::parse_nested_expression
+            ))
+        ));
+
+        fold_many0(parser,  move || vec![first_term.clone().into()],|mut vec: Vec<Token>,(_,op,_,tokens)| {
+            vec.push(op.into());
+
+            vec.extend(tokens.into_iter());
+
+            vec
+        })(input)
+    }
+
+    fn parse_nested_expression(input: &str) -> IResult<&str, Vec<Token>> {        
+        let parse = tuple((
+            opt(parse_final_add_sub),
+            char('('),
+            multispace0,
+            Token::parse_expression,
+            multispace0,
+            char(')'),
+        ));
+
+        map(parse,|(op,_,_,expr_tokens,_,_)|{
+            let mut vec = vec![];
+            
+            if let Some(value) = op {
+                vec.push(value.into())
+            };
+
+            vec.push(Token::OpenParenthesis);
+
+            vec.extend(expr_tokens.into_iter());
+
+            vec.push(Token::CloseParenthesis);
+
+            vec
+        })(input)
+    }
+}
+
+impl Token {
     /// Parses an input string into a vector of tokens.
     ///
-    /// This function tokenizes an input string and converts it into a vector of tokens. It takes
-    /// care of parsing terms and operators, and it is designed to work with the `parse_term` and
-    /// `parse_operator` functions.
+    /// This function tokenizes an input string and converts it into a vector of tokens.
     ///
     /// # Arguments
     ///
@@ -48,19 +127,11 @@ impl Token {
     ///
     /// - If the parsing is successful, it returns a `Result` with the remaining input and a
     ///   vector of `Token` representing the parsed tokens.
-    /// - If there's a parsing error, it returns an error using the `IResult` type from the `nom` crate.
     pub(in crate::parser) fn into_tokens(input: &str) -> IResult<&str,Vec<Token>>  {  
-        let (input,first_term) = parse_term(input)?;
-        let parser = tuple((multispace0,parse_operator,multispace0,parse_term));
-    
-        let jenesaispas = fold_many0(parser,  || Vec::from([Token::from(first_term.clone())]),|mut vec: Vec<Token>,(_,op,_,term)| {
-            vec.push(op.into());
-            vec.push(term.into());
-    
-            vec
-        })(input);
-    
-        jenesaispas
+        alt((
+            Token::parse_expression,
+            Token::parse_nested_expression
+        ))(input)
     }
 
     /// Converts an infix expression represented by a vector of `Token` into Reverse Polish Notation (RPN).

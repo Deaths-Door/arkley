@@ -36,8 +36,13 @@ mod tests {
         let input_str = "1 + (2 * 3)";
         let parsed = parse_expression(input_str);
 
-        let expected_expression = Expression::new_plus(1.0.into(), Expression::new_mal(2.0.into(), 3.0.into()));
-
+        let expected_expression = Expression::new_plus(
+            1.0.into(), 
+            Expression::new_nested(
+                Expression::new_mal(2.0.into(), 3.0.into())
+            )
+        );
+      //  let expected_expression = Expression::new_plus(1.0.into(), Expression::new_mal(2.0.into(), 3.0.into()));
         assert!(parsed.is_ok());
         assert_eq!(parsed.unwrap().1,Some(expected_expression));
     }
@@ -57,7 +62,9 @@ mod tests {
         let input_str = "1 + (2 * 3";
         let parsed = parse_expression(input_str);
        
-       assert!(parsed.unwrap().1.is_none());
+        let unwrapped = parsed.unwrap().1;
+        println!("{}",unwrapped.clone().unwrap());
+        assert!(unwrapped.is_none());
     }
 
     #[test]

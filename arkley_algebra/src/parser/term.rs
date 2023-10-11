@@ -4,7 +4,7 @@ use nom::{
     multi::many0, 
     combinator::{map, opt},
     branch::alt, 
-    character::complete::{char, satisfy}
+    character::complete::{char, satisfy},
 };
 use num_notation::{Number, parse_number};
 

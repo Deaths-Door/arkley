@@ -26,26 +26,49 @@ use crate::ArithmeticOperation;
 /// - If a special sequence '+-' or '-+' is found (with or without whitespace), it returns '-'.
 /// - If a special sequence '--' is found (with or without whitespace), it returns '+'.
 pub fn parse_operator(input : &str) -> IResult<&str,ArithmeticOperation> {
-    let parse_plus = || many1_count(char('+'));
-    let parse_minus = || many1_count(char('-'));
-    
-    let parse_plus_minus = tuple((parse_plus(), multispace0, parse_minus()));
-    let parse_minus_plus = tuple((parse_minus(), multispace0, parse_plus()));
-
-    
-    let map_plus = map(preceded(multispace0,parse_plus()),|_| ArithmeticOperation::Plus);
-    let map_minus = map(preceded(multispace0,parse_minus()),|count| calculate_final_sign(0, count));
-    let map_plus_minus = map(parse_plus_minus,|(c1,_,c2)| calculate_final_sign(c1, c2) );
-    let map_minus_plus = map(parse_minus_plus,|(c2,_,c1)| calculate_final_sign(c1, c2) );
-
     alt((
-        map_plus_minus,
-        map_minus_plus,
-        map_plus,
-        map_minus,
+        parse_final_add_sub,
         map(char('*'),|_| ArithmeticOperation::Mal),
         map(char('/'),|_| ArithmeticOperation::Durch),
     ))(input)
+}
+
+// TODO : Maybe can reduce the number of functions and then just use calculate_final_sign
+// For now using parse_final_add_sub for future replacement
+pub(super) fn parse_final_add_sub(input : &str) -> IResult<&str,ArithmeticOperation> {
+    alt((
+        parse_add_sub,
+        parse_sub_add,
+        parse_add,
+        parse_sub,
+    ))(input)
+}
+
+
+fn many_add(input : &str) -> IResult<&str,usize> {
+    many1_count(char('+'))(input)
+}
+
+fn many_sub(input : &str) -> IResult<&str,usize> {
+    many1_count(char('-'))(input)
+}
+
+fn parse_add(input : &str) -> IResult<&str,ArithmeticOperation> {
+    map(preceded(multispace0,many_add),|_| ArithmeticOperation::Plus)(input)
+}
+
+fn parse_sub(input : &str) -> IResult<&str,ArithmeticOperation> {
+    map(preceded(multispace0,many_sub),|count| calculate_final_sign(0, count))(input)
+}
+
+fn parse_add_sub(input : &str) -> IResult<&str,ArithmeticOperation> {
+    let parse = tuple((many_add, multispace0, many_sub));
+    map(parse,|(c1,_,c2)| calculate_final_sign(c1, c2) )(input)
+}
+
+fn parse_sub_add(input : &str) -> IResult<&str,ArithmeticOperation> {
+    let parse = tuple((many_sub, multispace0, many_add));
+    map(parse,|(c2,_,c1)| calculate_final_sign(c1, c2) )(input)
 }
 
 /// Calculates the final sign character based on the counts of plus and minus signs.
