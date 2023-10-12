@@ -5,7 +5,20 @@
 - Finsih rearranger for equation
 - Finish `build_expression_tree` with bracket support
 
-# Quadratics 
+# Done
+
+## Discriminant:
+
+- Calculate the discriminant (D) of a quadratic equation: D = b^2 - 4ac. 
+- Use the discriminant to determine the nature of the roots:
+
+
+# RUN CLIPPY
+# ADD STRINGS TO THE LOCAL GENERATOR FROM dir/TODO.md 
+
+# OPTIMZE DESCRIPTIONS FOR CASES LIKE 0 or 1 
+
+## Quadratics 
 
 **Note** : Requires `Describe` on equation and me knowing the maths
 Solve using Vieta's Formulas  -> sum of roots && product of roots

@@ -37,6 +37,15 @@ impl From<ArithmeticOperation> for Token {
     }
 }
 
+impl ArithmeticOperation {
+    const fn precedence(&self) -> i32 {
+        match self {
+            ArithmeticOperation::Plus | ArithmeticOperation::Minus => 1,
+            ArithmeticOperation::Mal | ArithmeticOperation::Durch => 2,
+        }
+    }
+}
+
 impl Token {
     fn parse_expression(input: &str) -> IResult<&str, Vec<Token>> {
         let (input,first_term) = parse_term(input)?;

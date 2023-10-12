@@ -9,7 +9,7 @@ macro_rules! create_describe {
     (op => $name : ident,$t : ident,$fn : ident) => {
         #[doc = concat!("Represents a generic trait for describing ", stringify!($t), " operations.
         The associated type `DescribeOutput` specifies the return type of the method.")]
-        pub trait $name <DescribeOutput = Steps, Rhs = Self> : $t<Rhs> + Sized {
+        pub trait $name <Rhs = Self,DescribeOutput = Steps> : $t<Rhs> + Sized {
             /// Describes the operation between the current instance and the right-hand side `Rhs`.
             /// 
             /// # Parameters

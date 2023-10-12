@@ -13,3 +13,9 @@ pub use mul::*;
 pub use div::*;
 pub use neg::*;
 pub use macro_gen::*;
+
+#[cfg(feature="describe")]
+mod describe;
+
+#[cfg(feature="describe")]
+pub use describe::*;
