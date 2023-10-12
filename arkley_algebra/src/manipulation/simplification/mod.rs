@@ -12,6 +12,8 @@ pub use expression::*;
 /// The `Output` associated type specifies the return type of the `simplify` method.
 /// By default, it is set to `Self`, indicating that if an implementing type doesn't
 /// specify a different return type, it will return an instance of itself.
+
+/// TODO : Add more methods to this eg simplify the thing
 pub trait Simplify<Output = Self> {
     /// Simplify the implementing type.
     ///

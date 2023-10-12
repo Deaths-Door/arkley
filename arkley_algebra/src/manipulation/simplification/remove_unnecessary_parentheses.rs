@@ -1,5 +1,3 @@
-use std::mem;
-
 use crate::{Expression, ArithmeticOperation};
 
 impl Expression {
@@ -8,36 +6,27 @@ impl Expression {
     /// This method is designed to simplify expressions with addition and subtraction operations by removing
     /// unnecessary parentheses around sub-expressions. Parentheses are retained only when they are necessary
     /// for correct evaluation according to the order of operations.
-    #[deprecated(note="Maybe not be the best way eg 1 - (2x + 3y) would be done wrong with this method")]
-    pub(in crate::manipulation::simplify) fn remove_unnecessary_parentheses(&mut self){
+    pub fn remove_unnecessary_parentheses(self) -> Self {
         match self {
-            Expression::Binary { operation,left, right } if *operation == ArithmeticOperation::Plus || *operation == ArithmeticOperation::Minus => {
-                if let Expression::Nested(ref mut _inner) = &mut **left {
-                    let inner: Expression = mem::replace(&mut **_inner, 'x'.into());
+            Expression::Binary { operation, mut left, mut right } if operation == ArithmeticOperation::Plus => {
+                if let Expression::Nested(inner) = *left {
+                    left = inner
+                };
 
-                    **left = inner;
-                }
+                if let Expression::Nested(inner) = *right {
+                    right = inner
+                };
 
-                left.remove_unnecessary_parentheses();
-
-                if let Expression::Nested(ref mut _inner) = &mut **right {
-                    let inner = mem::replace( &mut *_inner, Box::new('x'.into()));
-
-                    *right = inner;
-                }
-
-                right.remove_unnecessary_parentheses()
+                Expression::Binary { operation , left, right } 
             },
-            Expression::Binary { operation:_, left, right } => {
-                left.remove_unnecessary_parentheses();
-                right.remove_unnecessary_parentheses();
+            Expression::Binary { operation, mut left, mut right } => {
+                *left = left.remove_unnecessary_parentheses();
+                *right = right.remove_unnecessary_parentheses();
+
+                Expression::Binary { operation , left, right } 
             }
-            Expression::Nested(_inner) => {
-                _inner.remove_unnecessary_parentheses();
-                let inner: Expression = mem::replace(&mut **_inner,'x'.into());
-                *self = inner;
-            },
-            _ => {}
+            Expression::Nested(inner) => *inner,
+            _ => self
         }
     }
 }
@@ -55,7 +44,7 @@ mod tests {
                 'y'.into()
             )
         );
-        expression.remove_unnecessary_parentheses();//Expression::parse("((x + 2) + y)").unwrap();
+        expression = expression.remove_unnecessary_parentheses();//Expression::parse("((x + 2) + y)").unwrap();
         assert_eq!(expression.to_string(), "x + 2 + y");
     }
 
@@ -68,7 +57,7 @@ mod tests {
                 'y'.into()
             )
         );// ((x+2)-y)
-        expression.remove_unnecessary_parentheses();
+        expression = expression.remove_unnecessary_parentheses();
         assert_eq!(expression.to_string(), "x + 2 - y");
     }
 
@@ -82,7 +71,7 @@ mod tests {
                 )
             )
         );
-        expression.remove_unnecessary_parentheses();//Expression::parse("(((a + b)))").unwrap();
+        expression = expression.remove_unnecessary_parentheses();//Expression::parse("(((a + b)))").unwrap();
         assert_eq!(expression.to_string(), "a + b");
     }
 
@@ -93,7 +82,7 @@ mod tests {
             Expression::new_plus('x'.into(), 'y'.into()), 
             'x'.into()
         );
-        expression.remove_unnecessary_parentheses();
+        expression = expression.remove_unnecessary_parentheses();
         //Expression::parse("(x + y) * (x)").unwrap();
         assert_eq!(expression.to_string(), "(x + y)(x)");
     }

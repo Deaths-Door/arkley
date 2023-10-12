@@ -22,22 +22,6 @@ pub enum ArithmeticOperation {
     Durch
 }
 
-impl TryFrom<char> for ArithmeticOperation {
-    type Error = ();
-
-    fn try_from(value: char) -> Result<Self, Self::Error> {
-        use ArithmeticOperation::*;
-        match value {
-            '+' => Ok(Plus),
-            '-' => Ok(Minus),
-            '*' => Ok(Mal),
-            '/' => Ok(Durch),
-            _ => panic!()
-        }
-    }
-}
-
-
 impl ArithmeticOperation {
     pub(crate) const fn precedence(&self) -> i32 {
         match self {

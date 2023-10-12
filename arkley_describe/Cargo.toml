@@ -11,7 +11,7 @@ homepage.workspace = true
 license.workspace = true
 
 [features]
-default = ["build"]
+default = []
 build = []
 
 [dependencies]

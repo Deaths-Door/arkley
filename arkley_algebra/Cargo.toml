@@ -10,12 +10,15 @@ homepage.workspace = true
 license.workspace = true
 
 [features]
-default = ["parse","equation"]
+default = ["parse","describe"]
 parse = ["num-notation/nom"]
 equation = []
+describe = ["arkley_describe"]
 
 [dependencies]
 num-notation = { version = "0.1.3" , features = ["num"] }
 nom = "7.1.3"
 
 strum = { version = "0.25", features = ["derive"] }
+
+arkley_describe = { workspace = true , optional = true }

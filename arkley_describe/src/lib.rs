@@ -29,10 +29,4 @@ mod describe;
 pub use describe::*;
 
 #[cfg(feature="default")]
-mod filter;
-
-#[cfg(feature="default")]
-pub use filter::*;
-
-#[cfg(feature="default")]
 pub use fluent_templates;

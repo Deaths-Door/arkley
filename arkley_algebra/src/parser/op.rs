@@ -112,6 +112,23 @@ fn calculate_final_sign(_plus:usize,_minus:usize) -> ArithmeticOperation {
 }
 
 #[cfg(test)]
+impl TryFrom<char> for ArithmeticOperation {
+    type Error = ();
+
+    fn try_from(value: char) -> Result<Self, Self::Error> {
+        use ArithmeticOperation::*;
+        match value {
+            '+' => Ok(Plus),
+            '-' => Ok(Minus),
+            '*' => Ok(Mal),
+            '/' => Ok(Durch),
+            _ => panic!()
+        }
+    }
+}
+
+
+#[cfg(test)]
 mod calculate_final_sign_tests {
     use super::*;
 
