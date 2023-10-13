@@ -21,11 +21,14 @@ impl Expression {
             },
             Expression::Binary { operation, mut left, mut right } => {
                 *left = left.remove_unnecessary_parentheses();
-                *right = right.remove_unnecessary_parentheses();
+
+                if operation != ArithmeticOperation::Minus {
+                    *right = right.remove_unnecessary_parentheses();
+                }
 
                 Expression::Binary { operation , left, right } 
             }
-            Expression::Nested(inner) => *inner,
+            Expression::Nested(inner) => inner.remove_unnecessary_parentheses(),
             _ => self
         }
     }

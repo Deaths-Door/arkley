@@ -1,6 +1,5 @@
 use std::{vec, collections::HashMap};
 
-use arkley_describe::Steps;
 use num_notation::Num;
 
 use crate::{Discriminant, manipulation::Find, IntegerQuadratic};
@@ -71,7 +70,7 @@ impl<T> Find<Nature<T>> for Roots<IntegerQuadratic<T>> where T : Num + Clone + F
 
 #[cfg(feature="describe")]
 use arkley_describe::{
-    Describe,
+    Describe, Steps,
     fluent_templates::{StaticLoader, LanguageIdentifier}
 };
 

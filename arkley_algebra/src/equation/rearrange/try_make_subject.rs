@@ -134,7 +134,7 @@ impl Expression {
                 self = 0.into();
                 (self,other)
             },
-            _ => todo!("NOT DONE YET")
+            Self::Binary { operation, left, right } => (self,other)
         }
     }
 }
@@ -154,7 +154,7 @@ mod mul_equal_tests {
     }
 
     #[test]
-    fn test_traverse_term_mut_with_term_division() {
+    fn traverse_term_mut_with_term_division() {
         // 2x(7) = 3
         let equation = Equation::new(
             from_str("2x * 7"),
@@ -169,7 +169,7 @@ mod mul_equal_tests {
     }
 
     #[test]
-    fn test_traverse_term_mut_with_nested_division() {
+    fn traverse_term_mut_with_nested_division() {
         // x(2y) = (3)
         let equation = Equation::new(
             from_str("x * 2y"),
@@ -184,7 +184,7 @@ mod mul_equal_tests {
     }
 
     #[test]
-    fn test_traverse_term_mut_with_binary_division() {
+    fn traverse_term_mut_with_binary_division() {
         let equation = Equation::new(
             from_str("6y"),
             RelationalOperator::Equal,
@@ -213,7 +213,7 @@ mod div_equal_tests {
     }
 
     #[test]
-    fn test_traverse_term_mut_with_term_multiplication() {
+    fn traverse_term_mut_with_term_multiplication() {
         let equation = Equation::new(
             from_str("2x / 7"),
             RelationalOperator::Equal,
@@ -227,7 +227,7 @@ mod div_equal_tests {
     }
 
     #[test]
-    fn test_traverse_term_mut_with_nested_multiplication() {
+    fn traverse_term_mut_with_nested_multiplication() {
         // x / 2y = 3
         let equation = Equation::new(
             from_str("x / 2y"),
@@ -243,7 +243,7 @@ mod div_equal_tests {
     }
 
     #[test]
-    fn test_traverse_term_mut_with_binary_multiplication() {
+    fn traverse_term_mut_with_binary_multiplication() {
         let equation = Equation::new(
             from_str("6y"),
             RelationalOperator::Equal,
@@ -251,6 +251,24 @@ mod div_equal_tests {
         );
         
         match equation.try_make_subject(Term::new_with_variable(6.0.into(), Variables::from([('x'.into(),1.0.into())]))) {
+            Ok(value) => panic!("{:?}", value), 
+            Err(error) => match error {
+                RearrangeError::UnknownVariablesFound(_) => {},
+                _ => assert!(false)
+            }
+
+        }
+    }
+
+    #[test]
+    fn multiple_operations() {
+        let equation = Equation::new(
+            from_str("2x + 3y"),
+            RelationalOperator::Equal,
+            from_str("7"),
+        );
+        
+        match equation.try_make_subject('x'.into()) {
             Ok(value) => panic!("{:?}", value), 
             Err(error) => match error {
                 RearrangeError::UnknownVariablesFound(_) => {},

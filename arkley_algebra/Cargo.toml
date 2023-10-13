@@ -10,7 +10,7 @@ homepage.workspace = true
 license.workspace = true
 
 [features]
-default = ["parse","describe"]
+default = ["parse","equation"]
 parse = ["num-notation/nom"]
 equation = []
 describe = ["arkley_describe"]

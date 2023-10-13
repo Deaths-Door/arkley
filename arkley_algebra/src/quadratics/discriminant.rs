@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use arkley_describe::Steps;
 use num_notation::Num;
 
 use crate::{IntegerQuadratic, manipulation::Find};
@@ -26,6 +25,7 @@ impl<T> Find<T> for Discriminant<IntegerQuadratic<T>> where T : Num + Clone + Fr
 #[cfg(feature="describe")]
 use arkley_describe::{
     Describe,
+    Steps,
     fluent_templates::{StaticLoader, LanguageIdentifier}
 };
 
