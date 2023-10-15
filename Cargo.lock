@@ -26,6 +26,7 @@ name = "arkley_algebra"
 version = "0.0.2"
 dependencies = [
  "arkley_describe",
+ "concat-idents",
  "nom",
  "num-notation",
  "strum",
@@ -68,6 +69,16 @@ name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
+
+[[package]]
+name = "concat-idents"
+version = "1.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f76990911f2267d837d9d0ad060aa63aaad170af40904b29461734c339030d4d"
+dependencies = [
+ "quote",
+ "syn 2.0.38",
+]
 
 [[package]]
 name = "displaydoc"

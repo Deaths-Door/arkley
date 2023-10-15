@@ -1,6 +1,11 @@
 mod relation;
+mod utils;
 mod rearrange;
+mod make_subject;
+mod error;
+
 pub use relation::*;
+pub use error::*;
 
 use crate::Expression;
 

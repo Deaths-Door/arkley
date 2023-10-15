@@ -1,9 +1,15 @@
 
+mod tokens;
+mod op;
 mod term;
 mod expression;
-mod op;
-mod tokens;
 
 pub use term::*;
 pub use expression::*;
 pub use op::*;
+
+#[cfg(feature="equation")]
+mod equation;
+
+#[cfg(feature="equation")]
+pub use equation::*;

@@ -43,6 +43,7 @@ impl Expression {
         Expression::Term(term)
     }
 
+    #[inline]
     pub(crate) fn new_binary(operation: ArithmeticOperation,left: Expression,right: Expression) -> Self {
         Expression::Binary { operation , left : Box::new(left) , right : Box::new(right) }
     }

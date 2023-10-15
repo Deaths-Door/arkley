@@ -92,6 +92,11 @@ impl Expression {
     fn rearrange(mut self,mut other : Self,variables_to_count : &Variables) -> (Self,Self) {
         match self {
             Self::Binary { operation, left, right } if operation == ArithmeticOperation::Durch => {
+                other = other * right;
+                self = left;
+
+
+
                 // TODO : Maybe check for possible simplication eg 2/4 = 0.5 or 2/1 = 2 or smth else
                 other = Expression::Binary { operation : ArithmeticOperation::Mal, left : Box::new(other), right };
                 self = *left;
@@ -134,7 +139,15 @@ impl Expression {
                 self = 0.into();
                 (self,other)
             },
-            Self::Binary { operation, left, right } => (self,other)
+            Self::Binary { operation, left, right } => {
+                firstly go to the left 
+                then if term && has not variables move it over 
+                else go to right if term && has not variables move it over
+
+                now no the left traverse it till * / operations are meet 
+                gather any moveable terms that can be found 
+                move them and remake tree 
+            }///(self,other)
         }
     }
 }

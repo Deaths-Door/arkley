@@ -13,6 +13,8 @@ use super::tokens::Token;
 /// # Arguments
 ///
 /// * `input`: A string containing the mathematical expression to be parsed.
+
+// TODO : Give better reason then None for why its invalid
 pub fn parse_expression(input: &str) -> IResult<&str, Option<Expression>> {
     map(Token::into_tokens,|vec : Vec<Token>| Token::into_expression_tree(Token::to_rpn(vec)))(input)
 }
