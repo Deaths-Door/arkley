@@ -1,8 +1,9 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, collections::BTreeMap};
 
-use num_notation::One;
-
-use crate::{Equation, Term, manipulation::VariableAnalysis, Variables, Expression};
+use crate::{
+    Equation, Term, Variables, Expression, gcd,
+    manipulation::VariableAnalysis, 
+};
 
 use super::RearrangeError;
 
@@ -27,8 +28,50 @@ impl Equation {
         };
 
         // TODO : Handle case where making it a subject is not possible
-        let mut equation = self.determine_side_and_rearrange(target.variables);
+        let mut equation = self.determine_side_and_rearrange(&target.variables);
+        
+        match equation.left {
+            Expression::Term(ref mut term) => {
+                let gcd_coefficient = gcd(term.coefficient.clone(),target.coefficient.clone());
 
+                let vars_to_move : Variables;
+
+                #[cfg(nightly)]
+                {
+                    vars_to_move = term.variables.extract_if(|k,v| !target.variables.contains_key(k)).collect();
+                }
+
+                #[cfg(not(nightly))]
+                {
+                    let (
+                        _,_vars_to_move
+                    ) : (BTreeMap<_,_>,BTreeMap<_,_>) = term.variables.iter()
+                        .partition(|(k,_)| target.variables.contains_key(k));
+
+                    vars_to_move = _vars_to_move.into_iter().map(|(k,v)| (*k,v.clone())).collect();
+                    println!("{:?}",vars_to_move);
+                }
+
+                let to_divide_with =  Term::new_with_variable(term.coefficient.clone() / gcd_coefficient.clone(),vars_to_move);
+                println!("{}",equation.right);
+                equation.right = equation.right / to_divide_with;
+                println!("{}",equation.right);
+
+
+                if term.coefficient != target.coefficient {
+                    term.coefficient = gcd_coefficient;
+                }
+
+                if term.variables != target.variables {
+                    println!("BYE");
+                    return Err(RearrangeError::ImpossibleSolution(equation, target));   
+                }
+
+                Ok(equation)
+            },
+            _ => unimplemented!("Figure out how to make x subject for x^2 + 4x = y smth with factorization or check how to do this")
+        }
+/*
         if let Expression::Term(term) = &mut equation.left {
             if term.coefficient == target.coefficient {}
             else if target.coefficient.is_one() && !term.coefficient.is_one() {
@@ -45,23 +88,22 @@ impl Equation {
             }
         }
         else { unimplemented!("Figure out how to make x subject for x^2 + 4x = y smth with factorization or check how to do this") }
-
-        Ok(equation)
+*/
     }
 
     /// Determines the side of the equation to rearrange based on the count of variable occurrences.
-    fn determine_side_and_rearrange(mut self,variables_to_count : Variables) -> Self {
+    fn determine_side_and_rearrange(mut self,variables_to_count : &Variables) -> Self {
         let lexpr_count = self.left.count_variable_occurrences(&variables_to_count);
         let rexpr_count = self.right.count_variable_occurrences(&variables_to_count);
 
         let (left,right) = match lexpr_count.cmp(&rexpr_count) {
             Ordering::Greater => self.left.rearrange(
                 self.right,
-                &variables_to_count,|_,rexpr| rexpr.contains_any_variable(&mut variables_to_count.keys())),
+                variables_to_count,|_,rexpr| rexpr.contains_any_variable(&mut variables_to_count.keys())),
             Ordering::Equal | Ordering::Less => {
                 let (right,left) = self.right.rearrange(
                     self.left,
-                    &variables_to_count,
+                    variables_to_count,
                     |_,rexpr| rexpr.contains_any_variable(&mut variables_to_count.keys()) );
                 (left,right)
             }
@@ -89,7 +131,11 @@ mod tests {
                         let equation = parse_equation($eq).unwrap().1.unwrap();
                         let result = equation.try_make_subject(Term::from($subject));
                         assert!(result.is_ok());
-                        assert_eq!(&result.unwrap().to_string(), $expected);
+
+                        let result = result.unwrap();
+
+                        println!("{:?}",result);
+                        assert_eq!(&result.to_string(), $expected);
                     }
                 });       
             )*    
@@ -104,7 +150,7 @@ mod tests {
         { y => 0, "3y - 5 = 1", 'y', "y = 2" },
         { z => 0, "2z + 3 = 1",'z',"z = -1" },
 
-        { p => 0 , "3p + 2q = 12",'p', "p = 4 - q"},
+        { p => 0 , "3p + 2q = 12",'p', "p = (12 - 2q)/3" }, /* or p = (-2/3)q + 4  , for this behaviour make new fn */
 
         { q => 0 , "3p + 2q = 12",'q', "q = 6 - (3/2)p"},
         { q => 1, "3p + 2q = 12",'q', "q = 6 - (3/2)p" },
@@ -114,7 +160,7 @@ mod tests {
         { a => 1 ,  "2a + 3 = 7", 'a', "a = 2" },
 
 
-        { b => 0, "3b - 2a = 12", 'b', "b = (4/3) + (2/3)a" }
+        { b => 0, "3b - 2a = 12", 'b', "b = (12 - 2a)/3" } /* or b = (2/3)a + 4  , for this behaviour make new fn */
     );
 
     /*

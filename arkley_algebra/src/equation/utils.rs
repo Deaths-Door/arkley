@@ -89,7 +89,10 @@ impl Expression {
                     };
                 }
 
-                expression = self + expression;
+                // TODO : Check if subtract is the correct operation; probs not 
+                expression = self - expression;
+
+                // TODO : Check if this is needed
                 expression.reverse_tree();
 
                 expression

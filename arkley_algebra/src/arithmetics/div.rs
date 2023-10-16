@@ -141,7 +141,8 @@ impl std::ops::Div for Expression {
     }
 }
 
-fn gcd(a : Number,b : Number) -> Number {
+/// used in equation/make_subject.rs
+pub(crate) fn gcd(a : Number,b : Number) -> Number {
     match b == 0 {
         true => a,
         false => gcd(b.clone(),a % b)
@@ -149,6 +150,7 @@ fn gcd(a : Number,b : Number) -> Number {
 }
 
 fn figure_out_gcd(mut coefficients: BTreeSet<Number>) -> Number {
+    
     if coefficients.len() == 1 {
         return coefficients.pop_first().unwrap();
     };
@@ -444,4 +446,14 @@ mod expression_tests {
         let result = expr.clone() / num.clone();
         assert_eq!(result,Expression::new_durch(expr, num.into()));
     }
+
+    /*#[test]
+    fn divide_simplify(){
+        let expr = from_str("12 - 2q");
+        let term = Term::new(3f64.into());
+
+        let result = expr / term;
+
+        assert_eq!(&result.to_string(),"4 - ");
+    }*/
 }

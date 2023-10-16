@@ -158,14 +158,14 @@ impl std::fmt::Display for Expression {
                 },
                 ArithmeticOperation::Durch => {
                     match **left {
-                        Expression::Term(_) | Expression::Nested(_) => write!(f,"{left}"),
+                        Expression::Term(_) => write!(f,"{left}"),
                         _ => write!(f,"({left})")
                     }?;
 
                     write!(f,"/")?;
 
                     match **right {
-                        Expression::Term(_) | Expression::Nested(_) => write!(f,"{right}"),
+                        Expression::Term(_) => write!(f,"{right}"),
                         _ => write!(f,"({right})")
                     }
                 }

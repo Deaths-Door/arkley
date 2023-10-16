@@ -19,6 +19,12 @@
     non_snake_case
 )]
 
+#[cfg_attr(
+    all(nightly,feature="equation"),
+    feature(btree_extract_if)
+)] 
+
+
 mod core;
 mod arithmetics;
 

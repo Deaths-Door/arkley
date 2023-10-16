@@ -1,4 +1,4 @@
-use crate::Equation;
+use crate::{Equation, Term};
 
 /// Represents errors that can occur when rearranging an equation.
 #[derive(Debug)]
@@ -9,9 +9,8 @@ pub enum RearrangeError {
     /// Provides the original equation where unknown variables were discovered.
     UnknownVariablesFound(Equation),
 
-    /// Indicates that coefficients of the equation are not divisible, preventing
-    /// successful rearrangement.
+    /// Indicates that the resulting term cannot be converted into the target term
     /// 
-    /// Provides the rearranged equation where non-divisible coefficients were detected.
-    NonDivisibleCoefficients(Equation),
+    /// Provides the rearranged equation and the target term
+    ImpossibleSolution(Equation,Term),
 }
