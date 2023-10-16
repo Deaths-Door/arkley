@@ -98,7 +98,6 @@ mod tests {
 
 
     impl_test!(make_subject => 
-        { a => 0 ,  "3b - 2a = 12", 'a', "a = (3/2)b - 6" },
         { x => 0,  "2x + 3 = 7",'x', "x = 2" },
         { x => 1,  "2(x + 3) - 4 = 10 - x",'x', "x = 2.5" },
 
@@ -111,6 +110,10 @@ mod tests {
         { q => 1, "3p + 2q = 12",'q', "q = 6 - (3/2)p" },
         { q => 2,  "2qy + 3 = 1",'q', "q = (1/3)/2y"},
 
+        { a => 0 ,  "3b - 2a = 12", 'a', "a = (3/2)b - 6" },
+        { a => 1 ,  "2a + 3 = 7", 'a', "a = 2" },
+
+
         { b => 0, "3b - 2a = 12", 'b', "b = (4/3) + (2/3)a" }
     );
 
@@ -122,7 +125,7 @@ mod tests {
     impl_test!(variable_with_complex_expression, "2(x + 3) - 4 = 10 - x",'x', "x = 2.5");
     impl_test!(equation_with_constants_only, "3 = 4",'x', "No variable 'x' in the equation");
     impl_test!(empty_input, "",'x', "No equation provided");
-    impl_test!(complex_variable, "2a + 3 = 7", 'a', "a = 2");
+    impl_test!(complex_variable, );
     impl_test!(negative_coefficient, "-2x = 6",'x', "x = -3");
     impl_test!(multiple_terms_variable_on_one_side, "3x - 2y = 12",'x', "x = 4 + 2/3y");
     impl_test!(complex_expression_with_parentheses, "(x + 3) = 7",'x', "x = 4");

@@ -87,21 +87,19 @@ impl Expression {
         }
     } 
 
-    fn move_add(other : Self,right : Self,left : Self,variables_to_count : &Variables) -> (Self,Self) {
+    fn move_add(other : Self,left : Self,right : Self,variables_to_count : &Variables) -> (Self,Self) {
         Self::move_add_or_sub_inner(
             other, left, right, variables_to_count,
             |left,right| Expression::new_plus(left, right),
             |left,right| left - right,
-            |expr,vec| expr.into_move_add_from(vec)
         )
     }
 
-    fn move_sub(other : Self,right : Self,left : Self,variables_to_count : &Variables) -> (Self,Self) {
+    fn move_sub(other : Self,left : Self,right : Self,variables_to_count : &Variables) -> (Self,Self) {
         Self::move_add_or_sub_inner(
             other, left, right, variables_to_count,
             |left,right| Expression::new_minus(left, right),
             |left,right| left + right,
-            |expr,vec| expr.into_move_sub_from(vec)
         )
     }
 }
@@ -148,15 +146,45 @@ mod tests {
 
     #[test]
     fn move_add() {
-        // 2x - 5y + 4x = 3z + 2y - 6
-        // -5y = 3z + 2y - 6 + 6x
+        let other = parse_expression("3z - 2y - 6").unwrap().1.unwrap();
+
+        // simplified into 6x - 5y
+        let expression = parse_expression("2x - 5y + 4x").unwrap().1.unwrap();
+
+        // in end
+        // 6x - 5y = 3z - 2y - 6
+
+        // so keeping y on the left side
+        // -5y = 3z - 2y - 6x - 6
+
+        let (left,right) = match expression {
+            Expression::Binary{ left, right ,.. } => (*left,*right),
+            _ => panic!()
+        };
+
         let (lexpr, rexpr) = Expression::move_add(
-            parse_expression("3z + 2y - 6").unwrap().1.unwrap(),
-            parse_expression("2x - 5y").unwrap().1.unwrap(),
-            parse_expression("4x").unwrap().1.unwrap(),
+            other,
+            left,
+            right,
             &[('y',1f64.into())].into_iter().collect()
         );
-        assert_eq!(&rexpr.to_string(), "3z + 2y - 6 + 6x");
+
+        assert_eq!(&rexpr.to_string(), "3z - 2y + 6x - 6");
+        assert_eq!(&lexpr.to_string(), "-5y");
+    }
+
+    #[test]
+    fn move_sub() {
+        // 2x - 5y + 4x = 3z + 2y - 6
+        // -5y = 3z + 2y - 6 + 6x
+        let (lexpr, rexpr) = Expression::move_sub(
+            parse_expression("3z + 2y - 6").unwrap().1.unwrap(),
+            parse_expression("2x").unwrap().1.unwrap(),
+            parse_expression("5y + 4x").unwrap().1.unwrap(),
+            &[('y',1f64.into())].into_iter().collect()
+        );
+
+        assert_eq!(&rexpr.to_string(), "3z + 2y + 6x - 6");
         assert_eq!(&lexpr.to_string(), "-5y");
     }
 }

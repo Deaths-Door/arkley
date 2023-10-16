@@ -2,7 +2,7 @@
 - expand on simpilify structure for expr
 - maybe add simpilicfier to remove unneeded zeros eg 0 + 5 can be written as 5 (in the tree)
 - intergate equation with simpilify trait
-- Finsih rearranger for equation
+- Implement reverse_tree fn for rearranger to 'work' ; give output in the expected order
 - Finish `build_expression_tree` with bracket support
 
 # Done
