@@ -9,6 +9,17 @@ authors.workspace = true
 homepage.workspace = true
 license.workspace = true
 
+[features]
+default = ["algebra"]
+algebra = ["arkley_algebra"]
+units = ["arkley_unit_convertor"]
+describe = ["arkley_algebra/describe","arkley_describe"]
+
+[dependencies]
+arkley_algebra = { workspace = true , optional = true}
+arkley_unit_convertor = { workspace = true , optional = true}
+arkley_describe = { workspace = true , optional = true}
+
 [workspace]
 members = ["arkley_algebra","arkley_describe","arkley_unit_convertor"]
 
@@ -23,3 +34,4 @@ license = "MIT OR Apache-2.0"
 [workspace.dependencies]
 arkley_algebra = { path = "../arkley/arkley_algebra" }
 arkley_describe = { path = "../arkley/arkley_describe" }
+arkley_unit_convertor = { path = "../arkley/arkley_unit_convertor" }

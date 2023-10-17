@@ -20,6 +20,11 @@ checksum = "bddcadddf5e9015d310179a59bb28c4d4b9920ad0f11e8e14dbadf654890c9a6"
 [[package]]
 name = "arkley"
 version = "0.0.2"
+dependencies = [
+ "arkley_algebra",
+ "arkley_describe",
+ "arkley_unit_convertor",
+]
 
 [[package]]
 name = "arkley_algebra"
