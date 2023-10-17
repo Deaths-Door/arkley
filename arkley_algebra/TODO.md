@@ -5,6 +5,8 @@
 - Implement reverse_tree fn for rearranger to 'work' ; give output in the expected order
 - Finish `build_expression_tree` with bracket support
 
+- **#[deprecated(note = "Maybe this is redundant")]** for Expression::Nested
+
 # Done
 
 ## Discriminant:

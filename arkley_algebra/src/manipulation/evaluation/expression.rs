@@ -1,6 +1,6 @@
 use crate::{
-    Expression, Variables, ArithmeticOperation, 
-    manipulation::{VariableExpressionAssociation, VariableSubstitution}
+    Expression, ArithmeticOperation, 
+    manipulation::VariableSubstitution
 };
 
 use super::Evaluate;
@@ -25,76 +25,42 @@ impl Evaluate for Expression {
         }      
     }
 
-    fn evaluate_single_variable_with_value(mut self,variable : &char,value : num_notation::Number) -> Self {
+    fn evaluate_with_single_variable<SV,MV>(mut self, variable: &char, value: SV) -> Self 
+        where Self: VariableSubstitution<SV,MV>, SV: Clone {
         match self {
             Expression::Binary { operation,mut left, mut right } => {
-                left.try_replace_single_variable_with_value(variable,value.clone());
-                right.try_replace_single_variable_with_value(variable,value.clone());
-                operation.operate_on(left.evaluate_single_variable_with_value(variable, value.clone()), right.evaluate_single_variable_with_value(variable, value))
+                left.replace_single_variable(variable,value.clone());
+                right.replace_single_variable(variable,value);
+                operation.operate_on(*left, *right)
             }
             Expression::Nested(mut inner) => {
-                inner.try_replace_single_variable_with_value(variable,value.clone());
-                inner.evaluate_single_variable_with_value(variable,value)
+                inner.replace_single_variable(variable,value);
+                inner.evaluate()
             }
-            Expression::Term(ref mut term) => {
-                term.try_replace_single_variable_with_value(variable, value);
-                self
-            }
-        }        
-    }
-
-    
-    fn evaluate_with_values(mut self, variable_values: &mut Variables) -> Self {
-        match self {
-            Expression::Binary { operation,mut left, mut right } => {
-                left.try_replace_variables_with_value(variable_values);
-                right.try_replace_variables_with_value(variable_values);
-                operation.operate_on(left.evaluate_with_values(variable_values), right.evaluate_with_values(variable_values))
-            }
-            Expression::Nested(mut inner) => {
-                inner.try_replace_variables_with_value(variable_values);
-                inner.evaluate_with_values(variable_values)
-            }
-            Expression::Term(ref mut term) => {
-                term.try_replace_variables_with_value(variable_values);
-                self
-            }
-        }        
-    }
-    fn evaluate_single_variable_with_expr(mut self,variable : &char,value : Expression) -> Self {
-        match self {
-            Expression::Binary { operation,mut left, mut right } => {
-                left.try_replace_single_variable_with_expr(variable,value.clone());
-                right.try_replace_single_variable_with_expr(variable,value.clone());
-                operation.operate_on(left.evaluate_single_variable_with_expr(variable, value.clone()), right.evaluate_single_variable_with_expr(variable, value))
-            }
-            Expression::Nested(mut inner) => {
-                inner.try_replace_single_variable_with_expr(variable,value.clone());
-                inner.evaluate_single_variable_with_expr(variable,value)
-            }
-            Expression::Term(ref mut term) => {
-                term.try_replace_single_variable_with_expr(variable, value);
+            Expression::Term(_) => {
+                self.replace_single_variable(variable, value); // avoid compile errors
                 self
             }
         }    
     }
 
-    fn evaluate_with_expr(mut self, variable_values: &mut VariableExpressionAssociation) -> Self {
+    fn evaluate_with_variables<SV,MV>(mut self, variable_values:&mut MV) -> Self 
+        where Self: VariableSubstitution<SV,MV>, SV: Clone {
         match self {
             Expression::Binary { operation,mut left, mut right } => {
-                left.try_replace_variables_with_expr(variable_values);
-                right.try_replace_variables_with_expr(variable_values);
-                operation.operate_on(left.evaluate_with_expr(variable_values), right.evaluate_with_expr(variable_values))
+                left.replace_variables(variable_values);
+                right.replace_variables(variable_values);
+                operation.operate_on(*left, *right)
             }
             Expression::Nested(mut inner) => {
-                inner.try_replace_variables_with_expr(variable_values);
-                inner.evaluate_with_expr(variable_values)
+                inner.replace_variables(variable_values);
+                inner.evaluate()
             }
-            Expression::Term(ref mut term) => {
-                term.try_replace_variables_with_expr(variable_values);
+            Expression::Term(_) => {
+                self.replace_variables(variable_values); // avoid compile errors
                 self
             }
-        }       
+        }  
     }
 }
 
@@ -159,13 +125,8 @@ mod tests {
         variable_values.insert('x', 7.0.into());
         variable_values.insert('y', 3.0.into());
 
-        let mut __expr = expression.clone();
-        __expr.try_replace_variables_with_value(&mut variable_values.clone());
-
-        check_expression_str(__expr, "7 + 3");
-
         // Evaluate the expression with variable values
-        let result = expression.evaluate_with_values(&mut variable_values);
+        let result = expression.evaluate_with_variables(&mut variable_values);
 
         // Expected result: 7 + 3 = 10
         check_expression_str(result,"10");

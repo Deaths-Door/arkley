@@ -4,19 +4,17 @@ mod expression;
 #[cfg(feature="equation")]
 mod equation;
 
+use std::collections::BTreeMap;
+
 #[cfg(feature="equation")]
 pub use equation::*;
 
 use num_notation::Number;
 
-use crate::{Variables, Expression};
-
-use super::VariableExpressionAssociation;
-
 /// A trait for types that support variable replacement.
 ///
 /// Types implementing this trait can perform variable substitution in various ways (this is done for optimzation reasons).
-pub trait VariableSubstitution {
+pub trait VariableSubstitution<SV = Number,MV = BTreeMap<char,SV>> {
     /// Attempts to replace a single variable with a specified value.
     ///
     /// # Arguments
@@ -29,7 +27,7 @@ pub trait VariableSubstitution {
     /// An `Option<()>` where:
     /// - `Some(())` indicates the variable was found and successfully replaced.
     /// - `None` indicates the variable did not exist, and no replacement occurred.
-    fn try_replace_single_variable_with_value(&mut self,variable : &char,value : Number) -> Option<()>;
+    fn replace_single_variable(&mut self, variable: &char, value: SV) -> Option<()>;
 
     /// Attempts to replace multiple variables with specified values.
     ///
@@ -41,24 +39,5 @@ pub trait VariableSubstitution {
     ///
     /// The updated term with the specified variables replaced. Variables that do not exist in the term
     /// are left unchanged in the `variable_values` map given.
-    fn try_replace_variables_with_value(&mut self,variable_values : &mut Variables);
-
-    /// Attempts to replace a single variable with a specified expression.
-    ///
-    /// # Arguments
-    ///
-    /// - `variable`: A reference to the variable (char) to be replaced.
-    /// - `value`: The expression (Expression) to replace the variable with.
-    fn try_replace_single_variable_with_expr(&mut self,_variable : &char,_value : Expression) -> Option<()> {
-        todo!("power for expression needs to be implemented")
-    }
-
-    /// Attempts to replace multiple variables with specified expressions.
-    ///
-    /// # Arguments
-    ///
-    /// - `variable_values`: A reference to a `BTreeMap<char, Expression>` containing variables and their expressions.
-    fn try_replace_variables_with_expr(&mut self,_variable_values : &mut VariableExpressionAssociation) {
-        todo!("power for expression needs to be implemented")
-    }
+    fn replace_variables(&mut self, variable_values:&mut MV);
 }
