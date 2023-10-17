@@ -67,7 +67,7 @@ mod test {
     use crate::{Term, Variables};
     
     use num_notation::Number;
-    use std::collections::BTreeMap;
+    use std::collections::HashMap;
 
     #[test]
     fn try_replace_single_variable_success() {
@@ -102,7 +102,7 @@ mod test {
         let term = Term::new_with_variable(Number::Decimal(2.0),Variables::from([('x',Number::Decimal(3.0)),('y',Number::Decimal(4.0))]));
         let expression = Expression::Term(term.clone());
 
-        let mut variable_values = BTreeMap::new();
+        let mut variable_values = HashMap::new();
         variable_values.insert('x', Number::Decimal(5.0));
         variable_values.insert('z', Number::Decimal(6.0));
 
@@ -125,7 +125,7 @@ mod test {
         let term = Term::new_with_variable(Number::Decimal(2.0),Variables::from([('y',Number::Decimal(3.0))]));
         let expression = Expression::Term(term.clone());
 
-        let mut variable_values = BTreeMap::new();
+        let mut variable_values = HashMap::new();
         variable_values.insert('x', Number::Decimal(5.0));
 
         let mut result = expression.clone();

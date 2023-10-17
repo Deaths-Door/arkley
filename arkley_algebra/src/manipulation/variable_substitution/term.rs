@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 use num_notation::{Number, Pow};
 
@@ -6,7 +6,7 @@ use crate::{Term, Expression};
 
 use super::VariableSubstitution;
 
-impl VariableSubstitution<Number,BTreeMap<char,Number>> for Term {
+impl VariableSubstitution for Term {
     fn replace_single_variable(&mut self, variable: &char, value: Number) -> Option<()> {
         self.variables.remove(variable).and_then(|exponent| {
             self.coefficient *= value.pow(exponent);
@@ -14,10 +14,10 @@ impl VariableSubstitution<Number,BTreeMap<char,Number>> for Term {
         })
     }
 
-    fn replace_variables(&mut self, variable_values:&mut BTreeMap<char, Number>) {
+    fn replace_variables(&mut self, variable_values:&mut HashMap<char, Number>) {
         #[cfg(nightly)]
         {
-            let values : BTreeMap<char,Number> = variable_values.extract_if(|k,v| self.variables.contains_key(k)).collect();
+            let values : HashMap<char,Number> = variable_values.extract_if(|k,v| self.variables.contains_key(k)).collect();
 
             for (key,exponent) in values.into_iter() {
                 self.coefficient = self.coefficient * self.variables[&key].pow(exponent);
@@ -51,7 +51,7 @@ impl VariableSubstitution<Self> for Term {
         todo!("DO ONCE POW for it is done")
     }
 
-    fn replace_variables(&mut self, _:&mut BTreeMap<char, Self>) {
+    fn replace_variables(&mut self, _:&mut HashMap<char, Self>) {
         todo!("DO ONCE POW for it is done")
     }
 }
@@ -61,7 +61,7 @@ impl VariableSubstitution<Expression> for Term {
         todo!("DO ONCE POW for it is done")
     }
 
-    fn replace_variables(&mut self, _:&mut BTreeMap<char, Expression>) {
+    fn replace_variables(&mut self, _:&mut HashMap<char, Expression>) {
         todo!("DO ONCE POW for it is done")
     }
 }
@@ -71,7 +71,7 @@ mod tests {
     use crate::Variables;
 
     use super::*;
-    use std::collections::BTreeMap;
+    use std::collections::HashMap;
     
 
     #[test]
@@ -95,7 +95,7 @@ mod tests {
     #[test]
     fn try_replace_variables_success() {
         let mut term = Term::new_with_variable(Number::Decimal(2.0),Variables::from([('x',Number::Decimal(3.0)),('y',Number::Decimal(4.0))]));
-        let mut variable_values = BTreeMap::new();
+        let mut variable_values = HashMap::new();
         variable_values.insert('x', Number::Decimal(5.0));
         variable_values.insert('z', Number::Decimal(6.0));
         term.replace_variables(&mut variable_values);
@@ -107,7 +107,7 @@ mod tests {
     #[test]
     fn try_replace_variables_failure() {
         let mut term = Term::new_with_variable(Number::Decimal(2.0),Variables::from([('y',Number::Decimal(3.0))]));
-        let mut variable_values = BTreeMap::new();
+        let mut variable_values = HashMap::new();
         variable_values.insert('x', Number::Decimal(5.0));
         term.replace_variables(&mut variable_values);
         // Check that 'x' variable was not found, so the term remains unchanged
@@ -122,7 +122,7 @@ mod tests {
         let mut term = Term::new_with_variable(2.0.into(), Variables::from([('x',3.0.into()),('y',2.0.into())]));
         
         // Create a sample variable_values map
-        let mut variable_values = BTreeMap::new();
+        let mut variable_values = HashMap::new();
         variable_values.insert('x', Number::Decimal(2.0));
         variable_values.insert('z', Number::Decimal(4.0));
 

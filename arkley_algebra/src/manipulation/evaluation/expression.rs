@@ -67,6 +67,10 @@ impl Evaluate for Expression {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
+    use num_notation::Number;
+
     use super::*;
 
     use crate::{parse_expression, Variables};
@@ -121,7 +125,7 @@ mod tests {
         let expression = from_str("x + y");
 
         // Create a map of variable values
-        let mut variable_values = Variables::new();
+        let mut variable_values : HashMap<char,Number> = HashMap::new();
         variable_values.insert('x', 7.0.into());
         variable_values.insert('y', 3.0.into());
 

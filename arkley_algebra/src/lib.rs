@@ -1,7 +1,6 @@
 #![doc = include_str!("../README.md")]
 
 #![forbid(
-    missing_docs,
     missing_debug_implementations,
 
     unsafe_code,
@@ -19,7 +18,17 @@
     non_snake_case
 )]
 
-#[cfg_attr(
+#![cfg_attr(
+    feature="function",
+    deny(missing_docs)
+)]
+
+#![cfg_attr(
+    not(feature="function"),
+    forbid(missing_docs)
+)]
+
+#![cfg_attr(
     all(nightly,feature="equation"),
     feature(btree_extract_if)
 )] 
@@ -49,3 +58,9 @@ mod equation;
 
 #[cfg(feature="equation")]
 pub use equation::*;
+
+#[cfg(feature="function")]
+mod function;
+
+#[cfg(feature="equation")]
+pub use function::*;
