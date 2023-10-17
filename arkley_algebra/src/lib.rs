@@ -58,9 +58,3 @@ mod equation;
 
 #[cfg(feature="equation")]
 pub use equation::*;
-
-#[cfg(feature="function")]
-mod function;
-
-#[cfg(feature="equation")]
-pub use function::*;
