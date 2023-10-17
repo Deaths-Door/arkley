@@ -14,7 +14,7 @@ impl VariableAnalysis for Equation {
     }
 
     fn contains_all<'a,I>(&self,variables : &mut I) -> bool where I : Iterator<Item = &'a char> {
-        self.left.contains_all(variables) && self.right.contains_all(variables) 
+        self.left.contains_all(variables) || self.right.contains_all(variables) 
     }
 
     fn contains_variable(&self, variable: &char) -> bool {

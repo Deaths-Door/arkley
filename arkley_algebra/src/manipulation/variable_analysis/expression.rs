@@ -39,7 +39,7 @@ impl VariableAnalysis for Expression {
     fn contains_all<'a,I>(&self,variables : &mut I) -> bool where I : Iterator<Item = &'a char> {
         match self {
             Expression::Term(term) => term.contains_all(variables),
-            Expression::Binary { left, right, .. } => left.contains_all(variables) && right.contains_all(variables)   ,
+            Expression::Binary { left, right, .. } => left.contains_all(variables) || right.contains_all(variables)   ,
             Expression::Nested(inner) => inner.contains_all(variables)
         }
     }
@@ -47,7 +47,7 @@ impl VariableAnalysis for Expression {
     fn contains_variable(&self, variable: &char) -> bool {
         match self {
             Expression::Term(term) => term.contains_variable(variable),
-            Expression::Binary { left, right, .. } => left.contains_variable(variable) && right.contains_variable(variable)   ,
+            Expression::Binary { left, right, .. } => left.contains_variable(variable) || right.contains_variable(variable)   ,
             Expression::Nested(inner) => inner.contains_variable(variable)
         }
     }

@@ -73,7 +73,7 @@ impl std::ops::Div<Term> for Expression {
         let common_variables : BTreeSet<_> = expr_variables.intersection(&term_variables).collect();
 
         let mut derefernced_char_common_variables_iterator = common_variables.iter().map(|c| **c);
-        if common_variables.is_empty() || !self.all_terms_have(&mut derefernced_char_common_variables_iterator) {
+        if !self.all_terms_have(&mut derefernced_char_common_variables_iterator) {
             return Expression::new_durch(self, other.into());
         };
         

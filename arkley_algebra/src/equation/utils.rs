@@ -75,7 +75,7 @@ impl Expression {
         }
     }
     
-    pub(super) fn move_from(self,mut vec : Vec<Term>) -> Self {
+    pub(super) fn move_from(self,mut vec : Vec<Term>,inverse_operation : impl FnOnce(Self,Self) -> Self) -> Self {
         match vec.pop() {
             // no terms to move
             None => self,
@@ -90,7 +90,8 @@ impl Expression {
                 }
 
                 // TODO : Check if subtract is the correct operation; probs not 
-                expression = self - expression;
+                expression = inverse_operation(self,expression);
+                //self - expression;
 
                 // TODO : Check if this is needed
                 expression.reverse_tree();
@@ -162,7 +163,7 @@ impl Expression {
         create_self : F1,
         inverse_operation : F2,
     ) -> (Self,Self) where 
-    F1 :  Fn(Self,Self) -> Self ,
+    F1 :  FnOnce(Self,Self) -> Self ,
     F2 :  FnOnce(Self,Self) -> Self {
         let is_left_mul_or_div = matches!(left,Self::Binary { ref operation, .. } if operation == &ArithmeticOperation::Mal && operation == &ArithmeticOperation::Durch);
         let is_right_mul_or_div = matches!(right,Self::Binary { ref operation, .. } if operation == &ArithmeticOperation::Mal && operation == &ArithmeticOperation::Durch);
@@ -188,20 +189,24 @@ impl Expression {
             (true, false) => {
                 let mut vec = Vec::new();
 
-                match left.collect_all_add_sub_term_till_mul_div(&mut vec, variables_to_count) {
-                    None => (right,other.move_from(vec)), 
-                    Some(new_left) => (create_self(new_left,right),other.move_from(vec)),
-                }
+                let expr = match left.collect_all_add_sub_term_till_mul_div(&mut vec, variables_to_count) {
+                    None => right,
+                    Some(new_left) => create_self(new_left,right),
+                };
+
+                (expr,other.move_from(vec,inverse_operation))
             }
             // So eg 7y + 2x(x) or smth like that
             // So move the false one 
             (false, true) => {
                 let mut vec = Vec::new();
 
-                match right.collect_all_add_sub_term_till_mul_div(&mut vec, variables_to_count) {
-                    None => (left,other.move_from(vec)),
-                    Some(new_right) => (create_self(left,new_right),other.move_from(vec)),
-                }
+                let expr= match right.collect_all_add_sub_term_till_mul_div(&mut vec, variables_to_count) {
+                    None => left,
+                    Some(new_right) => create_self(left,new_right),
+                };
+
+                (expr,other.move_from(vec,inverse_operation))
             }
             // So eg 7y + 2x or smth like that
             // So try to move both
@@ -211,11 +216,13 @@ impl Expression {
                 let new_right = right.collect_all_add_sub_term_till_mul_div(&mut vec, variables_to_count);
                 let new_left = left.collect_all_add_sub_term_till_mul_div(&mut vec, variables_to_count);
 
-                match (new_left,new_right) {
-                    (None, None) => (0.into(),other.move_from(vec)),
-                    (None, Some(expression)) | (Some(expression), None) => (expression,other.move_from(vec)),
-                    (Some(lexpr), Some(rexpr)) => (create_self(lexpr,rexpr),other.move_from(vec)),
-                }
+                let expr = match (new_left,new_right) {
+                    (None, None) => 0.into(),
+                    (None, Some(expression)) | (Some(expression), None) => expression,
+                    (Some(lexpr), Some(rexpr)) => create_self(lexpr,rexpr),
+                };
+
+                (expr,other.move_from(vec,inverse_operation))
             }
         }
     }

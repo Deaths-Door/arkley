@@ -14,6 +14,9 @@ impl Equation {
     /// the equation remains balanced and valid. If any unknown variables are encountered during
     /// the process, an error of type `RearrangeError::UnknownVariablesFound` with `self` is returned.
     ///
+    ///  # Note
+    ///  Try to pass a 'simplified' (structured) equation if possible to make the process much quickers
+    /// 
     /// # Parameters
     ///
     /// - `term`: The term to be made the subject of the equation.
@@ -43,27 +46,23 @@ impl Equation {
 
                 #[cfg(not(nightly))]
                 {
-                    let (
-                        _,_vars_to_move
-                    ) : (BTreeMap<_,_>,BTreeMap<_,_>) = term.variables.iter()
-                        .partition(|(k,_)| target.variables.contains_key(k));
+                    vars_to_move = term.variables.iter()
+                        .filter(|(k,_)| !target.variables.contains_key(k))
+                        .map(|(k,v)| (*k,v.clone()))
+                        .collect();
 
-                    vars_to_move = _vars_to_move.into_iter().map(|(k,v)| (*k,v.clone())).collect();
-                    println!("{:?}",vars_to_move);
+                    term.variables.retain(|k,_| !vars_to_move.contains_key(k));
                 }
 
                 let to_divide_with =  Term::new_with_variable(term.coefficient.clone() / gcd_coefficient.clone(),vars_to_move);
-                println!("{}",equation.right);
-                equation.right = equation.right / to_divide_with;
-                println!("{}",equation.right);
 
+                equation.right = equation.right / to_divide_with;
 
                 if term.coefficient != target.coefficient {
                     term.coefficient = gcd_coefficient;
                 }
 
                 if term.variables != target.variables {
-                    println!("BYE");
                     return Err(RearrangeError::ImpossibleSolution(equation, target));   
                 }
 
@@ -71,24 +70,6 @@ impl Equation {
             },
             _ => unimplemented!("Figure out how to make x subject for x^2 + 4x = y smth with factorization or check how to do this")
         }
-/*
-        if let Expression::Term(term) = &mut equation.left {
-            if term.coefficient == target.coefficient {}
-            else if target.coefficient.is_one() && !term.coefficient.is_one() {
-                equation.right = equation.right / term.coefficient.clone();
-                term.coefficient.set_one();
-            }
-            // TODO : Move variables with the number over
-            else if term.coefficient.clone() % target.coefficient.clone() != 0 {
-                return Err(RearrangeError::NonDivisibleCoefficients(equation));
-            }
-            else {
-                term.coefficient /= target.coefficient.clone();
-                equation.right = Expression::new_durch(equation.right, target.coefficient.into())
-            }
-        }
-        else { unimplemented!("Figure out how to make x subject for x^2 + 4x = y smth with factorization or check how to do this") }
-*/
     }
 
     /// Determines the side of the equation to rearrange based on the count of variable occurrences.
@@ -145,22 +126,21 @@ mod tests {
 
     impl_test!(make_subject => 
         { x => 0,  "2x + 3 = 7",'x', "x = 2" },
-        { x => 1,  "2(x + 3) - 4 = 10 - x",'x', "x = 2.5" },
+        { x => 1,  "2 * (x + 3) - 4 = 10 - x",'x', "x = 2.5" },
 
         { y => 0, "3y - 5 = 1", 'y', "y = 2" },
         { z => 0, "2z + 3 = 1",'z',"z = -1" },
 
         { p => 0 , "3p + 2q = 12",'p', "p = (12 - 2q)/3" }, /* or p = (-2/3)q + 4  , for this behaviour make new fn */
 
-        { q => 0 , "3p + 2q = 12",'q', "q = 6 - (3/2)p"},
-        { q => 1, "3p + 2q = 12",'q', "q = 6 - (3/2)p" },
-        { q => 2,  "2qy + 3 = 1",'q', "q = (1/3)/2y"},
+        { q => 0 , "3p + 2q = 12",'q', "q = (12 - 3p)/2"},
+        { q => 1,  "2qy + 3 = 1",'q', "q = (-1)/y"},
 
-        { a => 0 ,  "3b - 2a = 12", 'a', "a = (3/2)b - 6" },
+        { a => 0 ,  "3b - 2a = 12", 'a', "a = (3b + 12)/2" },
         { a => 1 ,  "2a + 3 = 7", 'a', "a = 2" },
 
 
-        { b => 0, "3b - 2a = 12", 'b', "b = (12 - 2a)/3" } /* or b = (2/3)a + 4  , for this behaviour make new fn */
+        { b => 0, "3b - 2a = 12", 'b', "b = (2a + 12)/3" } /* or b = (2/3)a + 4  , for this behaviour make new fn */
     );
 
     /*
