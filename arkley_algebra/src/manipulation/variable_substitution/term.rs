@@ -68,6 +68,8 @@ impl VariableSubstitution<Expression> for Term {
 
 #[cfg(test)]
 mod tests {
+    use crate::Variables;
+
     use super::*;
     use std::collections::BTreeMap;
     

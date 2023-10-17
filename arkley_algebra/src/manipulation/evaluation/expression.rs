@@ -69,7 +69,7 @@ impl Evaluate for Expression {
 mod tests {
     use super::*;
 
-    use crate::parse_expression;
+    use crate::{parse_expression, Variables};
 
     fn from_str(input :&str) -> Expression {
         parse_expression(input).unwrap().1.unwrap()
