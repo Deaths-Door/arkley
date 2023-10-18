@@ -5,6 +5,38 @@ use num_notation::Number;
 
 use crate::{Term, Expression, manipulation::VariableAnalysis};
 
+#[cfg(feature="function")]
+use crate::Function;
+
+#[cfg(feature="function")]
+impl std::ops::Div<Function<'_>> for Function<'_> {
+    type Output = Expression; 
+    fn div(self, rhs: Function<'_>) -> Self::Output {
+        if self.name() == rhs.name() { 1.into() } else { Expression::new_durch(self.into(),rhs.into()) }
+    }
+}
+
+#[cfg(feature="function")]
+impl std::ops::Div<Term> for Function<'_> {
+    type Output = Expression; 
+    fn div(self, rhs: Term) -> Self::Output {
+        if rhs.coefficient == 1 && rhs.variables.is_empty() {
+            return self.into();
+        };
+
+        Expression::new_durch(self.into(),rhs.into())
+    }
+}
+
+#[cfg(feature="function")]
+impl std::ops::Div<Function<'_>> for Expression {
+    type Output = Expression; 
+    fn div(self, rhs: Function<'_>) -> Self::Output {
+        // TODO : Check for optimzations
+        Expression::new_durch(self.into(),rhs.into())
+    }
+}
+
 impl std::ops::Div for Term {
     type Output = Expression;
 

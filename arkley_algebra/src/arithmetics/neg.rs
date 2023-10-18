@@ -19,8 +19,20 @@ impl Neg for Expression {
             Expression::Nested(inner) => Expression::new_nested(-*inner),
             Expression::Binary { operation , left , right } if operation == ArithmeticOperation::Plus => Expression::new_binary(ArithmeticOperation::Minus ,-*left,*right),
             Expression::Binary { operation , left , right } if operation == ArithmeticOperation::Minus => Expression::new_binary(ArithmeticOperation::Plus,-*left,-*right),
-            Expression::Binary { operation , left , right } => Expression::new_binary(operation,-*left,-*right)
+            Expression::Binary { operation , left , right } => Expression::new_binary(operation,-*left,-*right),
+            Expression::Function { ref name } => Expression::new_minus(0.into(), self),
         }
+    }
+}
+
+#[cfg(feature="function")]
+use crate::Function;
+
+#[cfg(feature="function")]
+impl Neg for Function<'_> {
+    type Output = Expression; 
+    fn neg(self) -> Self::Output {
+        Expression::new_minus(0.into(), self.into())
     }
 }
 

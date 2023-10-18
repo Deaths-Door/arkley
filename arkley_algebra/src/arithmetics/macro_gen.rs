@@ -3,6 +3,9 @@ use num_notation::Number;
 
 use crate::{Term,Expression,Variables};
 
+#[cfg(feature="function")]
+use crate::Function;
+
 #[cfg(feature="describe")]
 use arkley_describe::{
     DescribeAdd, DescribeSub , DescribeMul , DescribeDiv ,Steps,
@@ -15,16 +18,15 @@ macro_rules! primitives_operations {
             impl Add<$t> for Term {
                 type Output = Expression;
                 fn add(self, other: $t) -> Expression {
-                    let term = Term::from(other);
-                    self + term
+                    self + Term::from(other)
+
                 }
             }
 
             impl Add<$t> for Expression {
                 type Output = Expression;
                 fn add(self, other: $t) -> Expression {
-                    let term = Term::from(other);
-                    self + term
+                    self + Term::from(other)
                 }
             }
 
@@ -32,6 +34,14 @@ macro_rules! primitives_operations {
             impl DescribeAdd<$t> for Term {
                 fn describe_add(self,other:$t,resources: &StaticLoader,lang: &LanguageIdentifier) -> Option<Steps> {
                     self.describe_add(Term::from(other),resources,lang)
+                }
+            }
+
+            #[cfg(feature="function")]
+            impl Add<$t> for Function<'_> {
+                type Output = Expression; 
+                fn add(self, rhs: $t) -> Self::Output {
+                    self + Term::from(rhs)
                 }
             }
         )*
@@ -42,16 +52,14 @@ macro_rules! primitives_operations {
             impl Sub<$t> for Term {
                 type Output = Expression;
                 fn sub(self, other: $t) -> Expression {
-                    let term = Term::from(other);
-                    self - term
+                    self - Term::from(other)
                 }
             }
 
             impl Sub<$t> for Expression {
                 type Output = Expression;
                 fn sub(self, other: $t) -> Expression {
-                    let term = Term::from(other);
-                    self - term
+                    self - Term::from(other)
                 }
             }
 
@@ -59,6 +67,14 @@ macro_rules! primitives_operations {
             impl DescribeSub<$t> for Term {
                 fn describe_sub(self,other:$t,resources: &StaticLoader,lang: &LanguageIdentifier) -> Option<Steps> {
                     self.describe_sub(Term::from(other),resources,lang)
+                }
+            }
+
+            #[cfg(feature="function")]
+            impl Sub<$t> for Function<'_> {
+                type Output = Expression; 
+                fn sub(self, rhs: $t) -> Self::Output {
+                    self - Term::from(rhs)
                 }
             }
         )*
@@ -69,16 +85,15 @@ macro_rules! primitives_operations {
             impl Mul<$t> for Term {
                 type Output = Expression;
                 fn mul(self, other: $t) -> Expression {
-                    let term = Term::from(other);
-                    self * term
+                    self * Term::from(other)
+
                 }
             }
 
             impl Mul<$t> for Expression {
                 type Output = Expression;
                 fn mul(self, other: $t) -> Expression {
-                    let term = Term::from(other);
-                    self - term
+                    self * Term::from(other)
                 }
             }
 
@@ -86,6 +101,14 @@ macro_rules! primitives_operations {
             impl DescribeMul<$t> for Term {
                 fn describe_mul(self,other:$t,resources: &StaticLoader,lang: &LanguageIdentifier) -> Option<Steps> {
                     self.describe_mul(Term::from(other),resources,lang)
+                }
+            }
+
+            #[cfg(feature="function")]
+            impl Mul<$t> for Function<'_> {
+                type Output = Expression; 
+                fn mul(self, rhs: $t) -> Self::Output {
+                    self * Term::from(rhs)
                 }
             }
         )*
@@ -96,16 +119,14 @@ macro_rules! primitives_operations {
             impl Div<$t> for Term {
                 type Output = Expression;
                 fn div(self, other: $t) -> Expression {
-                    let term = Term::from(other);
-                    self / term
+                    self / Term::from(other)
                 }
             }
 
             impl Div<$t> for Expression {
                 type Output = Expression;
                 fn div(self, other: $t) -> Expression {
-                    let term = Term::from(other);
-                    self - term
+                    self / Term::from(other)
                 }
             }
 
@@ -113,6 +134,14 @@ macro_rules! primitives_operations {
             impl DescribeDiv<$t> for Term {
                 fn describe_div(self,other:$t,resources: &StaticLoader,lang: &LanguageIdentifier) -> Option<Steps> {
                     self.describe_div(Term::from(other),resources,lang)
+                }
+            }
+
+            #[cfg(feature="function")]
+            impl Div<$t> for Function<'_> {
+                type Output = Expression; 
+                fn div(self, rhs: $t) -> Self::Output {
+                    self / Term::from(rhs)
                 }
             }
         )*

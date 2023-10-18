@@ -30,6 +30,50 @@ impl std::ops::Sub<Term> for Expression {
     }
 }
 
+#[cfg(feature="function")]
+use crate::Function;
+
+#[cfg(feature="function")]
+impl std::ops::Sub<Function<'_>> for Function<'_> {
+    type Output = Expression; 
+    fn sub(self, rhs: Function<'_>) -> Self::Output {
+        match self.name() == rhs.name() {
+            true => 0.0.into(),
+            false => Expression::new_minus(
+                self.into(), 
+                rhs.into()
+            ),
+        }
+    }
+}
+
+#[cfg(feature="function")]
+impl std::ops::Sub<Term> for Function<'_> {
+    type Output = Expression; 
+    fn sub(self, rhs: Term) -> Self::Output {
+        Expression::new_minus(self.into(),rhs.into())
+    }
+}
+
+#[cfg(feature="function")]
+impl std::ops::Sub<Function<'_>> for Expression {
+    type Output = Expression; 
+    fn sub(self, rhs: Function<'_>) -> Self::Output {
+        if let Expression::Function { name } = self {
+            return match name == rhs.name() {
+                true => 0.0.into(),
+                false => Expression::new_minus(
+                    self.into(), 
+                    rhs.into()
+                ),
+            }
+        };
+
+        Expression::new_minus(self.into(),rhs.into())
+    }
+}
+
+
 #[cfg(test)]
 mod term {
     use super::*;

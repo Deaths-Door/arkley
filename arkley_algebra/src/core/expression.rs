@@ -1,7 +1,7 @@
 
 use num_notation::Number;
 
-use crate::{Term,ArithmeticOperation,Variables};
+use crate::{Term,ArithmeticOperation,Variables, Function, FUNCTIONS, function_get};
 
 /// An enum representing a mathematical expression.
 ///
@@ -32,6 +32,16 @@ pub enum Expression {
     ///
     /// The `Nested` variant allows expressions to be nested within parentheses.
     Nested(Box<Expression>),
+
+    /// Represents a mathematical expression that corresponds to a function.
+    ///
+    /// The `Function` variant represents a mathematical expression that is a function.
+    /// It includes the name of the function as a string.
+    ///
+    /// - `name`: The name of the function, represented as a string. This can be used to
+    ///   identify the specific mathematical function being applied.
+    #[cfg(feature="function")]
+    Function { name : &'static str }
 }
 
 // To create Self
@@ -87,6 +97,31 @@ impl Expression {
     pub fn new_nested(inner: Expression) -> Self {
         Expression::Nested(Box::new(inner))
     }
+
+    /// Creates a new `Expression` representing a mathematical function without checking for validity.
+    ///
+    /// This function creates a new `Expression` of the `Function` variant with the provided function name.
+    /// It doesn't perform any validity checks 
+    /// 
+    /// - `name`: The name of the mathematical function, represented as a string.
+    #[cfg(feature="function")]
+    pub fn new_function_unchecked(name : &'static str) -> Self {
+        Expression::Function { name }
+    }
+
+    /// Creates a new `Expression` representing a mathematical function and registers it.
+    ///
+    /// This function creates a new `Expression` of the `Function` variant with the provided function name,
+    /// and then registers it in a collection of known functions. It first inserts the function into the collection,
+    /// and then creates the `Expression`.
+    ///
+    /// - `function`: The mathematical function to create and register.
+    #[cfg(feature="function")]
+    pub fn new_function(function : Function<'static>) -> Self {
+        let expr  = Self::new_function_unchecked(function.name());
+        FUNCTIONS.write().unwrap().insert(function.name(), function);
+        expr
+    }
 }
 
 impl From<Term> for Expression {
@@ -113,6 +148,12 @@ impl From<char> for Expression {
     }
 }
 
+impl From<Function<'_>> for Expression {
+    fn from(value: Function<'_>) -> Self {
+        Expression::new_function(value)
+    }
+}
+
 macro_rules! from {
     ($($t:ty),*) => {
         $(
@@ -132,6 +173,8 @@ impl std::fmt::Display for Expression {
         match self {
             Expression::Term(term) => write!(f, "{}", term),
             Expression::Nested(inner) => write!(f, "({})", inner),
+            #[cfg(feature="function")]
+            Expression::Function { name } => write!(f,"{}",function_get!(name)),
             Expression::Binary { operation , left , right } => match operation {
                 ArithmeticOperation::Plus => {
                     let s = format!("{left} + {right}").replace("0 + ","").replace(" + 0", "");
@@ -180,6 +223,8 @@ impl std::fmt::Debug for Expression {
         match self {
             Expression::Term(term) => write!(f, "{}", term),
             Expression::Nested(inner) => write!(f, "({})", inner),
+            #[cfg(feature="function")]
+            Expression::Function { name } => write!(f,"{}",function_get!(name)),
             Expression::Binary { operation , left , right } => match operation {
                 ArithmeticOperation::Plus => write!(f,"{left} + {right}"),
                 ArithmeticOperation::Minus => write!(f, "{left} - {right}"),

@@ -6,6 +6,8 @@
 - Finish `build_expression_tree` with bracket support
 
 - **#[deprecated(note = "Maybe this is redundant")]** for Expression::Nested
+- add cfg for functions + expr function variant
+For cases like f(x) * f(x) maybe output (f(x))^2
 
 # Done
 

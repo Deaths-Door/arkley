@@ -108,6 +108,35 @@ impl std::ops::Mul for Expression {
     }
 }
 
+#[cfg(feature="function")]
+use crate::Function;
+
+#[cfg(feature="function")]
+impl std::ops::Mul<Function<'_>> for Function<'_> {
+    type Output = Expression; 
+    fn mul(self, rhs: Function<'_>) -> Self::Output {
+        // TODO : For cases like f(x) * f(x) maybe output (f(x))^2
+        Expression::new_mal(self.into(), rhs.into())
+    }
+}
+
+#[cfg(feature="function")]
+impl std::ops::Mul<Term> for Function<'_> {
+    type Output = Expression; 
+    fn mul(self, rhs: Term) -> Self::Output {
+        Expression::new_mal(self.into(),rhs.into())
+    }
+}
+
+#[cfg(feature="function")]
+impl std::ops::Mul<Function<'_>> for Expression {
+    type Output = Expression; 
+    fn mul(self, rhs: Function<'_>) -> Self::Output {
+        // TODO : For cases like f(x) * f(x) maybe output (f(x))^2
+        Expression::new_mal(self.into(), rhs.into())
+    }
+}
+
 #[cfg(test)]
 mod term {
     use super::*;
