@@ -41,6 +41,8 @@ impl Evaluate for Expression {
                 self.replace_single_variable(variable, value); // avoid compile errors
                 self
             }
+            #[cfg(feature="function")]
+            Expression::Function { name } => todo!(),
         }    
     }
 

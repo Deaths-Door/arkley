@@ -1,4 +1,8 @@
-use std::{collections::{HashSet, HashMap}, fmt::Debug};
+use std::{
+    collections::{HashSet, HashMap}, 
+    fmt::{Debug, Display}, 
+    sync::RwLock
+};
 
 use lazy_static::lazy_static;
 
@@ -6,8 +10,16 @@ use crate::Expression;
 
 lazy_static! {
     #[allow(missing_docs)]
-    pub static ref FUNCTIONS : HashMap<&'static str,Function<'static>> =HashMap::new();
+    pub static ref FUNCTIONS : RwLock<HashMap<&'static str,Function<'static>>> = HashMap::new().into();
 }
+
+macro_rules! function_get {
+    ($name : expr) => {
+        FUNCTIONS.read().unwrap().get($name).unwrap()
+    };
+}
+
+pub(crate) use function_get;
 
 /// Represents a mathematical function with a name and a set of arguments.
 pub struct Function<'a> {
@@ -16,7 +28,7 @@ pub struct Function<'a> {
     expression : Expression
 }
 
-impl Debug for Function<'_> {
+impl Display for Function<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -29,6 +41,12 @@ impl Debug for Function<'_> {
                 .join(", "),
             expr = self.expression
         )
+    }
+}
+
+impl Debug for Function<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f,"{:?}",self)
     }
 }
 
@@ -49,12 +67,14 @@ impl<'a> Function<'a> {
     }
 
     /// Get underlying arguments
+    #[inline]
     pub const fn arguments(&self) -> &HashSet<char> {
         &self.arguments
     }
 
     /// Get underlying name
-    pub const fn name(&self) -> &str {
+    #[inline]
+    pub const fn name(&self) -> &'a str {
         self.name
     }
 }

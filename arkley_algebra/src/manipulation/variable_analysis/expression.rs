@@ -21,6 +21,8 @@ impl VariableAnalysis for Expression {
                 Expression::Nested(inner) => {
                     extract_variables(inner, unique_vars);
                 },
+                #[cfg(feature="function")]
+                Expression::Function { .. } => (),
             }
         }
 
@@ -32,7 +34,9 @@ impl VariableAnalysis for Expression {
         match self {
             Expression::Term(term) => term.contains_any_variable(variables),
             Expression::Binary { left, right, .. } => left.contains_any_variable(variables) || right.contains_any_variable(variables)   ,
-            Expression::Nested(inner) => inner.contains_any_variable(variables)
+            Expression::Nested(inner) => inner.contains_any_variable(variables),
+            #[cfg(feature="function")]
+            Expression::Function { .. } => false,
         }
     }
 
@@ -40,7 +44,9 @@ impl VariableAnalysis for Expression {
         match self {
             Expression::Term(term) => term.contains_all(variables),
             Expression::Binary { left, right, .. } => left.contains_all(variables) || right.contains_all(variables)   ,
-            Expression::Nested(inner) => inner.contains_all(variables)
+            Expression::Nested(inner) => inner.contains_all(variables),
+            #[cfg(feature="function")]
+            Expression::Function { .. } => false,
         }
     }
 
@@ -48,7 +54,9 @@ impl VariableAnalysis for Expression {
         match self {
             Expression::Term(term) => term.contains_variable(variable),
             Expression::Binary { left, right, .. } => left.contains_variable(variable) || right.contains_variable(variable)   ,
-            Expression::Nested(inner) => inner.contains_variable(variable)
+            Expression::Nested(inner) => inner.contains_variable(variable),
+            #[cfg(feature="function")]
+            Expression::Function { .. } => false,
         }
     }
 }
