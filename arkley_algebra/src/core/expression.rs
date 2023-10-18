@@ -117,7 +117,7 @@ impl Expression {
     ///
     /// - `function`: The mathematical function to create and register.
     #[cfg(feature="function")]
-    pub fn new_function(function : Function<'static>) -> Self {
+    pub fn new_function(function : Function) -> Self {
         let expr  = Self::new_function_unchecked(function.name());
         FUNCTIONS.write().unwrap().insert(function.name(), function);
         expr
@@ -148,8 +148,8 @@ impl From<char> for Expression {
     }
 }
 
-impl From<Function<'_>> for Expression {
-    fn from(value: Function<'_>) -> Self {
+impl From<Function > for Expression {
+    fn from(value: Function ) -> Self {
         Expression::new_function(value)
     }
 }

@@ -20,7 +20,7 @@ impl Neg for Expression {
             Expression::Binary { operation , left , right } if operation == ArithmeticOperation::Plus => Expression::new_binary(ArithmeticOperation::Minus ,-*left,*right),
             Expression::Binary { operation , left , right } if operation == ArithmeticOperation::Minus => Expression::new_binary(ArithmeticOperation::Plus,-*left,-*right),
             Expression::Binary { operation , left , right } => Expression::new_binary(operation,-*left,-*right),
-            Expression::Function { ref name } => Expression::new_minus(0.into(), self),
+            Expression::Function { ..  } => Expression::new_minus(0.into(), self),
         }
     }
 }
@@ -29,7 +29,7 @@ impl Neg for Expression {
 use crate::Function;
 
 #[cfg(feature="function")]
-impl Neg for Function<'_> {
+impl Neg for Function  {
     type Output = Expression; 
     fn neg(self) -> Self::Output {
         Expression::new_minus(0.into(), self.into())

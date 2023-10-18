@@ -34,9 +34,9 @@ impl std::ops::Sub<Term> for Expression {
 use crate::Function;
 
 #[cfg(feature="function")]
-impl std::ops::Sub<Function<'_>> for Function<'_> {
+impl std::ops::Sub<Function > for Function  {
     type Output = Expression; 
-    fn sub(self, rhs: Function<'_>) -> Self::Output {
+    fn sub(self, rhs: Function ) -> Self::Output {
         match self.name() == rhs.name() {
             true => 0.0.into(),
             false => Expression::new_minus(
@@ -48,7 +48,7 @@ impl std::ops::Sub<Function<'_>> for Function<'_> {
 }
 
 #[cfg(feature="function")]
-impl std::ops::Sub<Term> for Function<'_> {
+impl std::ops::Sub<Term> for Function  {
     type Output = Expression; 
     fn sub(self, rhs: Term) -> Self::Output {
         Expression::new_minus(self.into(),rhs.into())
@@ -56,9 +56,9 @@ impl std::ops::Sub<Term> for Function<'_> {
 }
 
 #[cfg(feature="function")]
-impl std::ops::Sub<Function<'_>> for Expression {
+impl std::ops::Sub<Function > for Expression {
     type Output = Expression; 
-    fn sub(self, rhs: Function<'_>) -> Self::Output {
+    fn sub(self, rhs: Function ) -> Self::Output {
         if let Expression::Function { name } = self {
             return match name == rhs.name() {
                 true => 0.0.into(),

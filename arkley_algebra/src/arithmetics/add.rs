@@ -34,9 +34,9 @@ impl std::ops::Add<Term> for Expression {
 use crate::Function;
 
 #[cfg(feature="function")]
-impl std::ops::Add<Function<'_>> for Function<'_> {
+impl std::ops::Add<Function > for Function  {
     type Output = Expression; 
-    fn add(self, rhs: Function<'_>) -> Self::Output {
+    fn add(self, rhs: Function ) -> Self::Output {
         match self.name() == rhs.name() {
             true => Expression::new_plus(2.0.into(), self.into()),
             false => Expression::new_plus(
@@ -48,7 +48,7 @@ impl std::ops::Add<Function<'_>> for Function<'_> {
 }
 
 #[cfg(feature="function")]
-impl std::ops::Add<Term> for Function<'_> {
+impl std::ops::Add<Term> for Function  {
     type Output = Expression; 
     fn add(self, rhs: Term) -> Self::Output {
         Expression::new_plus(self.into(),rhs.into())
@@ -56,9 +56,9 @@ impl std::ops::Add<Term> for Function<'_> {
 }
 
 #[cfg(feature="function")]
-impl std::ops::Add<Function<'_>> for Expression {
+impl std::ops::Add<Function > for Expression {
     type Output = Expression; 
-    fn add(self, rhs: Function<'_>) -> Self::Output {
+    fn add(self, rhs: Function ) -> Self::Output {
         if let Expression::Function { name } = self {
             return match name == rhs.name() {
                 true => Expression::new_plus(2.0.into(), self.into()),

@@ -38,7 +38,7 @@ macro_rules! primitives_operations {
             }
 
             #[cfg(feature="function")]
-            impl Add<$t> for Function<'_> {
+            impl Add<$t> for Function  {
                 type Output = Expression; 
                 fn add(self, rhs: $t) -> Self::Output {
                     self + Term::from(rhs)
@@ -71,7 +71,7 @@ macro_rules! primitives_operations {
             }
 
             #[cfg(feature="function")]
-            impl Sub<$t> for Function<'_> {
+            impl Sub<$t> for Function  {
                 type Output = Expression; 
                 fn sub(self, rhs: $t) -> Self::Output {
                     self - Term::from(rhs)
@@ -105,7 +105,7 @@ macro_rules! primitives_operations {
             }
 
             #[cfg(feature="function")]
-            impl Mul<$t> for Function<'_> {
+            impl Mul<$t> for Function  {
                 type Output = Expression; 
                 fn mul(self, rhs: $t) -> Self::Output {
                     self * Term::from(rhs)
@@ -138,7 +138,7 @@ macro_rules! primitives_operations {
             }
 
             #[cfg(feature="function")]
-            impl Div<$t> for Function<'_> {
+            impl Div<$t> for Function  {
                 type Output = Expression; 
                 fn div(self, rhs: $t) -> Self::Output {
                     self / Term::from(rhs)

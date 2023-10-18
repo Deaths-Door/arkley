@@ -9,15 +9,15 @@ use crate::{Term, Expression, manipulation::VariableAnalysis};
 use crate::Function;
 
 #[cfg(feature="function")]
-impl std::ops::Div<Function<'_>> for Function<'_> {
+impl std::ops::Div<Function > for Function  {
     type Output = Expression; 
-    fn div(self, rhs: Function<'_>) -> Self::Output {
+    fn div(self, rhs: Function ) -> Self::Output {
         if self.name() == rhs.name() { 1.into() } else { Expression::new_durch(self.into(),rhs.into()) }
     }
 }
 
 #[cfg(feature="function")]
-impl std::ops::Div<Term> for Function<'_> {
+impl std::ops::Div<Term> for Function  {
     type Output = Expression; 
     fn div(self, rhs: Term) -> Self::Output {
         if rhs.coefficient == 1 && rhs.variables.is_empty() {
@@ -29,9 +29,9 @@ impl std::ops::Div<Term> for Function<'_> {
 }
 
 #[cfg(feature="function")]
-impl std::ops::Div<Function<'_>> for Expression {
+impl std::ops::Div<Function > for Expression {
     type Output = Expression; 
-    fn div(self, rhs: Function<'_>) -> Self::Output {
+    fn div(self, rhs: Function ) -> Self::Output {
         // TODO : Check for optimzations
         Expression::new_durch(self.into(),rhs.into())
     }

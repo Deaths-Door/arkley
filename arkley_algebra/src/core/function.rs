@@ -10,7 +10,7 @@ use crate::Expression;
 
 lazy_static! {
     #[allow(missing_docs)]
-    pub static ref FUNCTIONS : RwLock<HashMap<&'static str,Function<'static>>> = HashMap::new().into();
+    pub static ref FUNCTIONS : RwLock<HashMap<&'static str,Function>> = HashMap::new().into();
 }
 
 macro_rules! function_get {
@@ -22,13 +22,13 @@ macro_rules! function_get {
 pub(crate) use function_get;
 
 /// Represents a mathematical function with a name and a set of arguments.
-pub struct Function<'a> {
-    name: &'a str,
+pub struct Function {
+    name: &'static str,
     arguments: HashSet<char>,
     expression : Expression
 }
 
-impl Display for Function<'_> {
+impl Display for Function {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -44,20 +44,20 @@ impl Display for Function<'_> {
     }
 }
 
-impl Debug for Function<'_> {
+impl Debug for Function {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f,"{:?}",self)
     }
 }
 
-impl<'a> Function<'a> {
+impl Function {
     /// Creates a new function with the given name and an empty set of arguments.
-    pub fn new(name: &'a str,expression : Expression) -> Self {
+    pub fn new(name: &'static str,expression : Expression) -> Self {
         Self { name, arguments: HashSet::new() , expression }
     }
 
     /// Creates a new function with the given name and a set of arguments.
-    pub fn new_with_arguments(name: &'a str,expression : Expression, arguments: HashSet<char>) -> Self {
+    pub fn new_with_arguments(name: &'static str,expression : Expression, arguments: HashSet<char>) -> Self {
         Self { name, arguments , expression }
     }
 
@@ -74,7 +74,7 @@ impl<'a> Function<'a> {
 
     /// Get underlying name
     #[inline]
-    pub const fn name(&self) -> &'a str {
+    pub const fn name(&self) -> &'static str {
         self.name
     }
 }
