@@ -1,6 +1,3 @@
-
-use std::collections::HashMap;
-
 use num_notation::Number;
 
 use crate::{
@@ -11,6 +8,7 @@ use crate::{
 ///
 /// The `Expression` enum allows building complex mathematical expressions
 #[derive(Clone)]
+#[cfg_attr(feature="function", derive(Hash))]
 #[cfg_attr(test, derive(PartialEq))]
 pub enum Expression {
     /// Represents a basic unit in a mathematical expression.
@@ -158,50 +156,11 @@ from!(u8,u16,u32,u64,i8,i16,i32,i64,f32,f64,usize);
 
 impl std::fmt::Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Expression::Term(term) => write!(f, "{term}"),
-            Expression::Nested(inner) => write!(f,"{inner}"),
-            #[cfg(feature="function")]
-            Expression::Function(func) => write!(f,"{func}"), 
-            Expression::Binary { operation , left , right } => match operation {
-                ArithmeticOperation::Plus => {
-                    let s = format!("{left} + {right}").replace("0 + ","").replace(" + 0", "");
-                    write!(f,"{s}")
-                },
-                ArithmeticOperation::Minus => {
-                    let s = format!("{left} - {right}").replace("0 - ","-").replace(" - 0", "");
-                    write!(f,"{s}")
-                },
-                ArithmeticOperation::Mal => {
-                    let s = format!("{left}");
+        let string = format!("{:?}",self)
+            .replace("0 + ","").replace(" + 0", "")
+            .replace("0 - ","-").replace(" - 0", "");
 
-                    match s.char_indices().find(|(_,c)| "+-*/".contains(*c)) {
-                        None => write!(f,"{s}")?,
-                        Some((pos,op)) => if op == '-' && s.chars().nth(pos + 1).map(|c| c.is_digit(10) || c.is_ascii_lowercase()).unwrap_or(false) {
-                            write!(f,"{s}")?
-                        }
-                        else {
-                            write!(f,"({s})")?
-                        }
-                    };
-
-                    write!(f,"({right})")
-                },
-                ArithmeticOperation::Durch => {
-                    match **left {
-                        Expression::Term(_) => write!(f,"{left}"),
-                        _ => write!(f,"({left})")
-                    }?;
-
-                    write!(f,"/")?;
-
-                    match **right {
-                        Expression::Term(_) => write!(f,"{right}"),
-                        _ => write!(f,"({right})")
-                    }
-                }
-            },
-        }
+        f.write_str(&string)
     }
 }
 
@@ -210,16 +169,16 @@ impl std::fmt::Debug for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Expression::Term(term) => write!(f, "{term}"),
-            Expression::Nested(inner) => write!(f,"{inner}"),
+            Expression::Nested(inner) => write!(f,"({inner})"),
             #[cfg(feature="function")]
-            Expression::Function(func) => write!(f,"{func}"), 
+            Expression::Function(func) => write!(f,"{func}"),
             Expression::Binary { operation , left , right } => match operation {
                 ArithmeticOperation::Plus => write!(f,"{left} + {right}"),
                 ArithmeticOperation::Minus => write!(f, "{left} - {right}"),
                 ArithmeticOperation::Mal => {
                     let s = format!("{left}");
 
-                    match s.char_indices().find(|(_,c)| "+-*/".contains(*c)) {
+                    match s.char_indices().find(|(_,c)| "+*-/".contains(*c)) {
                         None => write!(f,"{s}")?,
                         Some((pos,op)) => if op == '-' && s.chars().nth(pos + 1).map(|c| c.is_digit(10) || c.is_ascii_lowercase()).unwrap_or(false) {
                             write!(f,"{s}")?
@@ -230,6 +189,10 @@ impl std::fmt::Debug for Expression {
                     
                     };
 
+                  /*  match **right {
+                        Self::Function(ref func) => write!(f,"{func}"),
+                        _ => 
+                    }*/
                     write!(f,"({right})")
                 },
                 ArithmeticOperation::Durch => {
@@ -247,6 +210,7 @@ impl std::fmt::Debug for Expression {
                 }
             },
         }
+    
     }
 }
 

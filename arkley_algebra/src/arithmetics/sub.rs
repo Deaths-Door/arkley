@@ -31,10 +31,19 @@ impl std::ops::Sub<Term> for Expression {
 }
 
 #[cfg(feature="function")]
+impl std::ops::Sub<Term> for Function  {
+    type Output = Expression; 
+    fn sub(self, rhs: Term) -> Self::Output {
+        Expression::new_minus(self.into(),rhs.into())
+    }
+}
+
+
+#[cfg(feature="function")]
 use crate::Function;
 
 #[cfg(feature="function")]
-impl std::ops::Sub<Function > for Function  {
+impl std::ops::Sub<Function> for Function  {
     type Output = Expression; 
     fn sub(self, rhs: Function ) -> Self::Output {
         match self.same(&rhs) && self.arguments_empty(&rhs) {
@@ -44,14 +53,6 @@ impl std::ops::Sub<Function > for Function  {
                 rhs.into()
             ),
         }
-    }
-}
-
-#[cfg(feature="function")]
-impl std::ops::Sub<Term> for Function  {
-    type Output = Expression; 
-    fn sub(self, rhs: Term) -> Self::Output {
-        Expression::new_minus(self.into(),rhs.into())
     }
 }
 
@@ -134,10 +135,12 @@ mod term {
 
 #[cfg(test)]
 mod expr {
+    use std::collections::BTreeMap;
+
     use super::*;
 
     use num_notation::Number;
-    use crate::Variables;
+    use crate::{Variables, parse_expression};
     
     // Helper function to create a Term with a single variable.
     fn create_term_with_variable(coeff: f64, var: char, exp: f64) -> Term {
@@ -179,4 +182,61 @@ mod expr {
 
         check_expression_str(result, "2x - 2y");
     }
+
+    fn cos(arg : Expression) -> Function {
+        Function::new_default("cos", 1.into(),BTreeMap::from([('x',arg.into())]))
+    }
+
+    fn sin(arg : Expression) -> Function {
+        Function::new_default("sin", 1.into(),BTreeMap::from([('x',arg.into())]))
+    }
+    
+    #[test]
+    fn with_functions() {
+
+        let _expr = parse_expression("2x ").unwrap().1.unwrap();
+        let cos = cos(_expr);
+
+        let expr = parse_expression("3x").unwrap().1.unwrap();
+        let result = expr - cos;
+
+        check_expression_str(result, "3x - cos(2x)");
+    }
+
+    #[test]
+    fn func_sub_func() {
+        let cos1 = cos((-1).into());
+        let cos2 = cos(1.into());
+        let result = cos1 - cos2;
+
+        check_expression_str(result, "cos(-1) - cos(1)");
+    }
+
+    #[test]
+    fn cos_x_and_sin_x() {
+        let cos_x = cos('x'.into());
+        let sin_x = sin('x'.into());
+        let result = cos_x - sin_x;
+
+        check_expression_str(result, "cos(x) - sin(x)");
+    }
+
+    #[test]
+    fn funcition_complex() {
+        let sin_x = sin('x'.into());
+        
+        let cos_1 = cos(1.into());
+        let sin_1 = sin(1.into());
+
+        let expr = parse_expression("2x - 7x - 5y").unwrap().1.unwrap();
+
+        let lexpr = Expression::new_plus(expr, sin_1.into());
+        let rexpr = Expression::new_mal(cos_1.into(), sin_x.into());
+
+        // -5x - 5y + sin(1) - (cos(1) * sin(x))
+        let result = lexpr - rexpr;
+
+        check_expression_str(result, "sin(1) - 5x - 5y - cos(1)sin(x)");
+    }
+
 }

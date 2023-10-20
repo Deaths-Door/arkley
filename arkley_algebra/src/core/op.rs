@@ -4,6 +4,7 @@ use strum::Display;
 /// The `ArithmeticOperation` enum includes variants for common arithmetic operations
 /// such as addition, subtraction, multiplication, and division.
 #[derive(PartialEq,Clone,Display)]
+#[cfg_attr(feature="function", derive(Hash))]
 pub enum ArithmeticOperation {
     /// Represents the addition operation (+).
     #[strum(serialize = "+")]

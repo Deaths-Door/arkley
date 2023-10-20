@@ -1,22 +1,25 @@
-use std::fmt::{Debug, Display};
+use std::{fmt::{Debug, Display}, collections::{BTreeMap, HashMap}};
 
-use crate::Expression;
+use crate::{Expression, manipulation::VariableSubstitution};
 
 /// Represents a mathematical function with a name and a set of arguments.
 #[derive(Clone)]
+#[cfg_attr(feature="function", derive(Hash))]
 #[cfg_attr(test, derive(PartialEq))]
 pub struct Function {
-    name: &'static str,
-    pub(crate) arguments : Vec<(char,Option<Expression>)>,
-    expression : Box<Expression>,
+    pub(crate) name: &'static str,
+    pub(crate) arguments : FunctionArguments,
+    pub(crate) expression : Option<Box<Expression>>,
     pub(crate) closure : fn(Function) -> Expression,
 }
+
+pub(crate) type FunctionArguments = BTreeMap<char,Option<Expression>>;
 
 impl Display for Function {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{name}({args}) = {expr}",
+            "{name}({args})",
             name = self.name,
             args = self.arguments.iter().map(|(c,v)| match v {
                 None => c.to_string(),
@@ -24,7 +27,6 @@ impl Display for Function {
             })
             .collect::<Vec<String>>()
             .join(", "),
-            expr = *self.expression
         )
     }
 }
@@ -36,19 +38,64 @@ impl Debug for Function {
 }
 
 impl Function {
-    /// Creates a new function with the given name and an empty set of arguments.
-    pub const fn new(name: &'static str,expression : Box<Expression>,closure : fn(Function) -> Expression) -> Self {
-        Self::new_with_arguments(name, Vec::new(),expression, closure)
+    /// Gets the name of the function.
+    pub const fn name(&self) -> &'static str {
+        self.name
     }
 
-    /// Creates a new function with the given name and a set of arguments.
-    pub const fn new_with_arguments(
-        name: &'static str,
-        arguments : Vec<(char,Option<Expression>)>,
-        expression : Box<Expression>,
-        closure : fn(Function) -> Expression,
-    ) -> Self {
-        Self { name , arguments , expression , closure }
+    /// Gets the arguments of the function.
+    pub const fn arguments(&self) -> &FunctionArguments {
+        &self.arguments
+    }
+
+    /// Gets the expression of the function, if available.
+    pub const fn expression(&self) -> &Option<Box<Expression>> {
+        &self.expression
+    }
+
+    /// Gets a mutable reference to the arguments of the function, allowing you to modify them.
+    pub fn arguments_mut(&mut self) -> &mut FunctionArguments {
+        &mut self.arguments  
+    }
+}
+
+impl Function {
+    /// Creates a new `Function` instance with a default closure function.
+    ///
+    /// This constructor creates a `Function` with the given `name`, `expression`, and `arguments`.
+    /// It sets a default closure that processes the function's expression and arguments.
+    pub fn new_default(name: &'static str,expression : Expression,arguments : FunctionArguments) -> Self {
+        let closure = |func: Function| {
+            let mut arguments : HashMap<char,Expression> = func.arguments.into_iter()
+                .filter(|(_,expr)| expr.is_some())
+                .map(|(k,expr)| (k,expr.unwrap()))
+                .collect();
+
+            let mut expr = func.expression.unwrap();
+            
+            expr.replace_variables(&mut arguments);
+
+            *expr
+        };
+
+        Self { name , arguments , expression : Some(Box::new(expression)) , closure }
+    }
+    
+    /// Creates a new `Function` instance with a custom closure function.
+    pub const fn new(name: &'static str,closure: fn(Function) -> Expression) -> Self {
+        Self { name , arguments : BTreeMap::new() , expression : None , closure }
+    }
+
+    /// Sets the arguments of the function.
+    pub fn with_arguments(mut self, arguments: FunctionArguments) -> Self {
+        self.arguments = arguments;
+        self
+    }
+
+    /// Sets the expression of the function.
+    pub fn with_expression(mut self, expression: Expression) -> Self {
+        self.expression = Some(Box::new(expression));
+        self
     }
 }
 
