@@ -4,10 +4,16 @@ mod expression;
 #[cfg(feature="equation")]
 mod equation;
 
-use std::collections::{HashMap};
-
 #[cfg(feature="equation")]
 pub use equation::*;
+
+#[cfg(feature="function")]
+mod function;
+
+#[cfg(feature="equation")]
+pub use function::*;
+
+use std::collections::HashMap;
 
 use num_notation::Number;
 
@@ -39,5 +45,6 @@ pub trait VariableSubstitution<SV = Number,MV = HashMap<char,SV>> {
     ///
     /// The updated term with the specified variables replaced. Variables that do not exist in the term
     /// are left unchanged in the `variable_values` map given.
+    // TODO : THIS MAY NOT WORK LIKE EXCEpTED eg for 2x + 2x the first x is replaced but not the second
     fn replace_variables(&mut self, variable_values:&mut MV);
 }

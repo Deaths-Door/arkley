@@ -1,31 +1,15 @@
-use std::{
-    collections::{HashSet, HashMap}, 
-    fmt::{Debug, Display}, 
-    sync::RwLock
-};
-
-use lazy_static::lazy_static;
+use std::fmt::{Debug, Display};
 
 use crate::Expression;
 
-lazy_static! {
-    #[allow(missing_docs)]
-    pub static ref FUNCTIONS : RwLock<HashMap<&'static str,Function>> = HashMap::new().into();
-}
-
-macro_rules! function_get {
-    ($name : expr) => {
-        FUNCTIONS.read().unwrap().get($name).unwrap()
-    };
-}
-
-pub(crate) use function_get;
-
 /// Represents a mathematical function with a name and a set of arguments.
+#[derive(Clone)]
+#[cfg_attr(test, derive(PartialEq))]
 pub struct Function {
     name: &'static str,
-    arguments: HashSet<char>,
-    expression : Expression
+    pub(crate) arguments : Vec<(char,Option<Expression>)>,
+    expression : Box<Expression>,
+    pub(crate) closure : fn(Function) -> Expression,
 }
 
 impl Display for Function {
@@ -34,12 +18,13 @@ impl Display for Function {
             f,
             "{name}({args}) = {expr}",
             name = self.name,
-            args = self.arguments
-                .iter()
-                .map(|c| c.to_string())
-                .collect::<Vec<String>>()
-                .join(", "),
-            expr = self.expression
+            args = self.arguments.iter().map(|(c,v)| match v {
+                None => c.to_string(),
+                Some(value) => value.to_string()
+            })
+            .collect::<Vec<String>>()
+            .join(", "),
+            expr = *self.expression
         )
     }
 }
@@ -52,29 +37,27 @@ impl Debug for Function {
 
 impl Function {
     /// Creates a new function with the given name and an empty set of arguments.
-    pub fn new(name: &'static str,expression : Expression) -> Self {
-        Self { name, arguments: HashSet::new() , expression }
+    pub const fn new(name: &'static str,expression : Box<Expression>,closure : fn(Function) -> Expression) -> Self {
+        Self::new_with_arguments(name, Vec::new(),expression, closure)
     }
 
     /// Creates a new function with the given name and a set of arguments.
-    pub fn new_with_arguments(name: &'static str,expression : Expression, arguments: HashSet<char>) -> Self {
-        Self { name, arguments , expression }
+    pub const fn new_with_arguments(
+        name: &'static str,
+        arguments : Vec<(char,Option<Expression>)>,
+        expression : Box<Expression>,
+        closure : fn(Function) -> Expression,
+    ) -> Self {
+        Self { name , arguments , expression , closure }
+    }
+}
+
+impl Function {
+    pub(crate) fn same(&self,other : &Function) -> bool {
+        self.name == other.name
     }
 
-    /// Adds an argument to the function.
-    pub fn add_argument(&mut self, arg: char) {
-        self.arguments.insert(arg);
-    }
-
-    /// Get underlying arguments
-    #[inline]
-    pub const fn arguments(&self) -> &HashSet<char> {
-        &self.arguments
-    }
-
-    /// Get underlying name
-    #[inline]
-    pub const fn name(&self) -> &'static str {
-        self.name
+    pub(crate) fn arguments_empty(&self,other : &Function) -> bool {
+        self.arguments.is_empty() == other.arguments.is_empty()
     }
 }

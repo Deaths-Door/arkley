@@ -1,3 +1,5 @@
+use num_notation::{One, Zero};
+
 use crate::{Term,Expression,ArithmeticOperation};
 
 impl std::ops::Mul for Term {
@@ -42,6 +44,21 @@ impl std::ops::Mul<Term> for Expression {
                 let rexpr = -*right * other;
                 Expression::new_binary(operation,lexpr,rexpr)
             },
+            Expression::Function { .. } => {
+                if other.variables.is_empty() {
+                    return if other.coefficient.is_one() {
+                        self.into()
+                    }
+                    else if other.coefficient.is_zero() {
+                        0.0.into()
+                    }
+                    else {
+                        Expression::new_mal(self.into(),other.into())
+                    }
+                }
+        
+                Expression::new_mal(self.into(),other.into())
+            },
         };
 
         expr.combine_terms()
@@ -68,6 +85,18 @@ impl std::ops::Mul for Expression {
             (Expression::Binary { operation : op2, left : left1, right : right1 }, 
                 Expression::Binary { operation : op1, left : left2, right : right2 }
             ) if op1 == ArithmeticOperation::Durch && op2 == ArithmeticOperation::Durch => Expression::new_durch(*left2 * *left1, *right1 * *right2),
+        
+            // div , any
+            (
+                Expression::Binary { operation, left, right }, 
+                expr @_ 
+            ) |
+            (
+                expr @_ ,
+                Expression::Binary { operation, left, right }, 
+            )
+            if operation == ArithmeticOperation::Durch  => Expression::new_durch(*left * expr, *right),
+        
         
             (
                 Expression::Binary { operation : op1, left : left1, right : right1 }, 
@@ -103,7 +132,8 @@ impl std::ops::Mul for Expression {
                 let rexpr = Expression::new_plus(expr3, expr4);
 
                 lexpr + rexpr
-            }
+            },
+            (left @_,right @_) => Expression::new_mal(left, right),
         } 
     }
 }
@@ -124,6 +154,18 @@ impl std::ops::Mul<Function > for Function  {
 impl std::ops::Mul<Term> for Function  {
     type Output = Expression; 
     fn mul(self, rhs: Term) -> Self::Output {
+        if rhs.variables.is_empty() {
+            return if rhs.coefficient.is_one() {
+                self.into()
+            }
+            else if rhs.coefficient.is_zero() {
+                0.0.into()
+            }
+            else {
+                Expression::new_mal(self.into(),rhs.into())
+            }
+        }
+
         Expression::new_mal(self.into(),rhs.into())
     }
 }
@@ -131,7 +173,10 @@ impl std::ops::Mul<Term> for Function  {
 #[cfg(feature="function")]
 impl std::ops::Mul<Function > for Expression {
     type Output = Expression; 
-    fn mul(self, rhs: Function ) -> Self::Output {
+    fn mul(self, rhs: Function) -> Self::Output {
+        if let Expression::Term(value) = self  {
+            return rhs * value
+        }
         // TODO : For cases like f(x) * f(x) maybe output (f(x))^2
         Expression::new_mal(self.into(), rhs.into())
     }

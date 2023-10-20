@@ -2,7 +2,7 @@ use crate::{Expression, Term};
 
 use super::VariableSubstitution;
 
-impl<SV,MV> VariableSubstitution<SV,MV> for Expression where Term : VariableSubstitution<SV,MV> , SV : Clone{
+impl<SV,MV> VariableSubstitution<SV,MV> for Expression where Term : VariableSubstitution<SV,MV> , SV : Clone {
     fn replace_single_variable(&mut self, variable: &char, value: SV) -> Option<()> {
         match self {
             Expression::Term(term) => term.replace_single_variable(variable,value),
@@ -15,7 +15,8 @@ impl<SV,MV> VariableSubstitution<SV,MV> for Expression where Term : VariableSubs
                     (None,None) => None,
                     _ => Some(()),
                 }
-            }
+            },
+            Expression::Function(func) => func.replace_single_variable(variable, value),
         }
     }
 
@@ -27,6 +28,7 @@ impl<SV,MV> VariableSubstitution<SV,MV> for Expression where Term : VariableSubs
                 left.replace_variables(variable_values);
                 right.replace_variables(variable_values);
             }
+            Expression::Function(func) => func.replace_variables(variable_values),
         }
     }
 }

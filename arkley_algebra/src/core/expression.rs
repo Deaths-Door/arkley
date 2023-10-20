@@ -1,7 +1,11 @@
 
+use std::collections::HashMap;
+
 use num_notation::Number;
 
-use crate::{Term,ArithmeticOperation,Variables, Function, FUNCTIONS, function_get};
+use crate::{
+    Term, ArithmeticOperation, Variables, Function
+};
 
 /// An enum representing a mathematical expression.
 ///
@@ -41,7 +45,7 @@ pub enum Expression {
     /// - `name`: The name of the function, represented as a string. This can be used to
     ///   identify the specific mathematical function being applied.
     #[cfg(feature="function")]
-    Function { name : &'static str }
+    Function(Function)
 }
 
 // To create Self
@@ -98,29 +102,13 @@ impl Expression {
         Expression::Nested(Box::new(inner))
     }
 
-    /// Creates a new `Expression` representing a mathematical function without checking for validity.
+    /// Creates a new `Expression` representing a mathematical function.
     ///
-    /// This function creates a new `Expression` of the `Function` variant with the provided function name.
-    /// It doesn't perform any validity checks 
-    /// 
-    /// - `name`: The name of the mathematical function, represented as a string.
+    /// This function creates a new `Expression` of the `Function` variant with the provided function name
+    ///
     #[cfg(feature="function")]
-    pub fn new_function_unchecked(name : &'static str) -> Self {
-        Expression::Function { name }
-    }
-
-    /// Creates a new `Expression` representing a mathematical function and registers it.
-    ///
-    /// This function creates a new `Expression` of the `Function` variant with the provided function name,
-    /// and then registers it in a collection of known functions. It first inserts the function into the collection,
-    /// and then creates the `Expression`.
-    ///
-    /// - `function`: The mathematical function to create and register.
-    #[cfg(feature="function")]
-    pub fn new_function(function : Function) -> Self {
-        let expr  = Self::new_function_unchecked(function.name());
-        FUNCTIONS.write().unwrap().insert(function.name(), function);
-        expr
+    pub fn new_function(func : Function) -> Self {
+        Self::Function(func)
     }
 }
 
@@ -148,9 +136,9 @@ impl From<char> for Expression {
     }
 }
 
-impl From<Function > for Expression {
-    fn from(value: Function ) -> Self {
-        Expression::new_function(value)
+impl From<Function> for Expression {
+    fn from(value: Function) -> Self {
+        Self::new_function(value)
     }
 }
 
@@ -171,10 +159,10 @@ from!(u8,u16,u32,u64,i8,i16,i32,i64,f32,f64,usize);
 impl std::fmt::Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Expression::Term(term) => write!(f, "{}", term),
-            Expression::Nested(inner) => write!(f, "({})", inner),
+            Expression::Term(term) => write!(f, "{term}"),
+            Expression::Nested(inner) => write!(f,"{inner}"),
             #[cfg(feature="function")]
-            Expression::Function { name } => write!(f,"{}",function_get!(name)),
+            Expression::Function(func) => write!(f,"{func}"), 
             Expression::Binary { operation , left , right } => match operation {
                 ArithmeticOperation::Plus => {
                     let s = format!("{left} + {right}").replace("0 + ","").replace(" + 0", "");
@@ -221,10 +209,10 @@ impl std::fmt::Display for Expression {
 impl std::fmt::Debug for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Expression::Term(term) => write!(f, "{}", term),
-            Expression::Nested(inner) => write!(f, "({})", inner),
+            Expression::Term(term) => write!(f, "{term}"),
+            Expression::Nested(inner) => write!(f,"{inner}"),
             #[cfg(feature="function")]
-            Expression::Function { name } => write!(f,"{}",function_get!(name)),
+            Expression::Function(func) => write!(f,"{func}"), 
             Expression::Binary { operation , left , right } => match operation {
                 ArithmeticOperation::Plus => write!(f,"{left} + {right}"),
                 ArithmeticOperation::Minus => write!(f, "{left} - {right}"),

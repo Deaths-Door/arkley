@@ -37,7 +37,7 @@ use crate::Function;
 impl std::ops::Add<Function > for Function  {
     type Output = Expression; 
     fn add(self, rhs: Function ) -> Self::Output {
-        match self.name() == rhs.name() {
+        match self.same(&rhs) && self.arguments_empty(&rhs) {
             true => Expression::new_plus(2.0.into(), self.into()),
             false => Expression::new_plus(
                 self.into(), 
@@ -59,17 +59,14 @@ impl std::ops::Add<Term> for Function  {
 impl std::ops::Add<Function > for Expression {
     type Output = Expression; 
     fn add(self, rhs: Function ) -> Self::Output {
-        if let Expression::Function { name } = self {
-            return match name == rhs.name() {
+        match self {
+            Self::Function(ref func) if func.arguments_empty(&rhs) => match func.same(&rhs) {
                 true => Expression::new_plus(2.0.into(), self.into()),
-                false => Expression::new_plus(
-                    self.into(), 
-                    rhs.into()
-                ),
-            }
-        };
-
-        Expression::new_plus(self.into(),rhs.into())
+                false => Expression::new_plus(self.into(),rhs.into()),
+            },
+            Self::Function(_) => Expression::new_plus(self.into(),rhs.into()),
+            _ => Expression::new_plus(self.into(),rhs.into())
+        }
     }
 }
 

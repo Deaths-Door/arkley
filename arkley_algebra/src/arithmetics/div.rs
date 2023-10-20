@@ -12,7 +12,7 @@ use crate::Function;
 impl std::ops::Div<Function > for Function  {
     type Output = Expression; 
     fn div(self, rhs: Function ) -> Self::Output {
-        if self.name() == rhs.name() { 1.into() } else { Expression::new_durch(self.into(),rhs.into()) }
+        if self.same(&rhs) { 1.into() } else { Expression::new_durch(self.into(),rhs.into()) }
     }
 }
 
@@ -272,6 +272,7 @@ impl Expression {
             Expression::Term(term) => term.contains_all(iterator),
             Expression::Binary { left, right, .. } => left.all_terms_have(iterator) && right.all_terms_have(iterator),
             Expression::Nested(inner) => inner.all_terms_have(iterator),
+            Expression::Function { .. } => true,
         }
     }
 
@@ -296,9 +297,8 @@ impl Expression {
                 left.get_min_exponents_and_coefficient(common_variables, min_exponents, coefficients);
                 right.get_min_exponents_and_coefficient(common_variables, min_exponents, coefficients);
             },
-            Expression::Nested(inner) => {
-                inner.get_min_exponents_and_coefficient(common_variables, min_exponents, coefficients);
-            }
+            Expression::Nested(inner) => inner.get_min_exponents_and_coefficient(common_variables, min_exponents, coefficients),
+            Expression::Function { .. } => (),
         }
     }
 
@@ -320,6 +320,7 @@ impl Expression {
                 right.cancel_variables_and_divide_coefficient(min_exponents, gcd_coefficient);
             },
             Expression::Nested(inner) => inner.cancel_variables_and_divide_coefficient(min_exponents, gcd_coefficient),
+            Expression::Function { .. } => (),
         }
     }
 }

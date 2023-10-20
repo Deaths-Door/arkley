@@ -19,50 +19,23 @@ impl ArithmeticOperation {
 impl Evaluate for Expression {
     fn evaluate(self) -> Self {
         match self {
-            Expression::Binary { operation, left, right } => operation.operate_on(left.evaluate(), right.evaluate()),
-            Expression::Nested(inner) => inner.evaluate(),
-            _ => self
+            Self::Binary { operation, left, right } => operation.operate_on(left.evaluate(), right.evaluate()),
+            Self::Nested(inner) => inner.evaluate(),
+            Self::Function(func) => func.evaluate(),
+            Self::Term(_) => self,
         }      
     }
 
     fn evaluate_with_single_variable<SV,MV>(mut self, variable: &char, value: SV) -> Self 
         where Self: VariableSubstitution<SV,MV>, SV: Clone {
-        match self {
-            Expression::Binary { operation,mut left, mut right } => {
-                left.replace_single_variable(variable,value.clone());
-                right.replace_single_variable(variable,value);
-                operation.operate_on(*left, *right)
-            }
-            Expression::Nested(mut inner) => {
-                inner.replace_single_variable(variable,value);
-                inner.evaluate()
-            }
-            Expression::Term(_) => {
-                self.replace_single_variable(variable, value); // avoid compile errors
-                self
-            }
-            #[cfg(feature="function")]
-            Expression::Function { name } => todo!(),
-        }    
+            self.replace_single_variable(variable, value);
+            self.evaluate()
     }
 
     fn evaluate_with_variables<SV,MV>(mut self, variable_values:&mut MV) -> Self 
         where Self: VariableSubstitution<SV,MV>, SV: Clone {
-        match self {
-            Expression::Binary { operation,mut left, mut right } => {
-                left.replace_variables(variable_values);
-                right.replace_variables(variable_values);
-                operation.operate_on(*left, *right)
-            }
-            Expression::Nested(mut inner) => {
-                inner.replace_variables(variable_values);
-                inner.evaluate()
-            }
-            Expression::Term(_) => {
-                self.replace_variables(variable_values); // avoid compile errors
-                self
-            }
-        }  
+            self.replace_variables(variable_values);
+            self.evaluate()
     }
 }
 

@@ -9,5 +9,5 @@ pub use self::expression::*;
 #[cfg(feature="function")]
 mod function;
 
-#[cfg(feature="equation")]
+#[cfg(feature="function")]
 pub use function::*;

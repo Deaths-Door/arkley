@@ -44,6 +44,7 @@ impl Expression {
             Expression::Binary { left, right, .. } 
                 => left.count_variable_occurrences(variables_to_count) + right.count_variable_occurrences(variables_to_count),
             Expression::Nested(inner) => inner.count_variable_occurrences(variables_to_count),
+            Expression::Function (_)=> 0,
         }
     }
 }
@@ -89,9 +90,7 @@ impl Expression {
                     };
                 }
 
-                // TODO : Check if subtract is the correct operation; probs not 
                 expression = inverse_operation(self,expression);
-                //self - expression;
 
                 // TODO : Check if this is needed
                 expression.reverse_tree();
@@ -145,7 +144,6 @@ impl Expression {
                     (Some(value),None) | (None,Some(value)) => Some(value)
                 }
             },
-            Self::Binary { .. } => unreachable!()
         }
     }
 }
