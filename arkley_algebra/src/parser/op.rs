@@ -1,9 +1,9 @@
 use nom::{
     IResult, 
     character::complete::{char, multispace0}, 
-    sequence::{tuple, preceded}, 
+    sequence::{preceded, pair}, 
     multi::many1_count, 
-    combinator::map, 
+    combinator::{map, opt}, 
     branch::alt
 };
 
@@ -26,49 +26,53 @@ use crate::ArithmeticOperation;
 /// - If a special sequence '+-' or '-+' is found (with or without whitespace), it returns '-'.
 /// - If a special sequence '--' is found (with or without whitespace), it returns '+'.
 pub fn parse_operator(input : &str) -> IResult<&str,ArithmeticOperation> {
+    preceded(
+        multispace0, 
+        alt((
+            parse_add_sub,
+            map(char('*'),|_| ArithmeticOperation::Mal),
+            map(char('/'),|_| ArithmeticOperation::Durch),
+        ))
+    )(input)
+}
+
+/// space .. + 
+/// space .. -
+/// space .. + .. opt (space .. - )
+/// space .. - .. opt (space .. + )
+pub(super) fn parse_add_sub(input : &str) -> IResult<&str,ArithmeticOperation> {    
     alt((
-        parse_final_add_sub,
-        map(char('*'),|_| ArithmeticOperation::Mal),
-        map(char('/'),|_| ArithmeticOperation::Durch),
+        parse_add_with_opt_sub,
+        parse_sub_with_opt_add  
     ))(input)
 }
 
-// TODO : Maybe can reduce the number of functions and then just use calculate_final_sign
-// For now using parse_final_add_sub for future replacement
-pub(super) fn parse_final_add_sub(input : &str) -> IResult<&str,ArithmeticOperation> {
-    alt((
-        parse_add_sub,
-        parse_sub_add,
-        parse_add,
-        parse_sub,
-    ))(input)
-}
-
-
-fn many_add(input : &str) -> IResult<&str,usize> {
+fn parse_many_add(input : &str) -> IResult<&str,usize> {
     many1_count(char('+'))(input)
 }
 
-fn many_sub(input : &str) -> IResult<&str,usize> {
+fn parse_many_sub(input : &str) -> IResult<&str,usize> {
     many1_count(char('-'))(input)
 }
 
-fn parse_add(input : &str) -> IResult<&str,ArithmeticOperation> {
-    map(preceded(multispace0,many_add),|_| ArithmeticOperation::Plus)(input)
+fn parse_add_with_opt_sub(input : &str) -> IResult<&str,ArithmeticOperation> {
+    map(
+        pair(
+            parse_many_add,
+            opt(preceded(multispace0, parse_many_sub)),
+        ),
+        |(add_count, sub_count)| calculate_final_sign(add_count, sub_count.unwrap_or(0)),
+    )(input)
 }
 
-fn parse_sub(input : &str) -> IResult<&str,ArithmeticOperation> {
-    map(preceded(multispace0,many_sub),|count| calculate_final_sign(0, count))(input)
-}
-
-fn parse_add_sub(input : &str) -> IResult<&str,ArithmeticOperation> {
-    let parse = tuple((many_add, multispace0, many_sub));
-    map(parse,|(c1,_,c2)| calculate_final_sign(c1, c2) )(input)
-}
-
-fn parse_sub_add(input : &str) -> IResult<&str,ArithmeticOperation> {
-    let parse = tuple((many_sub, multispace0, many_add));
-    map(parse,|(c2,_,c1)| calculate_final_sign(c1, c2) )(input)
+fn parse_sub_with_opt_add(input : &str) -> IResult<&str,ArithmeticOperation> {
+    map(
+        pair(
+            parse_many_sub,
+            opt(preceded(multispace0, parse_many_add)),
+        ),
+        |(sub_count, add_count)| calculate_final_sign(add_count.unwrap_or(0), sub_count),
+    )(input)
 }
 
 /// Calculates the final sign character based on the counts of plus and minus signs.

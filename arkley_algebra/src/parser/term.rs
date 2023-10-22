@@ -1,16 +1,15 @@
 use nom::{
     IResult, 
-    sequence::{tuple, preceded, delimited}, 
-    multi::many0, 
+    sequence::{preceded, delimited, pair}, 
+    multi::{many0, many1}, 
     combinator::{map, opt},
-    branch::alt, 
-    character::complete::{char, satisfy},
+    character::complete::{char, satisfy}, branch::alt,
 };
 use num_notation::{Number, parse_number};
 
-use crate::{Term, Variables};
+use super::parse_add_sub;
 
-
+use crate::{Term, Variables, ArithmeticOperation};
 
 /// Parse a mathematical term from a given input string.
 ///
@@ -19,30 +18,42 @@ use crate::{Term, Variables};
 /// 
 /// **Note**: If the input string is empty, this function returns `Ok(("",1.0.into()))`.
 pub fn parse_term(input : &str) -> IResult<&str,Term> {
-    //num + opt var
-    // +/- var , to many hadnle cases like -x where num is not there
+    alt((
+        parse_coefficient_with_opt_variables,
+        parse_variables_with_opt_sign
+    ))(input)
+}
 
-    // Parse a term with a number and optional variables
-    let parse_num_and_opt_vars = tuple((parse_number, opt(parse_variables)));
-    let map_num_and_opt_vars = map(parse_num_and_opt_vars, |(coefficient, variables)| Term::new_with_variable(coefficient, variables.unwrap_or_default()) );
-    
-    // Parse a term with an optional sign (+/-) and variables
-    let parse_opt_sign_and_vars = tuple((opt(alt((char('+'), char('-')))), parse_variables));
-    let map_opt_sign_and_vars = map(parse_opt_sign_and_vars, |(sign, variable)| {
-         let coefficient = match sign {
-            Some('+') | None   => Number::Decimal(1.0), // Default to 1.0 for '+' sign
-            Some('-') => Number::Decimal(-1.0), // Default to -1.0 for '-' sign
-            _ => unreachable!()
-         };
-         Term::new_with_variable(coefficient, variable)
-     });
-    
-    alt((map_num_and_opt_vars,   map_opt_sign_and_vars))(input)
+fn parse_coefficient_with_opt_variables(input : &str) -> IResult<&str,Term> {
+    let parser = pair(
+        parse_number,
+        opt(parse_variables)
+    );
+
+    map(parser,|(coefficient,variables)| 
+        Term::new_with_variable(coefficient, variables.unwrap_or_default())
+    )(input) 
+}
+
+fn parse_variables_with_opt_sign(input : &str) -> IResult<&str,Term> {
+    let parser = pair(
+        opt(parse_add_sub),
+        parse_variables,
+    );
+
+    map(parser,|(sign,variables)| match sign {
+        Some(sign) if sign == ArithmeticOperation::Minus => Term::new_with_variable((-1f64).into(), variables),
+        _ => variables.into(),
+    })(input) 
 }
 
 fn parse_variables(input : &str) -> IResult<&str,Variables> {
     let parse_var_name = satisfy(|c| c >= 'a' && c <= 'z' && (c != 'e' || c!= 'E') );
-    let parser =  many0(tuple((parse_var_name,opt(parse_variable_exponent))));
+    let parser =  many1(pair(
+        parse_var_name,
+        opt(parse_exponent)
+    ));
+
     map(parser,|vec| 
         vec.into_iter()
             .map(|(c,num)| (c,num.unwrap_or(1.0.into())))
@@ -50,7 +61,7 @@ fn parse_variables(input : &str) -> IResult<&str,Variables> {
     )(input)
 }
 
-fn parse_variable_exponent(input : &str) -> IResult<&str,Number> {
+fn parse_exponent(input : &str) -> IResult<&str,Number> {
     preceded(char('^'),
         delimited(
             opt(char('(')), 
@@ -129,7 +140,7 @@ mod tests {
     fn test_parse_term_empty_input() {
         let input = "";
         let result = parse_term(input);
-        assert_eq!(result,Ok(("",1.0.into())));
+        assert!(result.is_err());
     }
 
     #[test]
@@ -149,14 +160,6 @@ mod tests {
         expected_variables.insert('x', Number::Decimal(2.0));
         expected_variables.insert('y', Number::Decimal(3.0));
         expected_variables.insert('z', Number::Decimal(1.0));
-        assert_eq!(result, Ok(("", expected_variables)));
-    }
-
-    #[test]
-    fn test_parse_variables_no_input() {
-        let input = "";
-        let result = parse_variables(input);
-        let expected_variables = Variables::new();
         assert_eq!(result, Ok(("", expected_variables)));
     }
 

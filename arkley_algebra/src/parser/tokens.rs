@@ -15,7 +15,7 @@ use crate::{
     Term,
 };
 
-use super::parse_final_add_sub;
+use super::parse_add_sub;
 
 #[cfg_attr(test, derive(PartialEq,Debug))]
 pub(super) enum Token {
@@ -89,7 +89,7 @@ impl Token {
 
     fn parse_nested_expression(input: &str) -> IResult<&str, Vec<Token>> {    
         let parse = tuple((
-            opt(parse_final_add_sub),
+            opt(parse_add_sub),
             char('('),
             multispace0,
             Token::parse_expression,
@@ -162,9 +162,7 @@ impl Token {
                     operator_stack.push(Token::Operator(op1));
                 }
                 Token::OpenParenthesis => operator_stack.push(token),
-                Token::CloseParenthesis => {
-                    output.push(Token::CloseParenthesis);
-                    
+                Token::CloseParenthesis => {                    
                     while let Some(top) = operator_stack.pop() {
                         if let Token::OpenParenthesis = top {
                             break;
@@ -172,8 +170,6 @@ impl Token {
              
                         output.push(top);
                     }
-
-                    output.push(Token::OpenParenthesis);
                 }
 
             }
@@ -213,53 +209,7 @@ impl Token {
                     let left = stack.pop()?;
                     stack.push(Expression::new_binary(operator, left, right));  
                 },
-                _ => todo!()
-                /* TODO : Opposite of what I did 
-                [Term(1), Operator(+), OpenParenthesis, Term(2), Operator(*), Term(3), CloseParenthesis]
-                [Term(1), Term(2), Term(3), CloseParenthesis, Operator(*), OpenParenthesis, Operator(+)]CloseParenthesis is true so None
-                thread 'parser::expression::tests::parse_complex_expression' panicked at 'assertion failed: `(left == right)`
-                left: `None`,
-                right: `Some(1 + (2(3)))`', arkley_algebra\src\parser\expression.rs:53:9
-                note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
-                 */
-               /* Token::OpenParenthesis => { 
-                    /*let corresponding_bracket_index = || -> Option<usize> {
-                        let mut brackets = 1;
-
-                        for (new_index, token) in rpn_tokens.iter().enumerate().skip(index + 1) {
-                            match token {
-                                Token::OpenParenthesis => brackets += 1,
-                                Token::CloseParenthesis => {
-                                    brackets -= 1;
-                                    if brackets == 0 {
-                                        return Some(index + 1 + new_index);
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-                        None
-                    };
-
-                    match corresponding_bracket_index() {
-                        None => {
-                            println!("corresponding_bracket_index is None");
-                            return None
-                        }
-                        Some(end_index) => match Token::into_expression_tree(&rpn_tokens[index..end_index]) {
-                            None => {
-                                println!("into_expression_tree is None");
-
-                                return None;
-                            }//return None,
-                            Some(inner) => stack.push(Expression::new_nested(inner))
-                        }
-                    }*/
-                },
-                Token::CloseParenthesis => {
-                    println!("CloseParenthesis is true so None");
-                    return None
-                },*/
+                Token::OpenParenthesis | Token::CloseParenthesis => unreachable!()
             }
         }
 
@@ -295,10 +245,9 @@ mod tests {
     #[test]
     fn test_into_tokens_empty_input() {
         // Test with an empty input string
-        let input = "";
-        let expected_tokens: Vec<Token> = Vec::from([Term::new(1.0.into()).into()]);
-        
-        assert_eq!(Token::into_tokens(input), Ok(("", expected_tokens)));
+        let input = "";        
+        let result = Token::into_tokens(input);
+        assert!(result.is_err());
     }
 
     #[test]
