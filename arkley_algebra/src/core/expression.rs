@@ -167,15 +167,19 @@ impl std::fmt::Display for Expression {
 /// Debug does not remove any extra 0s in the expression tree , eg used to represent (-5)(x + 1) as a expression tree would be (0 - 5)(x + 1) where the 0 is ignored by the expression tree
 impl std::fmt::Debug for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        use ArithmeticOperation::*;
         match self {
             Expression::Term(term) => write!(f, "{term}"),
             Expression::Nested(inner) => write!(f,"({inner})"),
             #[cfg(feature="function")]
             Expression::Function(func) => write!(f,"{func}"),
-            Expression::Binary { operation , left , right } => match operation {
-                ArithmeticOperation::Plus => write!(f,"{left} + {right}"),
-                ArithmeticOperation::Minus => write!(f, "{left} - {right}"),
-                ArithmeticOperation::Mal => {
+            Expression::Binary { operation , left , right } 
+                if operation == &Plus => write!(f,"{left} + {right}"),
+            Expression::Binary { operation , left , right } 
+                if operation == &Minus => write!(f,"{left} - {right}"),
+            Expression::Binary { operation , left , right } 
+                if operation == &Mal => {
+                    // Note : NO FUCKING CLUE WHY IT WORKS EXCEPT I WROTE IT AND NOW HAVE NO CLUE
                     let s = format!("{left}");
 
                     match s.char_indices().find(|(_,c)| "+*-/".contains(*c)) {
@@ -189,13 +193,13 @@ impl std::fmt::Debug for Expression {
                     
                     };
 
-                  /*  match **right {
-                        Self::Function(ref func) => write!(f,"{func}"),
-                        _ => 
-                    }*/
-                    write!(f,"({right})")
+                    match **right {
+                        Expression::Function(_) => write!(f,"{right}"),
+                        _ => write!(f,"({right})")
+                    }
                 },
-                ArithmeticOperation::Durch => {
+            Expression::Binary { operation , left , right } 
+                if operation == &Durch => {
                     match **left {
                         Expression::Term(_) => write!(f,"{left}"),
                         _ => write!(f,"({left})")
@@ -207,10 +211,10 @@ impl std::fmt::Debug for Expression {
                         Expression::Term(_) => write!(f,"{right}"),
                         _ => write!(f,"({right})")
                     }
-                }
-            },
+                },
+
+            Expression::Binary { .. } => unreachable!()
         }
-    
     }
 }
 

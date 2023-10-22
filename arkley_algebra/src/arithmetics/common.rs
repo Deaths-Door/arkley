@@ -23,6 +23,8 @@ impl Function {
         self
     }
 }
+
+// TODO : FIX THIS ENTIRE BS LOGIC BELOW SO THAT REMOVEING 0s from tree is not required
 #[derive(Hash)]
 struct FunctionArgumentsWithEquality {
     arguments : FunctionArguments,

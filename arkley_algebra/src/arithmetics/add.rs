@@ -225,7 +225,7 @@ mod expr {
     }
 
     #[test]
-    fn funcition_complex() {
+    fn function_complex() {
         let sin_x = sin('x'.into());
         
         let cos_1 = cos(1.into());
@@ -238,7 +238,7 @@ mod expr {
 
         // 9x - 5y + sin(1) + (cos(1) * sin(x))
         let result = lexpr + rexpr;
-
+        
         check_expression_str(result, "sin(1) + 9x - 5y + cos(1)sin(x)");
     }
 }
