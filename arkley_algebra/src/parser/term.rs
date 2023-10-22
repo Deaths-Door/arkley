@@ -2,7 +2,7 @@ use nom::{
     IResult, 
     sequence::{preceded, delimited, pair}, 
     multi::{many0, many1}, 
-    combinator::{map, opt},
+    combinator::{map, opt, all_consuming},
     character::complete::{char, satisfy}, branch::alt,
 };
 use num_notation::{Number, parse_number};
@@ -22,6 +22,13 @@ pub fn parse_term(input : &str) -> IResult<&str,Term> {
         parse_coefficient_with_opt_variables,
         parse_variables_with_opt_sign
     ))(input)
+}
+
+impl<'a> TryFrom<&'a str> for Term {
+    type Error = nom::Err<nom::error::Error<&'a str>>;
+    fn try_from(input: &'a str) -> Result<Self, Self::Error> {
+        all_consuming(parse_term)(input).map(|(_,value)| value)
+    }
 }
 
 fn parse_coefficient_with_opt_variables(input : &str) -> IResult<&str,Term> {

@@ -1,22 +1,21 @@
-use std::vec;
 
 use nom::{
-    IResult, Parser, 
-    sequence::{tuple, delimited, pair},
+    IResult, sequence::{tuple, delimited, pair, separated_pair},
     multi::fold_many0, 
     character::complete::{multispace0,char},
-    combinator::{map, opt}
+    combinator::{map, opt}, branch::{alt, Alt}
 };
 
 use crate::{
     Expression, 
     ArithmeticOperation, 
     parse_term, parse_operator, 
-    Term,
+    Term, parse_expression,
 };
 
 use super::parse_add_sub;
 
+// TODO : Add functions + context + brackets + error
 #[cfg_attr(test, derive(PartialEq,Debug))]
 pub(super) enum Token {
     Term(Term),
@@ -47,38 +46,20 @@ impl ArithmeticOperation {
 }
 
 impl Token {
+    // space .. 
+    // ( expr ) .. opt (expr) 
+    // default => term .. op .. many alt ( term , nested expr )
     fn parse_expression(input: &str) -> IResult<&str, Vec<Token>> {
-        let (input,first_term) = parse_term(input)?;
+        let (input,mut vec) = Self::parse_with_opt_implicit_mul(input)?;
 
-        let implicit_mul = delimited(
-            tuple((multispace0,char('('),multispace0)), 
-            parse_term, 
-            tuple((multispace0,char(')'))), 
-        );
-
-        // TODO : Handle case like (x - 2)(x + 2) while parsing
         let parser = tuple((
             multispace0,
             parse_operator,
             multispace0,
-            Token::parse_nested_expression.or(
-                map(
-                    pair(parse_term, opt(implicit_mul)),
-                    |(term,optional_implicit_mul_term)| {
-                        let mut vec = vec![term.into()];
-
-                        if let Some(value) = optional_implicit_mul_term {
-                            vec.push(ArithmeticOperation::Mal.into());
-                            vec.push(value.into());
-                        }
-
-                        vec
-                    }
-                )
-            )
+            Self::parse_with_opt_implicit_mul
         ));
-
-        fold_many0(parser,move || vec![first_term.clone().into()],|mut vec : Vec<Token>,(_,operation,_,tokens)|{
+        
+        fold_many0(parser,move || vec,|mut vec : Vec<Token>,(_,operation,_,tokens)|{
             vec.push(operation.into());
 
             vec.extend(tokens.into_iter());
@@ -87,31 +68,64 @@ impl Token {
         })(input)
     }
 
-    fn parse_nested_expression(input: &str) -> IResult<&str, Vec<Token>> {    
-        let parse = tuple((
-            opt(parse_add_sub),
-            char('('),
-            multispace0,
-            Token::parse_expression,
-            multispace0,
-            char(')'),
-        ));    
+    fn parse_nested_expression<'a>() -> impl FnMut(&'a str) -> IResult<&'a str, Vec<Token>> {
+        move |input : &'a str| {
+            let parser = delimited(
+                pair(char('('),multispace0),
+                Token::parse_expression, 
+                pair(multispace0,char(')')),
+            );
+    
+            map(parser,|expr|{
+                let mut vec = vec![];
+              
+                vec.push(Token::OpenParenthesis);
+    
+                vec.extend(expr.into_iter());
+    
+                vec.push(Token::CloseParenthesis);
+    
+                vec
+            })(input)
+        }
+    }
 
-        map(parse,|(operation,_,_,inner_expr_tokens,_,_)|{
+    fn parse_with_opt_implicit_mul(input: &str) -> IResult<&str,Vec<Token>> {
+        let parser = |first_parser| separated_pair(
+            first_parser,
+            multispace0,
+            opt(Token::parse_expression)
+        );
+
+        let mapper = |first_parser| map(parser(first_parser),|(lexpr,rexpr) : (Vec<Token>,Option<Vec<Token>>)|{
             let mut vec = vec![];
             
-            if let Some(value) = operation {
-                vec.push(value.into())
-            };
-
             vec.push(Token::OpenParenthesis);
 
-            vec.extend(inner_expr_tokens.into_iter());
+            vec.extend(lexpr.into_iter());
 
             vec.push(Token::CloseParenthesis);
 
+            if let Some(value) = rexpr {
+                vec.push(ArithmeticOperation::Mal.into());
+
+                vec.push(Token::OpenParenthesis);
+
+                vec.extend(value.into_iter());
+    
+                vec.push(Token::CloseParenthesis);
+    
+            }
+          
             vec
-        })(input)
+        });
+
+        let map_term = map(parse_term,|term| Vec::from([Token::from(term)]) );
+
+        alt((
+            mapper(Self::parse_nested_expression()),
+            mapper(map_term),
+        ))(input)
     }
 }
 
