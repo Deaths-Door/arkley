@@ -1,16 +1,17 @@
 
 use nom::{
-    IResult, sequence::{tuple, delimited, pair, separated_pair},
+    IResult, sequence::{delimited, pair, separated_pair, preceded},
     multi::fold_many0, 
     character::complete::{multispace0,char},
-    combinator::{map, opt}, branch::{alt, Alt}
+    combinator::{map, opt}, 
+    branch::alt
 };
 
 use crate::{
     Expression, 
     ArithmeticOperation, 
     parse_term, parse_operator, 
-    Term, parse_expression,
+    Term,
 };
 
 use super::parse_add_sub;
@@ -50,35 +51,49 @@ impl Token {
     // ( expr ) .. opt (expr) 
     // default => term .. op .. many alt ( term , nested expr )
     fn parse_expression(input: &str) -> IResult<&str, Vec<Token>> {
-        let (input,mut vec) = Self::parse_with_opt_implicit_mul(input)?;
+        let parser = preceded(
+            multispace0, 
+            separated_pair(
+                parse_operator, 
+                multispace0, 
+                Self::parse_with_opt_implicit_mul
+            )
+        );
 
-        let parser = tuple((
-            multispace0,
-            parse_operator,
-            multispace0,
-            Self::parse_with_opt_implicit_mul
-        ));
-        
-        fold_many0(parser,move || vec,|mut vec : Vec<Token>,(_,operation,_,tokens)|{
+        let (input,mut vec1) = Self::parse_with_opt_implicit_mul(input)?;
+
+        let (input,vec2) = fold_many0(parser,Vec::new,|mut vec : Vec<Token>,(operation,tokens)|{
             vec.push(operation.into());
 
             vec.extend(tokens.into_iter());
 
             vec
-        })(input)
+        })(input)?;
+
+        vec1.extend(vec2.into_iter());
+
+        Ok((input,vec1))
     }
+
 
     fn parse_nested_expression<'a>() -> impl FnMut(&'a str) -> IResult<&'a str, Vec<Token>> {
         move |input : &'a str| {
             let parser = delimited(
                 pair(char('('),multispace0),
-                Token::parse_expression, 
+                pair(
+                    opt(parse_add_sub),
+                    Token::parse_expression
+                ), 
                 pair(multispace0,char(')')),
             );
     
-            map(parser,|expr|{
+            map(parser,|(sign,expr)|{
                 let mut vec = vec![];
-              
+                
+                if let Some(value) = sign {
+                    vec.push(value.into())
+                }
+
                 vec.push(Token::OpenParenthesis);
     
                 vec.extend(expr.into_iter());
@@ -91,40 +106,48 @@ impl Token {
     }
 
     fn parse_with_opt_implicit_mul(input: &str) -> IResult<&str,Vec<Token>> {
-        let parser = |first_parser| separated_pair(
-            first_parser,
-            multispace0,
-            opt(Token::parse_expression)
-        );
+        fn parser<'a>(first_parser : impl FnMut(&'a str) -> IResult<&str,Vec<Token>>) -> impl FnMut(&'a str) -> IResult<&str,Vec<Token>> {
+            let _parser = separated_pair(
+                first_parser,
+                multispace0,
+                opt(Token::parse_expression)
+            );
 
-        let mapper = |first_parser| map(parser(first_parser),|(lexpr,rexpr) : (Vec<Token>,Option<Vec<Token>>)|{
-            let mut vec = vec![];
+            map(_parser,|(lexpr,rexpr) : (Vec<Token>,Option<Vec<Token>>)|{
+                let mut vec = vec![];
+                
+                // length one means only one token which means only one thing hence no brackets are required
+                match lexpr.len() == 1 {
+                    true => vec.extend(lexpr.into_iter()),
+                    false => {
+                        vec.push(Token::OpenParenthesis);
+    
+                        vec.extend(lexpr.into_iter());
             
-            vec.push(Token::OpenParenthesis);
+                        vec.push(Token::CloseParenthesis);
+                    }
+                };
 
-            vec.extend(lexpr.into_iter());
-
-            vec.push(Token::CloseParenthesis);
-
-            if let Some(value) = rexpr {
-                vec.push(ArithmeticOperation::Mal.into());
-
-                vec.push(Token::OpenParenthesis);
-
-                vec.extend(value.into_iter());
+                if let Some(value) = rexpr {
+                    vec.push(ArithmeticOperation::Mal.into());
     
-                vec.push(Token::CloseParenthesis);
+                    vec.push(Token::OpenParenthesis);
     
-            }
-          
-            vec
-        });
+                    vec.extend(value.into_iter());
+        
+                    vec.push(Token::CloseParenthesis);
+        
+                }
+              
+                vec
+            })
+        }
 
         let map_term = map(parse_term,|term| Vec::from([Token::from(term)]) );
 
         alt((
-            mapper(Self::parse_nested_expression()),
-            mapper(map_term),
+            parser(Self::parse_nested_expression()),
+            parser(map_term),
         ))(input)
     }
 }
@@ -205,22 +228,15 @@ impl Token {
     /// # Arguments
     ///
     /// * `rpn_tokens` - A vector of `Token` representing the expression in RPN format.
-    ///
-    /// # Returns
-    ///
-    /// An `Option<Expression>` containing the expression tree if the conversion is successful.
-    /// If the RPN expression is invalid or incomplete, `None` is returned.
-    pub(super) fn into_expression_tree(rpn_tokens  : Vec<Token>) -> Option<Expression> {
+    pub(super) fn into_expression_tree(rpn_tokens  : Vec<Token>) -> Expression {
         let mut stack: Vec<Expression> = Vec::new();
 
-        // TODO : MAYBE give more infomation , why give expr is invalid instead of just None
-        // TODO : Figure out technique without cloning the contents
         for token in rpn_tokens.into_iter() {
             match token {
                 Token::Term(term) => stack.push(term.into()),
                 Token::Operator(operator) => {
-                    let right = stack.pop()?;
-                    let left = stack.pop()?;
+                    let right = stack.pop().expect("Expected valid input : Check parser");
+                    let left = stack.pop().expect("Expected valid input : Check parser");
                     stack.push(Expression::new_binary(operator, left, right));  
                 },
                 Token::OpenParenthesis | Token::CloseParenthesis => unreachable!()
@@ -228,11 +244,8 @@ impl Token {
         }
 
         match stack.len() {
-            1 => Some(stack.pop().unwrap()),
-            _ => {
-                println!(" stack.len() != 1 so None");
-                None
-            }
+            1 => stack.pop().unwrap(),
+            _ => panic!("Expected valid input : Check parser")
         }
     }
 }

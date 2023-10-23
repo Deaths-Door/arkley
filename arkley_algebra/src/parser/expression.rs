@@ -13,9 +13,7 @@ use super::tokens::Token;
 /// # Arguments
 ///
 /// * `input`: A string containing the mathematical expression to be parsed.
-
-// TODO : Give better reason then None for why its invalid
-pub fn parse_expression(input: &str) -> IResult<&str, Option<Expression>> {
+pub fn parse_expression(input: &str) -> IResult<&str,Expression> {
     map(Token::into_tokens,|vec : Vec<Token>| Token::into_expression_tree(Token::to_rpn(vec)))(input)
 }
 
@@ -30,7 +28,7 @@ mod tests {
         let expected_expression = Expression::new_plus( 3.0.into(),  4.0.into());
 
         assert!(parsed.is_ok());
-        assert_eq!(parsed.unwrap().1,Some(expected_expression));
+        assert_eq!(parsed.unwrap().1,expected_expression);
     }
 
     #[test]
@@ -38,14 +36,8 @@ mod tests {
         let input_str = "1 + (2 * 3)";
         let parsed = parse_expression(input_str);
 
-        let expected_expression = Expression::new_plus(
-            1.0.into(), 
-            Expression::new_nested(
-                Expression::new_mal(2.0.into(), 3.0.into())
-            )
-        );
         assert!(parsed.is_ok());
-        assert_eq!(parsed.unwrap().1,Some(expected_expression));
+        assert_eq!(&parsed.unwrap().1.to_string(),"1 + 2(3)"); // unnesscary brackets removed
     }
 
     #[test]
@@ -58,7 +50,7 @@ mod tests {
             Expression::new_mal(2.0.into(), 4.0.into())
         );
         assert!(parsed.is_ok());
-        assert_eq!(parsed.unwrap().1,Some(expected_expression));
+        assert_eq!(parsed.unwrap().1,expected_expression);
     }
 
     #[test]
@@ -68,17 +60,17 @@ mod tests {
         let expected_expression =  Expression::new_plus((-5.0).into(),  2.0.into());
 
         assert!(parsed.is_ok());
-        assert_eq!(parsed.unwrap().1,Some(expected_expression));
+        assert_eq!(parsed.unwrap().1,expected_expression);
     }
 
     #[test]
     fn parse_invalid_expression() {
-        let input_str = "1 + (2 * 3";
+        let input_str = "5 + (2 * 3"; 
         let parsed = parse_expression(input_str);
        
+        // one would thing it should be none but parser stops checking at 5 + so output is 5 , for full consumuing use try_from
         let unwrapped = parsed.unwrap().1;
-        println!("{}",unwrapped.clone().unwrap());
-        assert!(unwrapped.is_none());
+        assert_eq!(&unwrapped.to_string(),"5")
     }
 
     #[test]
@@ -91,7 +83,7 @@ mod tests {
         );
 
         assert!(parsed.is_ok());
-        assert_eq!(parsed.unwrap().1,Some(expected_expression));
+        assert_eq!(parsed.unwrap().1,expected_expression);
     }
 
     #[test]
@@ -100,6 +92,6 @@ mod tests {
         let parsed = parse_expression(input_str);
 
         assert!(parsed.is_ok());
-        assert_eq!(&parsed.unwrap().1.unwrap().to_string(),"(2 + 3)(4/4)");
+        assert_eq!(&parsed.unwrap().1.to_string(),"(2 + 3)(4/4)");
     }
 }

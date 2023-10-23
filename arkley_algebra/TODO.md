@@ -4,7 +4,7 @@
 - intergate equation with simpilify trait
 - Implement reverse_tree fn for rearranger to 'work' ; give output in the expected order
 - Finish `build_expression_tree` with bracket support
-
+- remove unnecceary brackets function is useless parser does that alr
 - **#[deprecated(note = "Maybe this is redundant")]** for Expression::Nested
 - add cfg for functions + expr function variant
 For cases like f(x) * f(x) maybe output (f(x))^2

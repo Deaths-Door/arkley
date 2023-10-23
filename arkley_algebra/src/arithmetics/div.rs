@@ -429,7 +429,7 @@ mod expression_tests {
     use crate::parse_expression;
 
     fn from_str(input :&str) -> Expression {
-        parse_expression(input).unwrap().1.unwrap()
+        parse_expression(input).unwrap().1
     }
 
     #[test]
