@@ -1,4 +1,4 @@
-use nom::{IResult, combinator::map};
+use nom::{IResult, combinator::{map, all_consuming}};
 
 use crate::Expression;
 
@@ -15,6 +15,13 @@ use super::tokens::Token;
 /// * `input`: A string containing the mathematical expression to be parsed.
 pub fn parse_expression(input: &str) -> IResult<&str,Expression> {
     map(Token::into_tokens,|vec : Vec<Token>| Token::into_expression_tree(Token::to_rpn(vec)))(input)
+}
+
+impl<'a> TryFrom<&'a str> for Expression {
+    type Error = nom::Err<nom::error::Error<&'a str>>;
+    fn try_from(input: &'a str) -> Result<Self, Self::Error> {
+        all_consuming(parse_expression)(input).map(|(_,expr)| expr)
+    }
 }
 
 #[cfg(test)]

@@ -156,15 +156,10 @@ from!(u8,u16,u32,u64,i8,i16,i32,i64,f32,f64,usize);
 
 impl std::fmt::Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let string = format!("{:?}",self)
-            .replace("0 + ","").replace(" + 0", "")
-            .replace("0 - ","-").replace(" - 0", "");
-
-        f.write_str(&string)
+        write!(f,"{:?}",self)
     }
 }
 
-/// Debug does not remove any extra 0s in the expression tree , eg used to represent (-5)(x + 1) as a expression tree would be (0 - 5)(x + 1) where the 0 is ignored by the expression tree
 impl std::fmt::Debug for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         use ArithmeticOperation::*;
@@ -184,13 +179,10 @@ impl std::fmt::Debug for Expression {
 
                     match s.char_indices().find(|(_,c)| "+*-/".contains(*c)) {
                         None => write!(f,"{s}")?,
-                        Some((pos,op)) => if op == '-' && s.chars().nth(pos + 1).map(|c| c.is_digit(10) || c.is_ascii_lowercase()).unwrap_or(false) {
-                            write!(f,"{s}")?
-                        }
-                        else {
-                            write!(f,"({s})")?
-                        }
-                    
+                        Some((pos,op)) => match op == '-' && s.chars().nth(pos + 1).map(|c| c.is_digit(10) || c.is_ascii_lowercase()).unwrap_or(false) {
+                            true => write!(f,"{s}")?,
+                            false => write!(f,"({s})")?,
+                        } 
                     };
 
                     match **right {

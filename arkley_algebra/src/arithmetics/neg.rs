@@ -5,8 +5,9 @@ use crate::{Term,Expression,ArithmeticOperation};
 impl Neg for Term {
     type Output = Self;
 
-    fn neg(self) -> Self {
-        Term::new_with_variable(-self.coefficient,self.variables)
+    fn neg(mut self) -> Self {
+        self.coefficient = -self.coefficient;
+        self
     }
 }
 

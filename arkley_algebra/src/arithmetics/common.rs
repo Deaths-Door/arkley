@@ -3,7 +3,7 @@ use num_notation::{
     Number,
     fraction::Signed,
 };
-use crate::{Expression,Term,Variables,ArithmeticOperation, Function, FunctionArguments};
+use crate::{Expression,Term,Variables,ArithmeticOperation, Function};
 
 impl Term {
     pub(in crate::arithmetics) fn is_combinable_with(&self,other : &Self) -> bool {
@@ -17,57 +17,6 @@ impl Term {
     }
 }
 
-impl Function {
-    fn with_expr(mut self,expression : Option<Box<Expression>>) -> Self {
-        self.expression = expression;
-        self
-    }
-}
-
-// TODO : FIX THIS ENTIRE BS LOGIC BELOW SO THAT REMOVEING 0s from tree is not required
-#[derive(Hash)]
-struct FunctionArgumentsWithEquality {
-    arguments : FunctionArguments,
-    expression : Option<Box<Expression>>,
-    closure : fn(Function) -> Expression,
-}
-
-impl FunctionArgumentsWithEquality {
-    fn new(function : Function) -> Self { 
-        let arguments = function.arguments;
-        let expression = function.expression;
-        let closure = function.closure;
-
-        Self { arguments, expression, closure } 
-    }
-}
-
-
-impl Eq for FunctionArgumentsWithEquality {}
-
-impl PartialEq for FunctionArgumentsWithEquality {
-    // If both instances are expressions (expr),
-    // and if both expressions are terms (term),
-    // then it tries to compare them for equality (eq).
-    // If any of these conditions are not met, it returns false.
-    fn eq(&self, other: &Self) -> bool {
-        self.arguments.iter()
-            .all(|(key,_svalue)| match other.arguments.get(key) {
-                None => false,
-                Some(_ovalue) => match (_svalue,_ovalue) {
-                    (Some(svalue), Some(ovalue)) => match (svalue,ovalue) {
-                        (Expression::Term(t1), Expression::Term(t2)) => match t1.variables.is_empty() && t2.variables.is_empty() {
-                            true => t1.coefficient == t2.coefficient,
-                            false => false
-                        },
-                        _ => false
-                    },
-                    _ => false
-                }
-            })
-    }
-}
-
 /// Used to combine terms like 2x + x into 3x 
 impl Expression { 
     /// Collects all terms of addition (+) or subtraction (-) variants into 'treemap'
@@ -77,7 +26,7 @@ impl Expression {
     /// An optional Expression representing the result of combining terms from nested (Nested), multiplication (*),
     /// and division (/) variants.
     /// `None` = No expr left
-    fn collect_terms(self,term_map : &mut BTreeMap<Variables,Number>,fn_map : &mut HashMap<&'static str,HashMap<FunctionArgumentsWithEquality,i16>>) -> Option<Expression> {
+    fn collect_terms(self,term_map : &mut BTreeMap<Variables,Number>,fn_map : &mut HashMap<Function,i16>) -> Option<Expression> {
         match self {
             Self::Nested(inner) => Some(Expression::new_nested(inner.combine_terms())),
             Self::Term(term) => {
@@ -87,24 +36,9 @@ impl Expression {
                 None
             }
             Self::Function(func) => {
-                match fn_map.get_mut(func.name) {
-                    Some(hashmap) => {
-                        hashmap.entry(FunctionArgumentsWithEquality::new(func))
-                        .and_modify(|value| *value += 1 )
-                        .or_insert(1);
-                    },
-                    None => {
-                        let mut map = HashMap::new();
-
-                        let name = func.name;
-
-                        let key = FunctionArgumentsWithEquality::new(func);
-                        map.insert(key,1);
-
-                        fn_map.insert(name,map);
-
-                    },
-                }                                
+                fn_map.entry(func)
+                    .and_modify(|value| *value += 1)
+                    .or_insert(1);
                 None
             },
             Self::Binary { operation , left , right} if operation == ArithmeticOperation::Plus => {
@@ -128,23 +62,9 @@ impl Expression {
                         None
                     },
                     Self::Function(func) => {
-                        match fn_map.get_mut(func.name) {
-                            Some(hashmap) => {
-                                hashmap.entry(FunctionArgumentsWithEquality::new(func))
-                                .and_modify(|value| *value -= 1 )
-                                .or_insert(-1);
-                            },
-                            None => {
-                                let mut map = HashMap::new();
-                                
-                                let name = func.name;
-                                
-                                let key = FunctionArgumentsWithEquality::new(func);
-                                map.insert(key,-1);
-        
-                                fn_map.insert(name, map);
-                            },
-                        }
+                        fn_map.entry(func)
+                            .and_modify(|value| *value -= 1)
+                            .or_insert(-1);
                         None
                     },
                     _ => right.collect_terms(term_map,fn_map),
@@ -171,61 +91,25 @@ impl Expression {
     /// The reconstructed expression.
     fn reconstruct_expression(
         terms : BTreeMap<Variables,Number>,
-        functions : HashMap<&'static str,HashMap<FunctionArgumentsWithEquality,i16>>,
+        functions : HashMap<Function,i16>,
         nested_expr : Option<Expression>
-    ) -> Self {
+    ) -> Self {  
         let mut expression : Expression = Term::new(Number::Decimal(0.0)).into();
 
-        // sort by name then by count
-        let mut sort_function_data : Vec<(&str, HashMap<FunctionArgumentsWithEquality, i16>)> = functions.into_iter().collect();
-        sort_function_data.sort_by_key(|(key, _)| *key);
+        expression = expression.join_functions_into_expression(functions)            // |
+            .join_terms_into_expression(terms)                          // |
+            .join_nested_expression_into_expression(nested_expr)   ;
 
-        for (name,hashmap) in sort_function_data {
-            let mut sort_count_data :  Vec<(FunctionArgumentsWithEquality,i16)> = hashmap.into_iter().collect();
-            sort_count_data.sort_by_key(|(_,value)| *value);
+        println!("reconstruct_expression with = {expression}");
 
-            for (_arguments, count) in sort_count_data {
-                let func : Expression = Function::new(name,_arguments.closure)
-                    .with_arguments(_arguments.arguments)
-                    .with_expr(_arguments.expression)
-                    .into();
-                
-                expression = match count.is_positive() {
-                    true => Expression::new_plus(
-                        expression, 
-                        match count == 1 {
-                            true => func,
-                            false => Expression::new_mal(
-                                count.into(), 
-                                func
-                            )
-                        } 
-                    ),
-                    false => Expression::new_minus(
-                        expression, 
-                        Expression::new_mal(
-                            (-count).into(), 
-                            func
-                        )
-                    )
-                }
-            }
-        }
+      //  expression.remove_leftmost_zero()
 
-        for (variables,coefficient) in terms {
-            expression = match coefficient.is_positive() {
-                true => Expression::new_plus(expression, Term::new_with_variable(coefficient,variables).into()),
-                // If the coefficient is negative (-coefficient), the sign can be '-', but the number itself is positive. 
-                // For example, -3 represents a negative number, whereas --3 is not equal to -3; it represents a positive number.
-                false => Expression::new_minus(expression, Term::new_with_variable(-coefficient,variables).into()),
-            }
-        }
-
-        if let Some(nested) = nested_expr {
-            expression = Self::new_plus(expression,nested);
-        }
-        
-        expression
+      expression
+    /*                                                                         // |
+        expression.join_functions_into_expression(functions)            // |
+            .join_terms_into_expression(terms)                          // |
+            .join_nested_expression_into_expression(nested_expr)        // |
+            .remove_leftmost_zero() // Removes -----------------------------*/
     }
 
     /// Combines terms within the expression.
@@ -235,13 +119,119 @@ impl Expression {
     /// The expression with combined terms.
     pub(in crate::arithmetics) fn combine_terms(self) -> Expression {
         let mut term_map = BTreeMap::new();
-        
-        // $name -> {[args] -> $count}
-        // $count -> { $name -> [args] }
+
         let mut fn_map = HashMap::new();
 
         let nested_expr = self.collect_terms(&mut term_map,&mut fn_map);
     
         Self::reconstruct_expression(term_map,fn_map,nested_expr)
+    }
+}
+
+impl Expression {
+        
+    fn join_functions_into_expression(mut self,functions : HashMap<Function,i16>) -> Self {
+        let mut functions_sorted_by_count : Vec<(Function,i16)> = functions.into_iter().collect();
+        functions_sorted_by_count.sort_by_key(|(_,key)| *key);
+
+        for (_function,count) in functions_sorted_by_count {
+            let function : Expression = _function.into();
+            if count == 1 {
+                self = Expression::new_plus(self, function);
+                continue;
+            }
+
+            self = match count.is_positive() {
+                true => Expression::new_plus(
+                    self, 
+                    Expression::new_mal(
+                        count.into(), 
+                        function
+                    )
+                ),
+                false => Expression::new_minus(
+                    self, 
+                    Expression::new_mal(
+                        (-count).into(), 
+                        function
+                    )
+                )
+            }
+        }
+
+        self
+    }
+
+    fn join_terms_into_expression(mut self,terms : BTreeMap<Variables,Number>) -> Self {
+        for (variables,coefficient) in terms {
+            self = match coefficient.is_positive() {
+                true => Expression::new_plus(self, Term::new_with_variable(coefficient,variables).into()),
+                // If the coefficient is negative (-coefficient), the sign can be '-', but the number itself is positive. 
+                // For example, -3 represents a negative number, whereas --3 is not equal to -3; it represents a positive number.
+                false => Expression::new_minus(self, Term::new_with_variable(-coefficient,variables).into()),
+            }
+        }
+
+        self
+    }
+    
+    fn join_nested_expression_into_expression(self,nested_expr : Option<Expression>) -> Self { 
+        if let Some(nested) = nested_expr {
+            return Self::new_plus(self,nested);
+        }
+        
+        self
+    }
+
+    fn remove_leftmost_zero(self) -> Self {
+        println!("before removed zero = {self}");
+
+        let returned = match self {
+            // Handles cases like 0 - 3x where the 0 is remove and so is the sign hence we negate leftmost term to 'keep' the sign
+            Expression::Binary { ref left, right, operation } 
+                if left.is_removable() => match operation == ArithmeticOperation::Minus {
+                    true => right.negate_leftmost_thing(),
+                    false => *right,
+                }
+            Expression::Binary { operation,mut left, right }  => {
+                *left = left.remove_leftmost_zero();
+                let joined = Expression::Binary { operation , left , right };
+                println!("new joined {joined}");
+
+                joined
+            }
+            _ => self,
+        };
+
+        println!("removed zero result = {returned}");
+
+        returned
+    }
+
+    /// Note : Used as `if let` guards are experimental at time of writing
+    /// 
+    /// See issue #51114 <https://github.com/rust-lang/rust/issues/51114> for more information
+    fn is_removable(&self) -> bool {
+        println!("is_removable called for {self}");
+        match self {
+            Expression::Term(ref term) => term.variables.is_empty() && term.coefficient == 0,
+            _ => false,
+        }
+    }
+    
+    fn negate_leftmost_thing(self) -> Self {
+        println!("negate_leftmost_thing called for {self}");
+        println!("{self} became");
+        let negagted = match self {
+            Expression::Term(term) => (-term).into(),
+            Expression::Function(func) => (-func).into(),
+            Expression::Nested(inner) => (-*inner).into(),
+            Expression::Binary { operation,mut left, right } => {
+                *left = left.negate_leftmost_thing();
+                Expression::Binary { operation, left, right }   
+            }
+        };
+        println!("{negagted}");
+        negagted
     }
 }

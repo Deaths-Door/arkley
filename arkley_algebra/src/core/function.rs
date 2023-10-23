@@ -3,15 +3,39 @@ use std::{fmt::{Debug, Display}, collections::{BTreeMap, HashMap}};
 use crate::{Expression, manipulation::VariableSubstitution};
 
 /// Represents a mathematical function with a name and a set of arguments.
-#[derive(Clone)]
-#[cfg_attr(feature="function", derive(Hash))]
-#[cfg_attr(test, derive(PartialEq))]
+#[derive(Clone,Hash)]
 pub struct Function {
     pub(crate) name: &'static str,
     pub(crate) arguments : FunctionArguments,
     pub(crate) expression : Option<Box<Expression>>,
     pub(crate) closure : fn(Function) -> Expression,
 }
+
+impl Eq for Function {}
+
+impl PartialEq for Function {
+    // If both instances are expressions (expr),
+    // and if both expressions are terms (term),
+    // then it tries to compare them for equality (eq).
+    // If any of these conditions are not met, it returns false.
+    fn eq(&self, other: &Self) -> bool {
+        self.arguments.iter()
+            .all(|(key,_svalue)| match other.arguments.get(key) {
+                None => false,
+                Some(_ovalue) => match (_svalue,_ovalue) {
+                    (Some(svalue), Some(ovalue)) => match (svalue,ovalue) {
+                        (Expression::Term(t1), Expression::Term(t2)) => match t1.variables.is_empty() && t2.variables.is_empty() {
+                            true => t1.coefficient == t2.coefficient,
+                            false => false
+                        },
+                        _ => false
+                    },
+                    _ => false
+                }
+            })
+    }
+}
+
 
 pub(crate) type FunctionArguments = BTreeMap<char,Option<Expression>>;
 
