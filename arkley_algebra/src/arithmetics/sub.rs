@@ -230,8 +230,8 @@ mod expr {
 
         let expr = parse_expression("2x - 7x - 5y").unwrap().1;
 
-        let lexpr = Expression::new_plus(expr, sin_1.into());
-        let rexpr = Expression::new_mal(cos_1.into(), sin_x.into());
+        let lexpr = Expression::new_plus(expr, sin_1.into()); // 2x - 7x - 5y + sin(1)
+        let rexpr = Expression::new_mal(cos_1.into(), sin_x.into()); // cos(1)sin(x)
 
         // -5x - 5y + sin(1) - (cos(1) * sin(x))
         let result = lexpr - rexpr;

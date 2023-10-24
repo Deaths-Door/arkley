@@ -19,6 +19,10 @@ impl PartialEq for Function {
     // then it tries to compare them for equality (eq).
     // If any of these conditions are not met, it returns false.
     fn eq(&self, other: &Self) -> bool {
+        if self.name != other.name {
+            return false;
+        }
+
         self.arguments.iter()
             .all(|(key,_svalue)| match other.arguments.get(key) {
                 None => false,

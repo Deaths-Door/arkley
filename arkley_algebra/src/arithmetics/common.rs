@@ -90,26 +90,26 @@ impl Expression {
     ///
     /// The reconstructed expression.
     fn reconstruct_expression(
-        terms : BTreeMap<Variables,Number>,
+        mut terms : BTreeMap<Variables,Number>,
         functions : HashMap<Function,i16>,
         nested_expr : Option<Expression>
     ) -> Self {  
-        let mut expression : Expression = Term::new(Number::Decimal(0.0)).into();
+        let mut functions_sorted_by_count : Vec<(Function,i16)> = functions.into_iter().collect();
+        functions_sorted_by_count.sort_by_key(|(_,key)| *key);
 
-        expression = expression.join_functions_into_expression(functions)            // |
-            .join_terms_into_expression(terms)                          // |
-            .join_nested_expression_into_expression(nested_expr)   ;
+        println!("terms = {:?}",terms);
+        let mut expression : Expression = match functions_sorted_by_count.is_empty() {
+            true => Self::from_terms(&mut terms),
+            false => Self::from_function(&mut functions_sorted_by_count)
+        };
 
-        println!("reconstruct_expression with = {expression}");
+        expression = expression.join_functions(functions_sorted_by_count)
+            .join_terms(terms)
+            .join_nested_expression(nested_expr);
 
-      //  expression.remove_leftmost_zero()
+        println!("expr = {expression}");
 
-      expression
-    /*                                                                         // |
-        expression.join_functions_into_expression(functions)            // |
-            .join_terms_into_expression(terms)                          // |
-            .join_nested_expression_into_expression(nested_expr)        // |
-            .remove_leftmost_zero() // Removes -----------------------------*/
+        expression
     }
 
     /// Combines terms within the expression.
@@ -128,6 +128,90 @@ impl Expression {
     }
 }
 
+impl Expression {
+    fn join_nested_expression(self,nested_expr : Option<Expression>) -> Self { 
+        if let Some(nested) = nested_expr {
+            return Self::new_plus(self,nested);
+        }
+        
+        self
+    }
+
+    fn from_terms(terms : &mut BTreeMap<Variables,Number>) -> Self {
+        let (variables,coefficient) = terms.pop_first().unwrap();
+        Term::new_with_variable(coefficient,variables).into()
+    }
+
+    fn join_terms(mut self,terms : BTreeMap<Variables,Number>) -> Self {
+        let _before = self.clone();
+
+        for (variables,coefficient) in terms {
+            self = match coefficient.is_positive() {
+                true => {
+                    let term = Term::new_with_variable(coefficient.clone(),variables);
+                    println!("{self} and {coefficient} is positive so we are resulting {term}");
+                    Expression::new_plus(self, term.into())
+                }
+                
+                // If the coefficient is negative (-coefficient), the sign can be '-', but the number itself is positive. 
+                // For example, -3 represents a negative number, whereas --3 is not equal to -3; it represents a positive number.
+                false => {
+                    let term = Term::new_with_variable(-coefficient,variables);
+                    println!("is negative so we are resulting {term}");
+                    Expression::new_minus(self, term.into())
+                }
+            }
+        }
+
+        println!("before {_before} after {self}");
+
+        self
+    }
+
+    fn from_function(functions : &mut Vec<(Function,i16)>) -> Self {
+        let (_function,count) = functions.pop().unwrap();
+        let function : Expression = _function.into();
+        
+        if count == 1 {
+            return function;
+        }
+
+        Expression::new_mal(
+            count.into(), 
+            function
+        )
+    }
+
+    fn join_functions(mut self,functions : Vec<(Function,i16)>) -> Self {
+        for (_function,count) in functions {
+            let function : Expression = _function.into();
+            if count == 1 {
+                self = Expression::new_plus(self, function);
+                continue;
+            }
+
+            self = match count.is_positive() {
+                true => Expression::new_plus(
+                    self, 
+                    Expression::new_mal(
+                        count.into(), 
+                        function
+                    )
+                ),
+                false => Expression::new_minus(
+                    self, 
+                    Expression::new_mal(
+                        (-count).into(), 
+                        function
+                    )
+                )
+            }
+        }
+
+        self
+    }
+}
+/*
 impl Expression {
         
     fn join_functions_into_expression(mut self,functions : HashMap<Function,i16>) -> Self {
@@ -160,6 +244,15 @@ impl Expression {
         }
 
         self
+    }
+
+    fn join_term(self,variables : Variables,coefficient : Number) -> Self {
+        match coefficient.is_positive() {
+            true => Expression::new_plus(self, Term::new_with_variable(coefficient,variables).into()),
+            // If the coefficient is negative (-coefficient), the sign can be '-', but the number itself is positive. 
+            // For example, -3 represents a negative number, whereas --3 is not equal to -3; it represents a positive number.
+            false => Expression::new_minus(self, Term::new_with_variable(-coefficient,variables).into()),
+        }
     }
 
     fn join_terms_into_expression(mut self,terms : BTreeMap<Variables,Number>) -> Self {
@@ -234,4 +327,4 @@ impl Expression {
         println!("{negagted}");
         negagted
     }
-}
+}*/

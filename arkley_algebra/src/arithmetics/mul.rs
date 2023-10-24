@@ -25,39 +25,20 @@ impl std::ops::Mul<Term> for Expression {
         let expr = match self {
             Expression::Nested(inner) => *inner * other,
             Expression::Term(term) => term * other,
+            Expression::Function(func) => func * other,
             // if operation == ArithmeticOperation::Durch as 3x * (3/x) can be more simpily done as (3x/1) * (3/x) then other solution
             Expression::Binary { operation , left , right } if operation == ArithmeticOperation::Durch => {
                 let lexpr = *left * other;
-                Expression::Binary { operation,left : Box::new(lexpr), right } // to avoid unnesscary .combine_terms()
+                Expression::Binary { operation, left : Box::new(lexpr), right } // to avoid unnesscary .combine_terms()
             },
 
             //  if operation == ArithmeticOperation::Mal as things like 3x(4x * 3) need to be 'evaluted' inside before mal with outside 
             Expression::Binary { operation, left , right } if operation == ArithmeticOperation::Mal => (*left * *right) * other,
 
-            Expression::Binary { operation , left , right } if operation == ArithmeticOperation::Plus  => {
+            Expression::Binary { operation , left , right }  => {
                 let lexpr = *left * other.clone();
                 let rexpr = *right * other;
                 Expression::new_binary(operation,lexpr,rexpr) // to avoid unnesscary .combine_terms()
-            },
-            Expression::Binary { operation , left , right } /*if operation == ArithmeticOperation::Minus*/ => {
-                let lexpr = *left * other.clone();
-                let rexpr = -*right * other;
-                Expression::new_binary(operation,lexpr,rexpr)
-            },
-            Expression::Function { .. } => {
-                if other.variables.is_empty() {
-                    return if other.coefficient.is_one() {
-                        self.into()
-                    }
-                    else if other.coefficient.is_zero() {
-                        0.0.into()
-                    }
-                    else {
-                        Expression::new_mal(self.into(),other.into())
-                    }
-                }
-        
-                Expression::new_mal(self.into(),other.into())
             },
         };
 
@@ -318,17 +299,12 @@ mod expr {
     
     #[test]
     fn mul_expression_by_term_nested_expr() {
-        // Test multiplying a nested expression by a term2
-        let inner_expression = from_str("2x + 3y");
-        let expression = Expression::new_minus(
-            create_term_with_variable(5.0, 'z', 1.0).into(),
-            Expression::new_nested(inner_expression),
-        );
+        let expression = Expression::try_from("5z - (2x + 3y)").unwrap();
 
         // Create a term to multiply with the expression
         let term_to_multiply : Expression = create_term_with_variable(2.0, 'w', 1.0).into();
 
-        let result = expression.simplify_structure() * term_to_multiply;
+        let result = expression * term_to_multiply;
 
         check_expression_str(result, "-4wx - 6wy + 10wz");
     }

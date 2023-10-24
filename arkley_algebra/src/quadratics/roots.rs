@@ -56,7 +56,6 @@ impl<T> Find<Nature<T>> for Roots<IntegerQuadratic<T>> where T : Num + Clone + F
 
         let neg_b = -self.0.0.b ;
 
-        // TODO : Find a better way to avoid using f64 to show 0.5 or make a sqrt trait
         let sqrt = d.pow(T::from(1) / two.clone());  // as 25^0.5 = sqrt(25)
 
         let two_a = two.clone() * self.0.0.a;

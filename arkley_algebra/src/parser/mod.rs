@@ -1,4 +1,4 @@
-//TODO : Add from str for term , op , expr , equation
+//TODO : Add from str for equation
 mod tokens;
 mod op;
 mod term;

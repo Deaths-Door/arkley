@@ -31,9 +31,11 @@ impl std::ops::Div<Term> for Function  {
 #[cfg(feature="function")]
 impl std::ops::Div<Function > for Expression {
     type Output = Expression; 
-    fn div(self, rhs: Function ) -> Self::Output {
-        // TODO : Check for optimzations
-        Expression::new_durch(self.into(),rhs.into())
+    fn div(self, rhs: Function) -> Self::Output {
+        match self {
+            Self::Function(func) if func == rhs => 1.into(),
+            _ => Expression::new_durch(self,rhs.into())
+        }        
     }
 }
 
