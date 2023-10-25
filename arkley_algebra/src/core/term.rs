@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use num_notation::Number;
+use num_notation::{Number, One};
 
 /// Represents a collection of variables, each associated with a numerical value.
 /// The `Variables` type is an alias for `BTreeMap<char, Number>`.
@@ -9,8 +9,7 @@ pub type Variables = BTreeMap<char,Number>;
 ///
 /// A `Term` is a basic unit in a mathematical expression. It consists of a coefficient and variables represented
 /// as `BTreeMap<char,Number>` .
-#[derive(Clone)]
-#[cfg_attr(feature="function", derive(Hash))]
+#[derive(Clone,Hash)]
 #[cfg_attr(test, derive(PartialEq))]
 pub struct Term {
     /// The coefficient of the term.
@@ -59,7 +58,7 @@ impl From<char> for Term {
 
 impl std::fmt::Display for Term {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self.coefficient == 1 {
+        match self.coefficient.is_one() {
             false => write!(f, "{}", self.coefficient)?,
             true => match self.variables.is_empty() {
                 true => write!(f, "{}", self.coefficient)?,

@@ -5,7 +5,7 @@ mod mul;
 mod div;
 mod neg;
 mod macro_gen;
-mod common;
+mod combiner;
 
 pub use add::*;
 pub use sub::*;

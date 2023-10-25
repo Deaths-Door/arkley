@@ -7,8 +7,7 @@ use crate::{
 /// An enum representing a mathematical expression.
 ///
 /// The `Expression` enum allows building complex mathematical expressions
-#[derive(Clone)]
-#[cfg_attr(feature="function", derive(Hash))]
+#[derive(Clone,Hash)]
 #[cfg_attr(test, derive(PartialEq))]
 pub enum Expression {
     /// Represents a basic unit in a mathematical expression.

@@ -16,7 +16,7 @@ use crate::{
 
 use super::parse_add_sub;
 
-// TODO : Add functions + context + brackets + error
+// TODO : Add functions + context
 #[cfg_attr(test, derive(PartialEq,Debug))]
 pub(super) enum Token {
     Term(Term),

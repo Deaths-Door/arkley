@@ -212,7 +212,7 @@ mod expr {
     use super::*;
 
     use num_notation::Number;
-    use crate::{Variables, manipulation::Simplify};
+    use crate::Variables;
     // Helper function to create a Term with a single variable.
     fn create_term_with_variable(coeff: f64, var: char, exp: f64) -> Term {
         let mut variables = Variables::new();

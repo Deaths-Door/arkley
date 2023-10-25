@@ -1,10 +1,8 @@
-mod simplification;
 mod evaluation;
 
 mod variable_analysis;
 mod variable_substitution;
 
-pub use simplification::*;
 pub use evaluation::*;
 
 pub use variable_analysis::*;
@@ -20,5 +18,6 @@ pub trait Find<T> {
     /// # Returns
     ///
     /// A value of type `T` representing the result of the operation.
+    #[must_use]
     fn find(self) -> T;
 }

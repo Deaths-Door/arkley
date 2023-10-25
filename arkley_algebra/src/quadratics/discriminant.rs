@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use num_notation::Num;
 
 use crate::{IntegerQuadratic, manipulation::Find};

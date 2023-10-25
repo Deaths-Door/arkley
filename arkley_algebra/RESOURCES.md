@@ -37,4 +37,6 @@
 .div_no_vars = \textbf {"{"} { $term1 } / { $term2 } = { $term3 } {"}"} 
     Divide the two numbers 
 
+.div_cancel_common_variables = Now cancel common variables textit {"{"} that appear in both the top and bottom {"}"}.
+    Here is the list of common variables : { $common }
 ```

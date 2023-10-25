@@ -45,4 +45,13 @@ pub trait VariableAnalysis {
     ///
     /// `true` if all of the specified variables are present in the expression, `false` otherwise.
     fn contains_all<'a,I>(&self,variables : &mut I) -> bool where I : Iterator<Item = &'a char>;    
+
+    /// Checks if all elements in `self` contain all entries in `entries`.
+    ///
+    /// This function iterates through `self` and checks if each element has all the entries
+    /// provided by the iterator `iterator`.
+    /// # Returns
+    ///
+    /// `true` if all elements in `self` contain all the entries, `false` otherwise.    
+    fn has_all<'a,I>(&self,iterator : &mut I) -> bool where I : Iterator<Item = &'a char>;
 }

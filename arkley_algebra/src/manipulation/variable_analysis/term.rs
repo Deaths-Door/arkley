@@ -20,4 +20,8 @@ impl VariableAnalysis for Term{
     fn contains_variable(&self, variable: &char) -> bool {
         self.variables.contains_key(variable)
     }
+
+    fn has_all<'a,I>(&self,iterator : &mut I) -> bool where I : Iterator<Item = &'a char> {
+        self.contains_all(iterator)
+    }
 }

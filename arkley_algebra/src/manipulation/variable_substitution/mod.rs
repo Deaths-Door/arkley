@@ -10,7 +10,7 @@ pub use equation::*;
 #[cfg(feature="function")]
 mod function;
 
-#[cfg(feature="equation")]
+#[cfg(feature="function")]
 pub use function::*;
 
 use std::collections::HashMap;

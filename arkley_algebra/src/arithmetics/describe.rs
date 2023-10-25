@@ -1,11 +1,11 @@
-use std::{collections::HashMap, hash::Hash, vec};
+use std::{collections::{HashMap, BTreeSet, BTreeMap}, hash::Hash, vec};
 
 use arkley_describe::{
     DescribeAdd, Steps,
     fluent_templates::{StaticLoader, LanguageIdentifier}, DescribeSub, DescribeMul, DescribeDiv
 };
 
-use crate::Term;
+use crate::{Term, manipulation::VariableAnalysis};
 
 impl DescribeAdd for Term {
     fn describe_add(self,other:Self,resources: &StaticLoader,lang: &LanguageIdentifier) -> Option<Steps> {
@@ -84,7 +84,32 @@ impl DescribeDiv for Term {
             ].into()
         }
 
+        let self_variables = self.get_unique_variables();
+        let other_variables = other.get_unique_variables();
+        let common_variables : BTreeSet<_> = self_variables.intersection(&other_variables).collect();
 
-        vec![r"\\textbf{TODO THIS}".to_owned()].into()
+        let mut min_exponents = BTreeMap::new();
+        let mut coefficients = BTreeSet::new();
+
+        self.get_min_exponents_and_coefficient(&common_variables, &mut min_exponents, &mut coefficients);
+       /*  let expr_variables = self.get_unique_variables();
+        let term_variables = other.get_unique_variables();
+
+        let common_variables : Vec<_> = expr_variables.intersection(&term_variables).map(|c| c.to_string()).collect();
+        let joined_common_variables : String  = common_variables.join(", ");
+
+        let cancel_variables_args = HashMap::from([ ("common",joined_common_variables.into())]);
+        
+        let cancel_variables_description = 
+            resources.lookup_single_language(lang, "algebric-term.div_cancel_common_variables", Some(&cancel_variables_args))
+                .unwrap();
+
+
+        vec![
+            cancel_variables_description,
+
+        ].into()*/
+
+        todo!()
     }
 }
