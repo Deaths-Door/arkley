@@ -1,6 +1,6 @@
 use nom::{IResult, combinator::{map, all_consuming}};
 
-use crate::Expression;
+use crate::{Expression, Context};
 
 use super::tokens::Token;
 
@@ -13,14 +13,22 @@ use super::tokens::Token;
 /// # Arguments
 ///
 /// * `input`: A string containing the mathematical expression to be parsed.
-pub fn parse_expression(input: &str) -> IResult<&str,Expression> {
-    map(Token::into_tokens,|vec : Vec<Token>| Token::into_expression_tree(Token::to_rpn(vec)))(input)
+pub fn parse_expression<'a>(input: &'a str,context : &'a Context<'a>) -> IResult<&'a str,Expression> {
+    // TODO : Provide more imformative errors why the equation parsing failed
+
+    let (input,vec) = Token::into_tokens(input, context)?;
+
+    let expression = Token::into_expression_tree(Token::to_rpn(vec));
+
+    Ok((input,expression))
 }
 
 impl<'a> TryFrom<&'a str> for Expression {
     type Error = nom::Err<nom::error::Error<&'a str>>;
-    fn try_from(input: &'a str) -> Result<Self, Self::Error> {
-        all_consuming(parse_expression)(input).map(|(_,expr)| expr)
+    fn try_from(_input: &'a str) -> Result<Self, Self::Error> {
+        // TODO : Replace with actual logic
+        todo!()
+      //  all_consuming(parse_expression)(input).map(|(_,expr)| expr)
     }
 }
 
@@ -31,7 +39,8 @@ mod tests {
     #[test]
     fn parse_simple_addition() {
         let input_str = "3 + 4";
-        let parsed = parse_expression(input_str);
+        let context = Default::default();   
+        let parsed = parse_expression(input_str,&context);
         let expected_expression = Expression::new_plus( 3.0.into(),  4.0.into());
 
         assert!(parsed.is_ok());
@@ -41,7 +50,8 @@ mod tests {
     #[test]
     fn parse_complex_expression() {
         let input_str = "1 + (2 * 3)";
-        let parsed = parse_expression(input_str);
+        let context = Default::default();   
+        let parsed = parse_expression(input_str,&context);
 
         assert!(parsed.is_ok());
         assert_eq!(&parsed.unwrap().1.to_string(),"1 + 2(3)"); // unnesscary brackets removed
@@ -50,7 +60,8 @@ mod tests {
     #[test]
     fn parse_with_implicit_mul() {
         let input_str = "1 + 2(4)";
-        let parsed = parse_expression(input_str);
+        let context = Default::default();   
+        let parsed = parse_expression(input_str,&context);
 
         let expected_expression = Expression::new_plus(
             1.0.into(), 
@@ -63,7 +74,9 @@ mod tests {
     #[test]
     fn parse_expression_with_unary_minus() {
         let input_str = "-5 + 2";
-        let parsed = parse_expression(input_str);
+        let context = Default::default();   
+
+        let parsed = parse_expression(input_str,&context);
         let expected_expression =  Expression::new_plus((-5.0).into(),  2.0.into());
 
         assert!(parsed.is_ok());
@@ -73,7 +86,9 @@ mod tests {
     #[test]
     fn parse_invalid_expression() {
         let input_str = "5 + (2 * 3"; 
-        let parsed = parse_expression(input_str);
+        let context = Default::default();   
+
+        let parsed = parse_expression(input_str,&context);
        
         // one would thing it should be none but parser stops checking at 5 + so output is 5 , for full consumuing use try_from
         let unwrapped = parsed.unwrap().1;
@@ -83,7 +98,9 @@ mod tests {
     #[test]
     fn parse_expression_with_multiple_operators() {
         let input_str = "2 + 3 * 4 - 5 / 1";
-        let parsed = parse_expression(input_str);
+        let context = Default::default();   
+
+        let parsed = parse_expression(input_str,&context);
         let expected_expression = Expression::new_minus(
             Expression::new_plus(2.0.into(), Expression::new_mal(3.0.into(), 4.0.into())),
             Expression::new_durch(5.0.into(), 1.0.into())
@@ -96,7 +113,9 @@ mod tests {
     #[test]
     fn double_brackets() {
         let input_str = "(2 + 3)(4/4)";
-        let parsed = parse_expression(input_str);
+        let context = Default::default();   
+
+        let parsed = parse_expression(input_str,&context);
 
         assert!(parsed.is_ok());
         assert_eq!(&parsed.unwrap().1.to_string(),"(2 + 3)(4/4)");

@@ -135,6 +135,7 @@ impl std::ops::Div for Expression {
     fn div(self,other : Expression) -> Self::Output {
         match (self,other) {
             (Expression::Term(t1), Expression::Term(t2)) => t1 / t2,
+            (expr @_, Expression::Term(term)) => expr / term,
             (mut top @_,mut bottom @_)=> {
                 let top_variables = top.get_unique_variables();
                 let bottom_variables = bottom.get_unique_variables();
@@ -188,6 +189,7 @@ fn calculate_gcd(mut coefficients: HashSet<Number>) -> Number {
 
     ans
 }
+
 impl Term {
     /// Recursively calculates the minimum variable exponent 
     fn get_min_exponents<'a>(&'a self,common_variables : &BTreeSet<&&char>,min_exponents : &mut HashMap<&'a char,&'a Number>) {
@@ -374,7 +376,7 @@ mod expression_tests {
     use crate::parse_expression;
 
     fn from_str(input :&str) -> Expression {
-        parse_expression(input).unwrap().1
+        parse_expression(input,&(Default::default())).unwrap().1
     }
 
     #[test]

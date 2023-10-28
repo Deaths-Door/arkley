@@ -3,6 +3,7 @@ use std::{fmt::{Debug, Display}, collections::{BTreeMap, HashMap}};
 use crate::{Expression, manipulation::VariableSubstitution};
 
 /// Represents a mathematical function with a name and a set of arguments.
+// TODO : Create functions to validate arguemnts given to functions + corrcet number + corrcte ones etc
 #[derive(Clone,Hash)]
 pub struct Function {
     pub(crate) name: &'static str,
@@ -81,10 +82,11 @@ impl Function {
         &self.expression
     }
 
-    /// Gets a mutable reference to the arguments of the function, allowing you to modify them.
-    pub fn arguments_mut(&mut self) -> &mut FunctionArguments {
-        &mut self.arguments  
+    /// Gets a mutable reference to the expression of the function, if available.
+    pub fn expression_mut(&mut self) -> &mut Option<Box<Expression>> {
+        &mut self.expression
     }
+
 }
 
 impl Function {
@@ -112,12 +114,6 @@ impl Function {
     /// Creates a new `Function` instance with a custom closure function.
     pub const fn new(name: &'static str,closure: fn(Function) -> Expression) -> Self {
         Self { name , arguments : BTreeMap::new() , expression : None , closure }
-    }
-
-    /// Sets the arguments of the function.
-    pub fn with_arguments(mut self, arguments: FunctionArguments) -> Self {
-        self.arguments = arguments;
-        self
     }
 
     /// Sets the expression of the function.

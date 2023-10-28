@@ -1,28 +1,32 @@
+use std::collections::HashMap;
 
 use nom::{
     IResult, sequence::{delimited, pair, separated_pair, preceded},
     multi::fold_many0, 
     character::complete::{multispace0,char},
     combinator::{map, opt}, 
-    branch::alt
+    branch::alt, bytes::complete::tag
 };
 
 use crate::{
     Expression, 
     ArithmeticOperation, 
     parse_term, parse_operator, 
-    Term,
+    Term, Context,
 };
 
 use super::parse_add_sub;
 
-// TODO : Add functions + context
+// TODO : Add functionss
 #[cfg_attr(test, derive(PartialEq,Debug))]
 pub(super) enum Token {
     Term(Term),
     Operator(ArithmeticOperation),
     OpenParenthesis,
-    CloseParenthesis
+    CloseParenthesis,
+
+    /// Used for context parsing like "five * x" => "5 * x" => "5x"
+    Expression(Expression) 
 }
 
 impl From<Term> for Token {
@@ -37,6 +41,12 @@ impl From<ArithmeticOperation> for Token {
     }
 }
 
+impl From<Expression> for Token {
+    fn from(value: Expression) -> Self {
+        Token::Expression(value)
+    }
+}
+
 impl ArithmeticOperation {
     const fn precedence(&self) -> i32 {
         match self {
@@ -46,43 +56,61 @@ impl ArithmeticOperation {
     }
 }
 
+fn alternative<'a,T>(alternatives: &'a HashMap<&'a str,fn() -> T>) -> impl FnMut(&'a str) -> IResult<&'a str,T> {
+    move |input| {
+        let mut last_err = Err(nom::Err::Error(nom::error::Error { input, code: nom::error::ErrorKind::NonEmpty }));
+
+        for (key,closure) in alternatives {
+            // Same as : value(closure(),tag(*key))(input)
+            match tag(*key)(input).map(|(i, _)| (i, closure())) { 
+                ok @ Ok(_) => return ok,        
+                error @ Err(_) => last_err = error 
+            }
+        }
+
+        last_err
+    }
+}
+
+
 impl Token {
     // space .. 
     // ( expr ) .. opt (expr) 
     // default => term .. op .. many alt ( term , nested expr )
-    fn parse_expression(input: &str) -> IResult<&str, Vec<Token>> {
-        let parser = preceded(
-            multispace0, 
-            separated_pair(
-                parse_operator, 
+    fn parse_expression<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&str, Vec<Token>> {
+        move |input: &str| {
+            let parser = preceded(
                 multispace0, 
-                Self::parse_with_opt_implicit_mul
-            )
-        );
-
-        let (input,mut vec1) = Self::parse_with_opt_implicit_mul(input)?;
-
-        let (input,vec2) = fold_many0(parser,Vec::new,|mut vec : Vec<Token>,(operation,tokens)|{
-            vec.push(operation.into());
-
-            vec.extend(tokens.into_iter());
-
-            vec
-        })(input)?;
-
-        vec1.extend(vec2.into_iter());
-
-        Ok((input,vec1))
+                separated_pair(
+                    parse_operator, 
+                    multispace0, 
+                    Self::parse_with_opt_implicit_mul(context)
+                )
+            );
+    
+            let (input,mut vec1) = Self::parse_with_opt_implicit_mul(context)(input)?;
+    
+            let (input,vec2) = fold_many0(parser,Vec::new,|mut vec : Vec<Token>,(operation,tokens)|{
+                vec.push(operation.into());
+    
+                vec.extend(tokens.into_iter());
+    
+                vec
+            })(input)?;
+    
+            vec1.extend(vec2.into_iter());
+    
+            Ok((input,vec1))
+        }
     }
 
-
-    fn parse_nested_expression<'a>() -> impl FnMut(&'a str) -> IResult<&'a str, Vec<Token>> {
+    fn parse_nested_expression<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str, Vec<Token>> {
         move |input : &'a str| {
             let parser = delimited(
                 pair(char('('),multispace0),
                 pair(
                     opt(parse_add_sub),
-                    Token::parse_expression
+                    Token::parse_expression(context)
                 ), 
                 pair(multispace0,char(')')),
             );
@@ -105,12 +133,12 @@ impl Token {
         }
     }
 
-    fn parse_with_opt_implicit_mul(input: &str) -> IResult<&str,Vec<Token>> {
-        fn parser<'a>(first_parser : impl FnMut(&'a str) -> IResult<&str,Vec<Token>>) -> impl FnMut(&'a str) -> IResult<&str,Vec<Token>> {
+    fn parse_with_opt_implicit_mul<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
+        fn parser<'a>(context : &'a Context<'a>,first_parser : impl FnMut(&'a str) -> IResult<&str,Vec<Token>>) -> impl FnMut(&'a str) -> IResult<&str,Vec<Token>> {
             let _parser = separated_pair(
                 first_parser,
                 multispace0,
-                opt(Token::parse_expression)
+                opt(Token::parse_expression(context))
             );
 
             map(_parser,|(lexpr,rexpr) : (Vec<Token>,Option<Vec<Token>>)|{
@@ -143,12 +171,25 @@ impl Token {
             })
         }
 
-        let map_term = map(parse_term,|term| Vec::from([Token::from(term)]) );
+        move |input| {    
+            alt((
+                parser(context ,Self::parse_nested_expression(context)),
+                parser(context,Term::map_into_tokens()),
+                parser(context,context.map_tags_into_tokens())
+            ))(input)
+        }
+    }
+}
 
-        alt((
-            parser(Self::parse_nested_expression()),
-            parser(map_term),
-        ))(input)
+impl Term {
+    fn map_into_tokens<'a>() -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
+        map(parse_term,|term| Vec::from([Token::from(term)]) )
+    }
+}
+
+impl<'a> Context<'a> {
+    fn map_tags_into_tokens(&'a self) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
+        map(alternative(&self.tags()),|expr: Expression| Vec::from([Token::from(expr)]) )
     }
 }
 
@@ -165,8 +206,8 @@ impl Token {
     ///
     /// - If the parsing is successful, it returns a `Result` with the remaining input and a
     ///   vector of `Token` representing the parsed tokens.
-    pub(super) fn into_tokens(input: &str) -> IResult<&str,Vec<Token>>  {  
-        Token::parse_expression(input)
+    pub(super) fn into_tokens<'a>(input: &'a str,context : &'a Context<'a>) -> IResult<&'a str,Vec<Token>>  {  
+        Token::parse_expression(context)(input)
     }
 
     /// Converts an infix expression represented by a vector of `Token` into Reverse Polish Notation (RPN).
@@ -187,28 +228,24 @@ impl Token {
 
         for token in vec {
             match token {
-                Token::Term(_) => output.push(token),
+                Token::Term(_) | Token::Expression(_) => output.push(token),
                 Token::Operator(op1) => {
                     while let Some(&Token::Operator(ref op2)) = operator_stack.last() {
-                        if op1.precedence() <= op2.precedence() {
-                            output.push(operator_stack.pop().unwrap());
-                        } else {
-                            break;
+                        match op1.precedence() <= op2.precedence() {
+                            true => output.push(operator_stack.pop().unwrap()),
+                            false => break,
                         }
                     }
                     operator_stack.push(Token::Operator(op1));
                 }
                 Token::OpenParenthesis => operator_stack.push(token),
-                Token::CloseParenthesis => {                    
-                    while let Some(top) = operator_stack.pop() {
-                        if let Token::OpenParenthesis = top {
-                            break;
-                        }
-             
-                        output.push(top);
+                Token::CloseParenthesis => while let Some(top) = operator_stack.pop() {
+                    if let Token::OpenParenthesis = top {
+                        break;
                     }
+         
+                    output.push(top);
                 }
-
             }
         }
     
@@ -234,12 +271,13 @@ impl Token {
         for token in rpn_tokens.into_iter() {
             match token {
                 Token::Term(term) => stack.push(term.into()),
+                Token::Expression(expr) => stack.push(expr),
                 Token::Operator(operator) => {
                     let right = stack.pop().expect("Expected valid input : Check parser");
                     let left = stack.pop().expect("Expected valid input : Check parser");
                     stack.push(Expression::new_binary(operator, left, right));  
                 },
-                Token::OpenParenthesis | Token::CloseParenthesis => unreachable!()
+                Token::OpenParenthesis | Token::CloseParenthesis => unreachable!(),
             }
         }
 
@@ -253,7 +291,20 @@ impl Token {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
+    #[test]
+    fn test_alternative() {
+        let mut context = Context::default();
+        context.tags_mut().insert("five", || 5.into());
+        context.tags_mut().insert("two", || 2.into());
+        context.tags_mut().insert("sieben", || 7.into());
+
+        let result = alternative(&context.tags())("five * sieben");
+        
+        assert!(result.is_ok());
+
+        assert_eq!(&result.unwrap().1.to_string(),"5(7)")
+    }
     #[test]
     fn test_into_tokens_valid_input() {
         // Test with a valid input string
@@ -266,14 +317,15 @@ mod tests {
             Token::Term(4.0.into()),
         ];
         
-        assert_eq!(Token::into_tokens(input), Ok(("", expected_tokens)));
+        assert_eq!(Token::into_tokens(input,&Default::default()), Ok(("", expected_tokens)));
     }
 
     #[test]
     fn test_into_tokens_empty_input() {
         // Test with an empty input string
-        let input = "";        
-        let result = Token::into_tokens(input);
+        let input = "";     
+        let context = Default::default();   
+        let result = Token::into_tokens(input,&context);
         assert!(result.is_err());
     }
 
@@ -289,6 +341,6 @@ mod tests {
         ]);
 
         // Expect an error since "++" is not a valid operator
-        assert_eq!(Token::into_tokens(input), Ok(("", expected_tokens)));
+        assert_eq!(Token::into_tokens(input,&Default::default()), Ok(("", expected_tokens)));
     }
 }

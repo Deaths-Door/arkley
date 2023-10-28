@@ -223,7 +223,7 @@ mod expr {
     use crate::parse_expression;
 
     fn from_str(input :&str) -> Expression {
-        parse_expression(input).unwrap().1
+        parse_expression(input,&(Default::default())).unwrap().1
     }
     fn check_expression_str(expression : Expression,_str : &str) {
         assert_eq!(&expression.to_string(),_str)

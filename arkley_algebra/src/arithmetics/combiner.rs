@@ -74,6 +74,7 @@ impl Expression {
                 match (lexpr,rexpr) {
                     (None,None) => None,
                     (Some(expr),None) | (None,Some(expr)) => Some(expr),
+                    // TODO : Change sign here maybe issue
                     (Some(expr1),Some(expr2)) => Some(Expression::new_binary(operation,expr1,expr2))
                 }  
             },
