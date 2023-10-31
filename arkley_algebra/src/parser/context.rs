@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
+use nom::IResult;
+
 use crate::{Expression, Function};
 
+use super::tokens::Token;
 
 /// A context that stores its mappings in hash maps.
 ///
@@ -41,9 +44,39 @@ impl<'a> Context<'a> {
     }
 }
 
+impl<'a> Context<'a> {
+    pub(super) fn parse_tags(&'a self) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
+        move |input| {
+            // TODO : Check why does this fail at + five , parses first tag then an operator stops ; figure out solution for wheni first encountered this issue
+            let (input,expression) = super::alternative(&self.tags())(input)?;    
+                    
+            let vec = vec![expression.into()];
+            Ok((input,vec))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::{Context, parse_expression};
+    use crate::{Context, parse_expression, parser::tokens::Token};
+    #[test]
+    fn parsing_tag() {
+        let mut context = Context::default();
+        context.tags_mut().insert("five", || 5.into());
+        context.tags_mut().insert("two", || 2.into());
+        context.tags_mut().insert("sieben", || 7.into());
+
+        let result = context.parse_tags()("five + sieben");
+        
+        assert!(result.is_ok());
+
+        let (input,vec) = result.unwrap();
+
+        println!("{input}");
+
+        let expr = Token::into_expression_tree(Token::to_rpn(vec));
+        assert_eq!(&expr.to_string(),"5 + 7")
+    }
 
     #[test]
     fn with_context() {
@@ -52,7 +85,7 @@ mod tests {
         context.tags_mut().insert("two", || 2.into());
         context.tags_mut().insert("sieben", || 7.into());
 
-        let result = parse_expression("five * two + sieben", &context);
+        let result = parse_expression(&context)("five * two + sieben");
 
         assert!(result.is_ok());
 

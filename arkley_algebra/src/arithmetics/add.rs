@@ -197,10 +197,10 @@ mod expr {
     #[test]
     fn with_functions() {
 
-        let _expr = parse_expression("2x ",&(Default::default())).unwrap().1;
+        let _expr = Expression::try_from(("2x",&Default::default())).unwrap();
         let cos = cos(_expr);
 
-        let expr = parse_expression("3x",&(Default::default())).unwrap().1;
+        let expr = Expression::try_from(("3x",&Default::default())).unwrap();
         let result = expr + cos;
 
         check_expression_str(result, "3x + cos(2x)");
@@ -231,7 +231,7 @@ mod expr {
         let cos_1 = cos(1.into());
         let sin_1 = sin(1.into());
 
-        let expr = parse_expression("2x + 7x - 5y",&(Default::default())).unwrap().1;
+        let expr = Expression::try_from(("2x + 7x - 5y",&Default::default())).unwrap();
 
         let lexpr = Expression::new_plus(expr, sin_1.into());
         let rexpr = Expression::new_mal(cos_1.into(), sin_x.into());

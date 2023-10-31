@@ -190,14 +190,18 @@ mod expr {
     fn sin(arg : Expression) -> Function {
         Function::new_default("sin", 1.into(),BTreeMap::from([('x',arg.into())]))
     }
+
+    fn from_str(input :&str) -> Expression {
+        Expression::try_from((input,&Default::default())).unwrap()
+    }
     
     #[test]
     fn with_functions() {
 
-        let _expr = parse_expression("2x ",&(Default::default())).unwrap().1;
+        let _expr = from_str("2x");
         let cos = cos(_expr);
 
-        let expr = parse_expression("3x",&(Default::default())).unwrap().1;
+        let expr = from_str("3x");
         let result = expr - cos;
 
         check_expression_str(result, "3x - cos(2x)");
@@ -228,7 +232,7 @@ mod expr {
         let cos_1 = cos(1.into());
         let sin_1 = sin(1.into());
 
-        let expr = parse_expression("2x - 7x - 5y",&(Default::default())).unwrap().1;
+        let expr = from_str("2x - 7x - 5y");
 
         let lexpr = Expression::new_plus(expr, sin_1.into()); // 2x - 7x - 5y + sin(1)
         let rexpr = Expression::new_mal(cos_1.into(), sin_x.into()); // cos(1)sin(x)

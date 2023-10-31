@@ -1,4 +1,4 @@
-use nom::{IResult, combinator::{map, all_consuming}};
+use nom::{IResult, combinator::{map, all_consuming}, Parser, InputLength, error::{ParseError, ErrorKind}};
 
 use crate::{Expression, Context};
 
@@ -13,22 +13,21 @@ use super::tokens::Token;
 /// # Arguments
 ///
 /// * `input`: A string containing the mathematical expression to be parsed.
-pub fn parse_expression<'a>(input: &'a str,context : &'a Context<'a>) -> IResult<&'a str,Expression> {
-    // TODO : Provide more imformative errors why the equation parsing failed
-
-    let (input,vec) = Token::into_tokens(input, context)?;
-
-    let expression = Token::into_expression_tree(Token::to_rpn(vec));
-
-    Ok((input,expression))
+pub fn parse_expression<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Expression> {
+    move |input| {
+        let (input,vec) = Token::into_tokens(input, context)?;
+        let expression = Token::into_expression_tree(Token::to_rpn(vec));
+    
+        Ok((input,expression))
+    }
 }
 
-impl<'a> TryFrom<&'a str> for Expression {
+// TODO : Add try_from for expression once the lifetime garbage can be fixed
+
+impl<'a> TryFrom<(&'a str,&'a Context<'a>)> for Expression {
     type Error = nom::Err<nom::error::Error<&'a str>>;
-    fn try_from(_input: &'a str) -> Result<Self, Self::Error> {
-        // TODO : Replace with actual logic
-        todo!()
-      //  all_consuming(parse_expression)(input).map(|(_,expr)| expr)
+    fn try_from((input,context): (&'a str,&'a Context<'a>)) -> Result<Self, Self::Error> {
+        all_consuming(parse_expression(context))(input).map(move |(_,expr)| expr)
     }
 }
 
@@ -40,7 +39,7 @@ mod tests {
     fn parse_simple_addition() {
         let input_str = "3 + 4";
         let context = Default::default();   
-        let parsed = parse_expression(input_str,&context);
+        let parsed = parse_expression(&context)(input_str);
         let expected_expression = Expression::new_plus( 3.0.into(),  4.0.into());
 
         assert!(parsed.is_ok());
@@ -51,7 +50,7 @@ mod tests {
     fn parse_complex_expression() {
         let input_str = "1 + (2 * 3)";
         let context = Default::default();   
-        let parsed = parse_expression(input_str,&context);
+        let parsed = parse_expression(&context)(input_str);
 
         assert!(parsed.is_ok());
         assert_eq!(&parsed.unwrap().1.to_string(),"1 + 2(3)"); // unnesscary brackets removed
@@ -61,7 +60,7 @@ mod tests {
     fn parse_with_implicit_mul() {
         let input_str = "1 + 2(4)";
         let context = Default::default();   
-        let parsed = parse_expression(input_str,&context);
+        let parsed = parse_expression(&context)(input_str);
 
         let expected_expression = Expression::new_plus(
             1.0.into(), 
@@ -76,7 +75,7 @@ mod tests {
         let input_str = "-5 + 2";
         let context = Default::default();   
 
-        let parsed = parse_expression(input_str,&context);
+        let parsed = parse_expression(&context)(input_str);
         let expected_expression =  Expression::new_plus((-5.0).into(),  2.0.into());
 
         assert!(parsed.is_ok());
@@ -88,7 +87,7 @@ mod tests {
         let input_str = "5 + (2 * 3"; 
         let context = Default::default();   
 
-        let parsed = parse_expression(input_str,&context);
+        let parsed = parse_expression(&context)(input_str);
        
         // one would thing it should be none but parser stops checking at 5 + so output is 5 , for full consumuing use try_from
         let unwrapped = parsed.unwrap().1;
@@ -100,7 +99,7 @@ mod tests {
         let input_str = "2 + 3 * 4 - 5 / 1";
         let context = Default::default();   
 
-        let parsed = parse_expression(input_str,&context);
+        let parsed = parse_expression(&context)(input_str);
         let expected_expression = Expression::new_minus(
             Expression::new_plus(2.0.into(), Expression::new_mal(3.0.into(), 4.0.into())),
             Expression::new_durch(5.0.into(), 1.0.into())
@@ -115,7 +114,7 @@ mod tests {
         let input_str = "(2 + 3)(4/4)";
         let context = Default::default();   
 
-        let parsed = parse_expression(input_str,&context);
+        let parsed = parse_expression(&context)(input_str);
 
         assert!(parsed.is_ok());
         assert_eq!(&parsed.unwrap().1.to_string(),"(2 + 3)(4/4)");

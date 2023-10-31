@@ -1,11 +1,9 @@
-use std::collections::HashMap;
-
 use nom::{
     IResult, sequence::{delimited, pair, separated_pair, preceded},
     multi::fold_many0, 
     character::complete::{multispace0,char},
     combinator::{map, opt}, 
-    branch::alt, bytes::complete::tag
+    branch::alt
 };
 
 use crate::{
@@ -25,7 +23,7 @@ pub(super) enum Token {
     OpenParenthesis,
     CloseParenthesis,
 
-    /// Used for context parsing like "five * x" => "5 * x" => "5x"
+    /// Used for context parsing like "five_x_plus_y* x" => "(5x + y) * x" => "5x^2"
     Expression(Expression) 
 }
 
@@ -47,45 +45,13 @@ impl From<Expression> for Token {
     }
 }
 
-impl ArithmeticOperation {
-    const fn precedence(&self) -> i32 {
-        match self {
-            ArithmeticOperation::Plus | ArithmeticOperation::Minus => 1,
-            ArithmeticOperation::Mal | ArithmeticOperation::Durch => 2,
-        }
-    }
-}
-
-fn alternative<'a,T>(alternatives: &'a HashMap<&'a str,fn() -> T>) -> impl FnMut(&'a str) -> IResult<&'a str,T> {
-    move |input| {
-        let mut last_err = Err(nom::Err::Error(nom::error::Error { input, code: nom::error::ErrorKind::NonEmpty }));
-
-        for (key,closure) in alternatives {
-            // Same as : value(closure(),tag(*key))(input)
-            match tag(*key)(input).map(|(i, _)| (i, closure())) { 
-                ok @ Ok(_) => return ok,        
-                error @ Err(_) => last_err = error 
-            }
-        }
-
-        last_err
-    }
-}
-
-
 impl Token {
-    // space .. 
-    // ( expr ) .. opt (expr) 
-    // default => term .. op .. many alt ( term , nested expr )
     fn parse_expression<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&str, Vec<Token>> {
         move |input: &str| {
-            let parser = preceded(
+            let parser = separated_pair(
+                parse_operator, 
                 multispace0, 
-                separated_pair(
-                    parse_operator, 
-                    multispace0, 
-                    Self::parse_with_opt_implicit_mul(context)
-                )
+                Self::parse_with_opt_implicit_mul(context)
             );
     
             let (input,mut vec1) = Self::parse_with_opt_implicit_mul(context)(input)?;
@@ -106,77 +72,79 @@ impl Token {
 
     fn parse_nested_expression<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str, Vec<Token>> {
         move |input : &'a str| {
-            let parser = delimited(
+            let (input,(sign,expr)) = delimited(
                 pair(char('('),multispace0),
                 pair(
                     opt(parse_add_sub),
                     Token::parse_expression(context)
                 ), 
                 pair(multispace0,char(')')),
-            );
-    
-            map(parser,|(sign,expr)|{
-                let mut vec = vec![];
-                
-                if let Some(value) = sign {
-                    vec.push(value.into())
-                }
+            )(input)?;
 
-                vec.push(Token::OpenParenthesis);
-    
-                vec.extend(expr.into_iter());
-    
-                vec.push(Token::CloseParenthesis);
-    
-                vec
-            })(input)
+            let mut vec = vec![];
+                
+            if let Some(value) = sign {
+                vec.push(value.into())
+            }
+
+            vec.push(Token::OpenParenthesis);
+
+            vec.extend(expr.into_iter());
+
+            vec.push(Token::CloseParenthesis);
+
+
+            Ok((input,vec))
         }
     }
 
     fn parse_with_opt_implicit_mul<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
-        fn parser<'a>(context : &'a Context<'a>,first_parser : impl FnMut(&'a str) -> IResult<&str,Vec<Token>>) -> impl FnMut(&'a str) -> IResult<&str,Vec<Token>> {
-            let _parser = separated_pair(
-                first_parser,
-                multispace0,
-                opt(Token::parse_expression(context))
-            );
+        move |input| {    
+            // TODO : Add parse functions thing right here for context + add functions parsing as well
+            alt((
+                Self::opt_implicit_mul_parser(context ,Self::parse_nested_expression(context)),
+                Self::opt_implicit_mul_parser(context,Term::map_into_tokens()),
+                Self::opt_implicit_mul_parser(context,context.parse_tags())
+            ))(input)
+        }
+    }
 
-            map(_parser,|(lexpr,rexpr) : (Vec<Token>,Option<Vec<Token>>)|{
-                let mut vec = vec![];
-                
-                // length one means only one token which means only one thing hence no brackets are required
-                match lexpr.len() == 1 {
-                    true => vec.extend(lexpr.into_iter()),
-                    false => {
-                        vec.push(Token::OpenParenthesis);
-    
-                        vec.extend(lexpr.into_iter());
+    fn opt_implicit_mul_parser<'a>(context : &'a Context<'a>,first_parser : impl FnMut(&'a str) -> IResult<&str,Vec<Token>>) -> impl FnMut(&'a str) -> IResult<&str,Vec<Token>> {
+        let mut parser = separated_pair(
+            first_parser,
+            multispace0,
+            opt(Token::parse_expression(context))
+        );
+      
+        move |input| {
+            let (input,(lexpr,rexpr)) = (parser)(input)?;
+
+            let mut vec = vec![];
             
-                        vec.push(Token::CloseParenthesis);
-                    }
-                };
-
-                if let Some(value) = rexpr {
-                    vec.push(ArithmeticOperation::Mal.into());
-    
+            // length one means only one token which means only one thing hence no brackets are required
+            match lexpr.len() == 1 {
+                true => vec.extend(lexpr.into_iter()),
+                false => {
                     vec.push(Token::OpenParenthesis);
     
-                    vec.extend(value.into_iter());
+                    vec.extend(lexpr.into_iter());
         
                     vec.push(Token::CloseParenthesis);
-        
                 }
-              
-                vec
-            })
-        }
+            };
+    
+            if let Some(value) = rexpr {
+                vec.push(ArithmeticOperation::Mal.into());
+    
+                vec.push(Token::OpenParenthesis);
+    
+                vec.extend(value.into_iter());
+    
+                vec.push(Token::CloseParenthesis);
+    
+            }
 
-        move |input| {    
-            alt((
-                parser(context ,Self::parse_nested_expression(context)),
-                parser(context,Term::map_into_tokens()),
-                parser(context,context.map_tags_into_tokens())
-            ))(input)
+            Ok((input,vec))
         }
     }
 }
@@ -187,9 +155,12 @@ impl Term {
     }
 }
 
-impl<'a> Context<'a> {
-    fn map_tags_into_tokens(&'a self) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
-        map(alternative(&self.tags()),|expr: Expression| Vec::from([Token::from(expr)]) )
+impl ArithmeticOperation {
+    const fn precedence(&self) -> i32 {
+        match self {
+            ArithmeticOperation::Plus | ArithmeticOperation::Minus => 1,
+            ArithmeticOperation::Mal | ArithmeticOperation::Durch => 2,
+        }
     }
 }
 
@@ -206,6 +177,7 @@ impl Token {
     ///
     /// - If the parsing is successful, it returns a `Result` with the remaining input and a
     ///   vector of `Token` representing the parsed tokens.
+    #[inline(always)]
     pub(super) fn into_tokens<'a>(input: &'a str,context : &'a Context<'a>) -> IResult<&'a str,Vec<Token>>  {  
         Token::parse_expression(context)(input)
     }
@@ -236,7 +208,7 @@ impl Token {
                             false => break,
                         }
                     }
-                    operator_stack.push(Token::Operator(op1));
+                    operator_stack.push(op1.into());
                 }
                 Token::OpenParenthesis => operator_stack.push(token),
                 Token::CloseParenthesis => while let Some(top) = operator_stack.pop() {
@@ -292,19 +264,6 @@ impl Token {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_alternative() {
-        let mut context = Context::default();
-        context.tags_mut().insert("five", || 5.into());
-        context.tags_mut().insert("two", || 2.into());
-        context.tags_mut().insert("sieben", || 7.into());
-
-        let result = alternative(&context.tags())("five * sieben");
-        
-        assert!(result.is_ok());
-
-        assert_eq!(&result.unwrap().1.to_string(),"5(7)")
-    }
     #[test]
     fn test_into_tokens_valid_input() {
         // Test with a valid input string

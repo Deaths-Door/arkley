@@ -376,7 +376,7 @@ mod expression_tests {
     use crate::parse_expression;
 
     fn from_str(input :&str) -> Expression {
-        parse_expression(input,&(Default::default())).unwrap().1
+        Expression::try_from((input,&Default::default())).unwrap()
     }
 
     #[test]

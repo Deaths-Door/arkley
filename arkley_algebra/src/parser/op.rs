@@ -115,8 +115,8 @@ fn calculate_final_sign(_plus:usize,_minus:usize) -> ArithmeticOperation {
     }
 }
 
-#[cfg(test)]
 impl TryFrom<char> for ArithmeticOperation {
+    // TODO : Update Error Type
     type Error = ();
 
     fn try_from(value: char) -> Result<Self, Self::Error> {
@@ -126,7 +126,7 @@ impl TryFrom<char> for ArithmeticOperation {
             '-' => Ok(Minus),
             '*' => Ok(Mal),
             '/' => Ok(Durch),
-            _ => panic!()
+            _ => Err(())
         }
     }
 }

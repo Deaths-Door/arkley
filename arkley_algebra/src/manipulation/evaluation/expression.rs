@@ -51,7 +51,7 @@ mod tests {
     use crate::{parse_expression, Variables};
 
     fn from_str(input :&str) -> Expression {
-        parse_expression(input,&(Default::default())).unwrap().1
+        Expression::try_from((input,&Default::default())).unwrap()
     }
 
     fn check_expression_str(result : Expression,_str : &str) {

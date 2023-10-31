@@ -22,18 +22,22 @@ use crate::{Equation, RelationalOperator, parse_expression};
 /// Returns an `Option<Equation>`, where `Some` contains a valid `Equation` object if
 /// both expressions are successfully parsed, and `None` if parsing fails.
 
-// TODO : Give better reason then None for why its invalid
-pub fn parse_equation(input: &str) -> IResult<&str,Option<Equation>> {
-    let parser = tuple((
-        parse_expression,
-        delimited(multispace0,parse_relation_operator,multispace0),
-        parse_expression
-    ));
+pub fn parse_equation<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Expression> {
+    move |input| {
+        let (input,lexpr) = parse_expression(context)(input)?;
 
-    map(parser,|(eq1,relation,eq2)| match eq1.is_none() || eq2.is_none() {
-        true => None,
-        false => Some(Equation::new(eq1.unwrap(),relation,eq2.unwrap()))
-    })(input)
+        let (input,relational_operator) = delimited(
+            multispace0,
+            parse_relation_operator,
+            multispace0
+        )(input)?;
+
+        let (input,rexpr) = parse_expression(context)(input)?;
+
+        let equation = Equation::new(lexpr,relational_operator,rexpr);
+
+        Ok((input,equation))
+    }
 }
 
 fn parse_relation_operator(input: &str) -> IResult<&str,RelationalOperator> {
@@ -42,4 +46,13 @@ fn parse_relation_operator(input: &str) -> IResult<&str,RelationalOperator> {
         value(RelationalOperator::GreaterThan,tag(">")),
         value(RelationalOperator::LessThan,tag("<")),
     ))(input)
+}
+
+// TODO : Add try_from for expression once the lifetime garbage can be fixed
+
+impl<'a> TryFrom<(&'a str,&'a Context<'a>)> for Equation {
+    type Error = nom::Err<nom::error::Error<&'a str>>;
+    fn try_from((input,context): (&'a str,&'a Context<'a>)) -> Result<Self, Self::Error> {
+        all_consuming(parse_equation(context))(input).map(move |(_,eq)| eq)
+    }
 }

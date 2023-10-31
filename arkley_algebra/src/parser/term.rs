@@ -1,28 +1,16 @@
 use nom::{
     IResult, 
     sequence::{preceded, delimited, pair}, 
-    multi::{many0, many1}, 
+    multi::many1, 
     combinator::{map, opt, all_consuming},
     character::complete::{char, satisfy}, branch::alt,
 };
+
 use num_notation::{Number, parse_number};
 
 use super::parse_add_sub;
 
 use crate::{Term, Variables, ArithmeticOperation};
-
-/// Parse a mathematical term from a given input string.
-///
-/// A mathematical term can represent a part of a mathematical expression and consists of
-/// a coefficient and optional variables with exponents.
-/// 
-/// **Note**: If the input string is empty, this function returns `Ok(("",1.0.into()))`.
-pub fn parse_term(input : &str) -> IResult<&str,Term> {
-    alt((
-        parse_coefficient_with_opt_variables,
-        parse_variables_with_opt_sign
-    ))(input)
-}
 
 impl<'a> TryFrom<&'a str> for Term {
     type Error = nom::Err<nom::error::Error<&'a str>>;
@@ -31,41 +19,60 @@ impl<'a> TryFrom<&'a str> for Term {
     }
 }
 
+/// Parse a mathematical term from a given input string.
+///
+/// A mathematical term can represent a part of a mathematical expression and consists of
+/// a coefficient and optional variables with exponents.
+pub fn parse_term(input : &str) -> IResult<&str,Term> {
+    alt((
+        parse_coefficient_with_opt_variables,
+        parse_variables_with_opt_sign
+    ))(input)
+}
+
 fn parse_coefficient_with_opt_variables(input : &str) -> IResult<&str,Term> {
-    let parser = pair(
+    let (input,(coefficient,variables)) = pair(
         parse_number,
         opt(parse_variables)
-    );
+    )(input)?;
+    
+    let term = Term::new_with_variable(coefficient, variables.unwrap_or_default());
 
-    map(parser,|(coefficient,variables)| 
-        Term::new_with_variable(coefficient, variables.unwrap_or_default())
-    )(input) 
+    Ok((input,term))
 }
 
 fn parse_variables_with_opt_sign(input : &str) -> IResult<&str,Term> {
-    let parser = pair(
+    let (input,(sign,variables)) = pair(
         opt(parse_add_sub),
         parse_variables,
-    );
+    )(input)?;
 
-    map(parser,|(sign,variables)| match sign {
+    let term = match sign {
         Some(sign) if sign == ArithmeticOperation::Minus => Term::new_with_variable((-1f64).into(), variables),
         _ => variables.into(),
-    })(input) 
+    };
+
+    Ok((input,term))
+}
+
+// Used by super::function
+pub(super) fn satisfies_variable_name(input : &str) -> IResult<&str,char> {
+    satisfy(|c| c >= 'a' && c <= 'z' && (c != 'e' || c!= 'E') )(input)
 }
 
 fn parse_variables(input : &str) -> IResult<&str,Variables> {
-    let parse_var_name = satisfy(|c| c >= 'a' && c <= 'z' && (c != 'e' || c!= 'E') );
-    let parser =  many1(pair(
-        parse_var_name,
-        opt(parse_exponent)
-    ));
+    let (input,vec) =  many1(
+        pair(
+            satisfies_variable_name,
+            opt(parse_exponent)
+        )
+    )(input)?;
 
-    map(parser,|vec| 
-        vec.into_iter()
-            .map(|(c,num)| (c,num.unwrap_or(1.0.into())))
-            .collect()
-    )(input)
+    let variables = vec.into_iter()
+        .map(|(c,num)| (c,num.unwrap_or(1.0.into())))
+        .collect();
+
+    Ok((input,variables))
 }
 
 fn parse_exponent(input : &str) -> IResult<&str,Number> {

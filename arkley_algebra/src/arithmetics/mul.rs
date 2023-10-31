@@ -223,8 +223,9 @@ mod expr {
     use crate::parse_expression;
 
     fn from_str(input :&str) -> Expression {
-        parse_expression(input,&(Default::default())).unwrap().1
+        Expression::try_from((input,&Default::default())).unwrap()
     }
+
     fn check_expression_str(expression : Expression,_str : &str) {
         assert_eq!(&expression.to_string(),_str)
     }
@@ -299,7 +300,7 @@ mod expr {
     
     #[test]
     fn mul_expression_by_term_nested_expr() {
-        let expression = Expression::try_from("5z - (2x + 3y)").unwrap();
+        let expression = from_str("5z - (2x + 3y)");
 
         // Create a term to multiply with the expression
         let term_to_multiply : Expression = create_term_with_variable(2.0, 'w', 1.0).into();
