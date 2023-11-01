@@ -6,7 +6,7 @@ use nom::{
     bytes::complete::{take_till, take}
 };
 
-use crate::{Function, FunctionArguments, parse_expression, Context, Expression};
+use crate::{Function, FunctionArguments, parse_expression, Context};
 use super::satisfies_variable_name;
 
 /// Parses a function definition from the given input string.
@@ -21,7 +21,7 @@ pub fn parse_function_definition<'a>(context : &'a Context<'a>) -> impl FnMut(&'
     
         let (input,expression) = parse_expression(context)(input)?;
     
-        let function = Function::new_default(name,expression,arguments);
+        let function = Function::new_default(name.into(),expression,arguments);
     
         Ok((input,function))
     }
@@ -87,9 +87,9 @@ impl Function {
             for s in arguments_str.trim().split(',') {
                 match all_consuming(satisfies_variable_name)(s) {
                     Ok((_,key)) => arguments.insert(key, None),
-                    // TODO : Figure out out the fuck to handle this, maybe convert [`FunctionArguments`] into Vec<..>
-                    Err(_) =>  todo!()
-                };        
+                    // TODO : Figure out out the fuck to handle this, maybe convert [`FunctionArguments`] into Vec<..> , for now returned error
+                    Err(err) => return Err(err)
+                };
             }
 
             Ok((input,arguments))

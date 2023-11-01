@@ -1,5 +1,5 @@
 use nom::{
-    IResult, sequence::{delimited, pair, separated_pair, preceded},
+    IResult, sequence::{delimited, pair, separated_pair},
     multi::fold_many0, 
     character::complete::{multispace0,char},
     combinator::{map, opt}, 
@@ -46,15 +46,15 @@ impl From<Expression> for Token {
 
 impl Token {
     fn parse_expression<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&str, Vec<Token>> {
-        move |input: &str| {
+        move |input: &str| {    
+            let (input,mut vec1) = Self::parse_with_opt_implicit_mul(context)(input)?;
+    
             let parser = separated_pair(
                 parse_operator, 
                 multispace0, 
                 Self::parse_with_opt_implicit_mul(context)
             );
-    
-            let (input,mut vec1) = Self::parse_with_opt_implicit_mul(context)(input)?;
-    
+            
             let (input,vec2) = fold_many0(parser,Vec::new,|mut vec : Vec<Token>,(operation,tokens)|{
                 vec.push(operation.into());
     
@@ -96,7 +96,7 @@ impl Token {
             Ok((input,vec))
         }
     }
-
+    
     fn parse_with_opt_implicit_mul<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
         move |input| {    
             alt((

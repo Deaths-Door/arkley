@@ -6,7 +6,8 @@ use crate::{Expression, manipulation::VariableSubstitution};
 // TODO : Create functions to validate arguemnts given to functions + corrcet number + corrcte ones etc
 #[derive(Clone,Hash)]
 pub struct Function {
-    pub(crate) name: &'static str,
+    // TODO : Rn use string into future change to maybe Cow<'a,str>
+    pub(crate) name: String,//&'static str,
     pub(crate) arguments : FunctionArguments,
     pub(crate) expression : Option<Box<Expression>>,
     pub(crate) closure : fn(Function) -> Expression,
@@ -77,8 +78,8 @@ impl Debug for Function {
 
 impl Function {
     /// Gets the name of the function.
-    pub const fn name(&self) -> &'static str {
-        self.name
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
     /// Gets the arguments of the function.
@@ -103,7 +104,7 @@ impl Function {
     ///
     /// This constructor creates a `Function` with the given `name`, `expression`, and `arguments`.
     /// It sets a default closure that processes the function's expression and arguments.
-    pub fn new_default(name: &'static str,expression : Expression,arguments : FunctionArguments) -> Self {
+    pub fn new_default(name: String,expression : Expression,arguments : FunctionArguments) -> Self {
         let closure = |func: Function| {
             let mut arguments : HashMap<char,Expression> = func.arguments.into_iter()
                 .filter(|(_,expr)| expr.is_some())
@@ -121,7 +122,7 @@ impl Function {
     }
     
     /// Creates a new `Function` instance with a custom closure function.
-    pub const fn new(name: &'static str,closure: fn(Function) -> Expression) -> Self {
+    pub const fn new(name: String,closure: fn(Function) -> Expression) -> Self {
         Self { name , arguments : BTreeMap::new() , expression : None , closure }
     }
 

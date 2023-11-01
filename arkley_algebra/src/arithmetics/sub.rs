@@ -184,11 +184,11 @@ mod expr {
     }
 
     fn cos(arg : Expression) -> Function {
-        Function::new_default("cos", 1.into(),BTreeMap::from([('x',arg.into())]))
+        Function::new_default("cos".into(), 1.into(),BTreeMap::from([('x',arg.into())]))
     }
 
     fn sin(arg : Expression) -> Function {
-        Function::new_default("sin", 1.into(),BTreeMap::from([('x',arg.into())]))
+        Function::new_default("sin".into(), 1.into(),BTreeMap::from([('x',arg.into())]))
     }
 
     fn from_str(input :&str) -> Expression {
