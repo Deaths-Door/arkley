@@ -10,12 +10,11 @@ use crate::{
     Expression, 
     ArithmeticOperation, 
     parse_term, parse_operator, 
-    Term, Context,
+    Term, Context, parse_function, Function,
 };
 
 use super::parse_add_sub;
 
-// TODO : Add functionss
 #[cfg_attr(test, derive(PartialEq,Debug))]
 pub(super) enum Token {
     Term(Term),
@@ -100,8 +99,8 @@ impl Token {
 
     fn parse_with_opt_implicit_mul<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
         move |input| {    
-            // TODO : Add parse functions thing right here for context + add functions parsing as well
             alt((
+                Self::opt_implicit_mul_parser(context, Function::map_into_tokens(context)),
                 Self::opt_implicit_mul_parser(context ,Self::parse_nested_expression(context)),
                 Self::opt_implicit_mul_parser(context,Term::map_into_tokens()),
                 Self::opt_implicit_mul_parser(context,context.parse_tags())
@@ -152,6 +151,12 @@ impl Token {
 impl Term {
     fn map_into_tokens<'a>() -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
         map(parse_term,|term| Vec::from([Token::from(term)]) )
+    }
+}
+
+impl Function {
+    fn map_into_tokens<'a>(context : &'a Context<'a> ) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
+        map(parse_function(context),|func| Vec::from([Token::from(Expression::from(func))]) )
     }
 }
 

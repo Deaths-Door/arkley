@@ -17,6 +17,7 @@ use super::tokens::Token;
 pub struct Context<'a> {
     tags : HashMap<&'a str,fn() -> Expression>,
     #[cfg(feature="function")]
+    // used cuz functions will have different 'parsing' logic
     functions : HashMap<&'a str,fn() -> Function>
 }
 

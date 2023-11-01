@@ -1,48 +1,57 @@
 use nom::{
     IResult, 
-    multi::many_till,
     character::complete::{char, multispace0}, 
     sequence::{delimited, terminated}, 
-    combinator::{map, opt}, 
+    combinator::all_consuming, 
     bytes::complete::{take_till, take}
 };
 
-use crate::{Function, FunctionArguments, parse_expression, Context, satisfies_variable_name};
+use crate::{Function, FunctionArguments, parse_expression, Context, Expression};
+use super::satisfies_variable_name;
 
-/* 
-/*
-// TODO : Add ability to parse user defined functions by parsing around context struct (maybe)
-// TODO : Improve doc 
-// TODO : allow more formats to be parsed of functions (which exist i think)
-// can use to parse custom fn defination + context can be used to map more complex functions like cos , sin / tan with custom closue
-pub fn parse_function_definition<'a>(context : &Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Function> {
+/// Parses a function definition from the given input string.
+///
+/// This function takes an input string, `input`, and attempts to parse a function definition
+/// in the form of `name(arguments) = expression'.
+pub fn parse_function_definition<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Function> {
     move |input| {
-        let (mut input,name) = Function::parse_name(input)?;
-
-        let function = match context.functions().get(name) {
-            Some(value) => value(),
-            None => {
-                let (_input,arguments) = Function::parse_arguments(input)?;
-                let (_input,_) = delimited(multispace0, char('='),multispace0)(_input)?;
-                let (_input,expression) = parse_expression(_input, context)?;   
-                input = _input;
-
-                Function::new_default(name, expression, arguments)     
-            }
-        };
-
-        Ok((input,function))   
+        let (input,name) = Function::parse_name(input)?;
+        let (input,arguments) = Function::parse_arguments(input)?;
+        let (input,_) = delimited(multispace0, char('='), multispace0)(input)?;
+    
+        let (input,expression) = parse_expression(context)(input)?;
+    
+        let function = Function::new_default(name,expression,arguments);
+    
+        Ok((input,function))
     }
 }
 
-pub fn parse_function<'a>(context : &Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Function> {
-    move |input: &str|{
-        let (input,name) = Function::parse_name(input)?;
-        let (input,arguments) = Function::parse_arguments(input)?;
 
-        Ok((input,function))    
+/// Parses a custom function definition from the input string, using the provided `context`.
+///
+/// This function is designed to parse custom function definitions, which include user-defined functions
+/// and potentially more complex functions , as an example trigonometric functions (e.g., cos, sin, tan) defined using
+/// custom closures. The `context` parameter is used to provide context for parsing these functions.
+pub fn parse_function<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Function> {
+    move |input| {
+        let (input,name) = Function::parse_name(input)?;
+        let (input,mut _arguments) = Function::parse_arguments_with_context(context)(input)?;
+
+        let function = match context.functions().get(name) {
+            None => todo!(), // for now , return error in future
+            Some(closure) => {
+                let mut func = closure();
+                func.arguments.append(&mut _arguments);
+
+                func
+            }
+        };
+
+        
+        Ok((input,function))
     }
-}*/
+}
 
 impl Function {
     fn parse_name(input : &str) -> IResult<&str,&str> {
@@ -55,38 +64,35 @@ impl Function {
 
         Ok((input,s))
     }
-
-    //  space .. name ... opt(comma) 
+    
     fn parse_arguments(input : &str) -> IResult<&str,FunctionArguments> {
-        // gets the arguments as a str eg f(x,y) => (x,y) => x,y
-        let (mut input,arguments_str) = take_till(|c| c == ')')(input)?;
+        let (input,arguments_str) = take_till(|c| c == ')')(input)?;
+    
+        let mut arguments = FunctionArguments::new();
 
-        let mut args = FunctionArguments::new();
-
-        for string in arguments_str.trim().split(',') {
-            match string.len() == 1 {
-                true => {
-                    let (i,key) = satisfies_variable_name(input);
-                    args.insert(key, None);
-                    input = i;
-                },
-                false => {
-
-                }
-            }
+        for s in arguments_str.trim().split(',') {
+            let (_,key) = all_consuming(satisfies_variable_name)(s)?;
+            arguments.insert(key, None);
         }
 
-        todo!()
-        /*let parser = many_till(
-            delimited(
-                multispace0, 
-                super::satisfies_variable_name,
-                opt(char(','))
-            ),
-            char(')')
-        );
+        Ok((input,arguments))
+    }
 
-        map(parser,|(variables,_)| variables.into_iter().map(|c| (c,None)).collect())(input)*/
+    fn parse_arguments_with_context<'a>(_context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,FunctionArguments> {
+        move |input| {
+            let (input,arguments_str) = take_till(|c| c == ')')(input)?;
+
+            let mut arguments = FunctionArguments::new();
+
+            for s in arguments_str.trim().split(',') {
+                match all_consuming(satisfies_variable_name)(s) {
+                    Ok((_,key)) => arguments.insert(key, None),
+                    // TODO : Figure out out the fuck to handle this, maybe convert [`FunctionArguments`] into Vec<..>
+                    Err(_) =>  todo!()
+                };        
+            }
+
+            Ok((input,arguments))
+        }
     }
 }
-*/

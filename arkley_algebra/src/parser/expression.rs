@@ -1,4 +1,4 @@
-use nom::{IResult, combinator::{map, all_consuming}, Parser, InputLength, error::{ParseError, ErrorKind}};
+use nom::{IResult, combinator::{map, all_consuming}, Parser, InputLength, error::{ParseError, ErrorKind, Error}};
 
 use crate::{Expression, Context};
 
@@ -22,12 +22,10 @@ pub fn parse_expression<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) ->
     }
 }
 
-// TODO : Add try_from for expression once the lifetime garbage can be fixed
-
 impl<'a> TryFrom<(&'a str,&'a Context<'a>)> for Expression {
     type Error = nom::Err<nom::error::Error<&'a str>>;
     fn try_from((input,context): (&'a str,&'a Context<'a>)) -> Result<Self, Self::Error> {
-        all_consuming(parse_expression(context))(input).map(move |(_,expr)| expr)
+        all_consuming(parse_expression(context))(input).map(|(_,expr)| expr)
     }
 }
 

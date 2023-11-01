@@ -24,6 +24,15 @@ impl PartialEq for Function {
             return false;
         }
 
+        if self.arguments.len() != other.arguments.len() {
+            return false;
+        }
+
+        match (&self.expression,&other.expression) {
+            (None, Some(_)) |  (Some(_), None) => return false,
+            _ => () // next check
+        }
+
         self.arguments.iter()
             .all(|(key,_svalue)| match other.arguments.get(key) {
                 None => false,
