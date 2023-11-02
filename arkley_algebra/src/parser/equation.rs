@@ -1,9 +1,9 @@
 use nom::{
-    sequence::{tuple, delimited}, 
+    sequence::delimited, 
     character::complete::multispace0, 
-    bytes::complete::tag, branch::alt, combinator::{value, map}, IResult};
+    bytes::complete::tag, branch::alt, combinator::{value, all_consuming}, IResult};
 
-use crate::{Equation, RelationalOperator, parse_expression};
+use crate::{Equation, RelationalOperator, parse_expression, Context};
 
 
 /// Parse an equation from the input string.
@@ -22,7 +22,7 @@ use crate::{Equation, RelationalOperator, parse_expression};
 /// Returns an `Option<Equation>`, where `Some` contains a valid `Equation` object if
 /// both expressions are successfully parsed, and `None` if parsing fails.
 
-pub fn parse_equation<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Expression> {
+pub fn parse_equation<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Equation> {
     move |input| {
         let (input,lexpr) = parse_expression(context)(input)?;
 

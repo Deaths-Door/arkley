@@ -1,8 +1,8 @@
-use std::{cmp::Ordering, collections::BTreeMap};
+use std::cmp::Ordering;
 
 use crate::{
-    Equation, Term, Variables, Expression, gcd,
-    manipulation::VariableAnalysis, 
+    Equation, Term, Variables, Expression,
+    manipulation::VariableAnalysis, gcd, 
 };
 
 use super::RearrangeError;
@@ -56,12 +56,15 @@ impl Equation {
 
                 let to_divide_with =  Term::new_with_variable(term.coefficient.clone() / gcd_coefficient.clone(),vars_to_move);
 
+                println!("{r} / {l}",r = equation.right,l = to_divide_with);
+                
                 equation.right = equation.right / to_divide_with;
 
                 if term.coefficient != target.coefficient {
                     term.coefficient = gcd_coefficient;
                 }
 
+                // TODO : Maybe remove this ; figure it out
                 if term.variables != target.variables {
                     return Err(RearrangeError::ImpossibleSolution(equation, target));   
                 }
@@ -77,15 +80,20 @@ impl Equation {
         let lexpr_count = self.left.count_variable_occurrences(&variables_to_count);
         let rexpr_count = self.right.count_variable_occurrences(&variables_to_count);
 
+        let should_continue_rearranging = |_ : &Expression,rexpr : &Expression| rexpr.contains_any_variable(&mut variables_to_count.keys());
+        
         let (left,right) = match lexpr_count.cmp(&rexpr_count) {
             Ordering::Greater => self.left.rearrange(
                 self.right,
-                variables_to_count,|_,rexpr| rexpr.contains_any_variable(&mut variables_to_count.keys())),
+                variables_to_count,
+                should_continue_rearranging
+            ),
             Ordering::Equal | Ordering::Less => {
                 let (right,left) = self.right.rearrange(
                     self.left,
                     variables_to_count,
-                    |_,rexpr| rexpr.contains_any_variable(&mut variables_to_count.keys()) );
+                    should_continue_rearranging
+                );
                 (left,right)
             }
         };
@@ -101,21 +109,18 @@ impl Equation {
 mod tests {
     use super::*;
 
-    use crate::parse_equation;
-
     macro_rules! impl_test {
         (make_subject => $({ $var:expr => $count : expr,$eq : expr,$subject : expr,$expected : expr } ),* ) => {
             $(
                 concat_idents::concat_idents!(fn_name = make_subject_,$var,_,$count {
                     #[test]
                     fn fn_name() {
-                        let equation = parse_equation($eq).unwrap().1.unwrap();
+                        let context = crate::Context::default();
+                        let equation = Equation::try_from(($eq ,&context)).unwrap();
                         let result = equation.try_make_subject(Term::from($subject));
                         assert!(result.is_ok());
 
                         let result = result.unwrap();
-
-                        println!("{:?}",result);
                         assert_eq!(&result.to_string(), $expected);
                     }
                 });       
@@ -134,27 +139,16 @@ mod tests {
         { p => 0 , "3p + 2q = 12",'p', "p = (12 - 2q)/3" }, /* or p = (-2/3)q + 4  , for this behaviour make new fn */
 
         { q => 0 , "3p + 2q = 12",'q', "q = (12 - 3p)/2"},
-        { q => 1,  "2qy + 3 = 1",'q', "q = (-1)/y"},
+        { q => 1,  "2qy + 3 = 1",'q', "q = -1/y"},
 
-        { a => 0 ,  "3b - 2a = 12", 'a', "a = (3b + 12)/2" },
+        { a => 0 ,  "3b - 2a = 12", 'a', "a = (12 + 3b)/2" },
         { a => 1 ,  "2a + 3 = 7", 'a', "a = 2" },
 
 
-        { b => 0, "3b - 2a = 12", 'b', "b = (2a + 12)/3" } /* or b = (2/3)a + 4  , for this behaviour make new fn */
+        { b => 0, "3b - 2a = 12", 'b', "b = (12 + 2a)/3" } /* or b = (2/3)a + 4  , for this behaviour make new fn */
+
     );
 
-    /*
-    impl_test!(make_y_the_subject_trivial_equation, "y = y",'y', "Infinite solutions");
-    impl_test!(variable_on_both_sides, "2x = x + 3",'x', "x = 3");
-    impl_test!(no_solution, "2x + 3 = 1",'x', "No solution");
-    impl_test!(multiple_solutions, "2x - 4 = 2x - 6",'x', "Infinite solutions");
-    impl_test!(variable_with_complex_expression, "2(x + 3) - 4 = 10 - x",'x', "x = 2.5");
-    impl_test!(equation_with_constants_only, "3 = 4",'x', "No variable 'x' in the equation");
-    impl_test!(empty_input, "",'x', "No equation provided");
-    impl_test!(complex_variable, );
-    impl_test!(negative_coefficient, "-2x = 6",'x', "x = -3");
-    impl_test!(multiple_terms_variable_on_one_side, "3x - 2y = 12",'x', "x = 4 + 2/3y");
-    impl_test!(complex_expression_with_parentheses, "(x + 3) = 7",'x', "x = 4");
-    impl_test!(equation_with_whitespace, "  2x  +  3  =  7  ",'x', "x = 2");
-    impl_test!(no_variable_x_in_equation, "5 = 7",'x', "No variable 'x' in the equation");;*/
+    //impl_test!(make_y_the_subject_trivial_equation, "y = y",'y', "Infinite solutions");
+    //impl_test!(multiple_solutions, "2x - 4 = 2x - 6",'x', "Infinite solutions");
 }

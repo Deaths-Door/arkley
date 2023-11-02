@@ -10,7 +10,7 @@ impl Term  {
         self.coefficient.is_one() && self.variables.is_empty()
     }
 
-    fn contains_no_variables(&self,other : &Self) -> bool {
+    fn both_contain_no_variables(&self,other : &Self) -> bool {
         self.variables.is_empty() && other.variables.is_empty()
     }
 }
@@ -57,7 +57,7 @@ impl std::ops::Div for Term {
             return self.into();
         };
 
-        if self.contains_no_variables(&other) {
+        if self.both_contain_no_variables(&other) {
             return Term::new(self.coefficient / other.coefficient).into()
         }
 
@@ -66,26 +66,21 @@ impl std::ops::Div for Term {
         
         let common_variables : BTreeSet<_> = s_keys.intersection(&o_keys).collect();
 
-        if common_variables.is_empty() {
-            return Term::new(self.coefficient / other.coefficient).into()
-        }
-        
         let mut min_exponents = HashMap::new();
 
         let sclone = self.clone();
         let oclone = other.clone();
-
+        
         sclone.get_min_exponents(&common_variables,&mut min_exponents);
         oclone.get_min_exponents(&common_variables,&mut min_exponents);
 
-        self.cancel_variables(&min_exponents);
-        other.cancel_variables(&min_exponents);
+        // TODO : Remove clone when borrorwing is 'ov
+        let gcd_coefficient = gcd(sclone.coefficient.clone(),oclone.coefficient.clone());
 
-        if self.contains_no_variables(&other) {
-            return Term::new(self.coefficient / other.coefficient).into()
-        }
+        self.cancel_variables_and_divide_coefficient(&min_exponents, gcd_coefficient.clone());
+        other.cancel_variables_and_divide_coefficient(&min_exponents, gcd_coefficient);
 
-        match other.is_numeric_one() {
+        match other.is_numeric_one() && other.variables.is_empty() {
             true => self.into(),
             false => Expression::new_durch(self.into(), other.into())
         }
@@ -96,17 +91,17 @@ impl std::ops::Div<Term> for Expression {
     type Output = Self;
     fn div(mut self,mut other : Term) -> Self::Output {
         if other.is_numeric_one() {
-            return self;
-        };
+            return self 
+        }
 
+        if let Expression::Term(term) = self {
+            return term / other;
+        }
+        
         let expr_variables = self.get_unique_variables();
         let term_variables = other.get_unique_variables();
 
         let common_variables : BTreeSet<_> = expr_variables.intersection(&term_variables).collect();
-        
-        if common_variables.is_empty() {
-            return Expression::new_durch(self, other.into());
-        }
         
         let mut min_exponents = HashMap::new();
         let mut coefficients = HashSet::new();
@@ -123,7 +118,7 @@ impl std::ops::Div<Term> for Expression {
         self.cancel_variables_and_divide_coefficient(&min_exponents,gcd_coefficient.clone());
         other.cancel_variables_and_divide_coefficient(&min_exponents,gcd_coefficient);
 
-        match other.is_numeric_one() {
+        match other.is_numeric_one() && other.variables.is_empty() {
             true => self,
             false => Expression::new_durch(self, other.into())
         }
@@ -143,7 +138,7 @@ impl std::ops::Div for Expression {
                 let common_variables : BTreeSet<_> = top_variables.intersection(&bottom_variables).collect();
         
                 if common_variables.is_empty() {
-                    return Expression::new_durch(top,bottom);
+                    return Expression::new_durch(top, bottom)
                 };
 
                 let mut min_exponents = HashMap::new();
@@ -167,7 +162,7 @@ impl std::ops::Div for Expression {
     }
 }
 
-fn gcd(a : Number,b : Number) -> Number {
+pub(crate) fn gcd(a : Number,b : Number) -> Number {
     match b == 0 {
         true => a,
         false => gcd(b.clone(),a % b)
@@ -373,7 +368,6 @@ mod term {
 #[cfg(test)]
 mod expression_tests {
     use super::*;
-    use crate::parse_expression;
 
     fn from_str(input :&str) -> Expression {
         Expression::try_from((input,&Default::default())).unwrap()

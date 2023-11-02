@@ -52,6 +52,7 @@ pub trait VariableAnalysis {
     /// provided by the iterator `iterator`.
     /// # Returns
     ///
-    /// `true` if all elements in `self` contain all the entries, `false` otherwise.    
+    /// `true` if all elements in `self` contain all the entries, `false` otherwise.   
+    #[deprecated(note = "Not used at all so maybe just remove it")]
     fn has_all<'a,I>(&self,iterator : &mut I) -> bool where I : Iterator<Item = &'a char>;
 }

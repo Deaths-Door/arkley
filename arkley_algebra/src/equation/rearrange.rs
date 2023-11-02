@@ -27,6 +27,7 @@ impl Expression {
         self,
         other : Self,
         variables_to_count : &Variables,
+        // TODO : Maybe should remove this can keep 'constant' checking
         should_continue_rearranging : F
     ) -> (Self,Self) 
     where F : Fn(&Self,&Self) -> bool {
@@ -75,8 +76,6 @@ impl Expression {
     } 
 
     fn move_mal(other : Self,right : Self,left : Self,variables_to_count : &Variables) -> (Self,Self) {
-        // TODO : Find a better way then this to handle in future
-
         let lexpr_count = left.count_variable_occurrences(&variables_to_count);
         let rexpr_count = right.count_variable_occurrences(&variables_to_count);
         
