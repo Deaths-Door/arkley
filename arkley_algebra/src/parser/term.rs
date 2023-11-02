@@ -2,7 +2,7 @@ use nom::{
     IResult, 
     sequence::{preceded, delimited, pair}, 
     multi::many1, 
-    combinator::{map, opt, all_consuming},
+    combinator::{opt, all_consuming},
     character::complete::{char, satisfy}, branch::alt,
 };
 

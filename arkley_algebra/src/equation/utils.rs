@@ -53,29 +53,7 @@ impl Expression {
 
 // into_move_from
 
-impl Expression {
-    fn reverse_tree(&mut self) {
-        match self {
-            Expression::Binary { operation, left, right } 
-                if operation == &ArithmeticOperation::Plus => {
-                left.reverse_tree();
-                right.reverse_tree();
-                std::mem::swap(left, right);
-            },
-            Expression::Binary { operation, left, right } 
-                if operation == &ArithmeticOperation::Minus => {
-                left; right;
-                // TODO : Implement this 'reverse' fn for minus 
-                println!("TODO : Implement this 'reverse' fn for minus ");
-           //    left.reverse_tree();
-               // right.reverse_tree();
-          //      std::mem::swap(left, right);
-            },
-            Expression::Nested(nested) => nested.reverse_tree(),
-            _ => ()
-        }
-    }
-    
+impl Expression {    
     pub(super) fn move_from(self,mut vec : Vec<Term>,inverse_operation : impl FnOnce(Self,Self) -> Self) -> Self {
         match vec.pop() {
             // no terms to move
@@ -90,12 +68,7 @@ impl Expression {
                     };
                 }
 
-                expression = inverse_operation(self,expression);
-
-                // TODO : Check if this is needed
-                expression.reverse_tree();
-
-                expression
+                inverse_operation(self,expression)
             }
         }
     }
@@ -109,6 +82,7 @@ impl Expression {
     fn collect_all_add_sub_term_till_mul_div(self,vec :&mut Vec<Term>,variables_to_count : &Variables) -> Option<Self> {
         match self {
             Self::Term(ref term) if term.contains_any_variable(&mut variables_to_count.keys()) => Some(self),
+            Self::Function(_) => todo!(),
             Self::Term(term) => {
                 // + + 3 then + - 3 then expressino --3 is + 3 so nothing
                 vec.push(term); 
@@ -144,6 +118,8 @@ impl Expression {
                     (Some(value),None) | (None,Some(value)) => Some(value)
                 }
             },
+
+            Self::Binary { .. } => unreachable!()
         }
     }
 }
@@ -171,8 +147,6 @@ impl Expression {
             // So decide which one to move 
             // For now use count_variable_occurrences
             (true, true) => {    
-                // TODO : Find a better way then this to handle in future
-
                 let lexpr_count = left.count_variable_occurrences(&variables_to_count);
                 let rexpr_count = right.count_variable_occurrences(&variables_to_count);  
                 

@@ -43,12 +43,8 @@ impl Evaluate for Expression {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-
     use num_notation::Number;
-
     use super::*;
-
-    use crate::{parse_expression, Variables};
 
     fn from_str(input :&str) -> Expression {
         Expression::try_from((input,&Default::default())).unwrap()
