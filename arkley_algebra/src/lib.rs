@@ -32,11 +32,11 @@ pub use core::*;
 pub use arithmetics::*;
 
 
-/// Module contains manipulations for algebra
+/// Module containing manipulations for algebra
 pub mod manipulation;
 
-mod quadratics;
-pub use quadratics::*;
+/// Module containing `quadratics` for both algebra and numerics
+pub mod quadratics;
 
 #[cfg(feature="parse")]
 mod parser;

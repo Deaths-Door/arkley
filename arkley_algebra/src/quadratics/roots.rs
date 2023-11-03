@@ -1,16 +1,14 @@
-use std::{vec, collections::HashMap};
-
 use num_notation::Num;
 
-use crate::{Discriminant, manipulation::Find, IntegerQuadratic};
-
+use crate::manipulation::Find;
+use super::*;
 /// A utility struct for determining the nature of roots in a quadratic equation.
 ///
 /// The `Roots` struct provides a mechanism for calculating the nature of roots
 /// of a quadratic equation based on its discriminant value. It contains methods
 /// for this specific purpose, simplifying the process and providing a clear interface.
 ///
-/// It is created by [Quadratic::roots] method.
+/// It is created by [super::Quadratic::roots] method.
 #[derive(Debug,Clone)]
 pub struct Roots<T>(pub(super) Discriminant<T>);
 
@@ -38,8 +36,7 @@ pub enum Nature<T> {
 impl<T> Find<Nature<T>> for Roots<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + PartialOrd + std::ops::Neg<Output = T> + num_notation::Pow<T,Output = T> {
     // Use the discriminant to determine the nature of the roots:
     fn find(self) -> Nature<T> {
-        // Used to avoid borrow checker b,a clone vs full struct clone
-        let d =  (self.0.0.b.clone() * self.0.0.b.clone()) - (T::from(4u8) * self.0.0.a.clone() * self.0.0.c);
+        let d = self.0.clone().find();
 
         let zero = T::from(0u8);
 
@@ -76,6 +73,8 @@ use arkley_describe::{
 #[cfg(feature="describe")]
 impl<T> Describe for Roots<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + std::fmt::Display + PartialOrd + std::ops::Neg<Output = T> + num_notation::Pow<T,Output = T>  {
     fn describe(self,resources:&StaticLoader,lang: &LanguageIdentifier) -> Option<Steps> {
+        use std::collections::HashMap;
+        
         let discriminant_description = self.0.clone().describe(resources,lang)?;
 
         let nature = self.find();
