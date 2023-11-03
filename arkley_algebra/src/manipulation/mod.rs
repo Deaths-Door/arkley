@@ -3,10 +3,15 @@ mod evaluation;
 mod variable_analysis;
 mod variable_substitution;
 
+mod polynomial;
+
 pub use evaluation::*;
 
 pub use variable_analysis::*;
 pub use variable_substitution::*;
+
+pub use polynomial::*;
+
 
 /// A trait for types that provide a `find` method to obtain a value of type `T`.
 ///

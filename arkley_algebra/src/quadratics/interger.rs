@@ -67,7 +67,7 @@ impl<T> TryFrom<Term> for IntegerQuadratic<T> where T: Num + Clone + From<u8> + 
     type Error = QuadraticError;
     fn try_from(value: Term) -> Result<Self, Self::Error> {
         let mut vec : Vec<_>  = value.variables.into_iter()
-            .filter(|(key,value)| value == &2)
+            .filter(|(_,value)| value == &2)
             .map(|(_,value)| value )
             .collect();
 
@@ -78,6 +78,7 @@ impl<T> TryFrom<Term> for IntegerQuadratic<T> where T: Num + Clone + From<u8> + 
         }
     }   
 }
+
 
 impl<T> Quadratic<Self> for IntegerQuadratic<T> where T: Num + Clone + From<u8>  {
     fn discriminant(self) -> Discriminant<Self> {

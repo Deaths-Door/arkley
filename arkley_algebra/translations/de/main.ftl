@@ -42,4 +42,7 @@ algebric-term
         Teilen Sie die beiden Zahlen 
 
     .div_cancel_common_variables = Streichen Sie nun die gemeinsamen Variablen \textit {"{"}, die sowohl in der oberen als auch in der unteren {"}"} erscheinen.
-        Hier ist die Liste der gemeinsamen Variablen : { $common }
+        Hier ist die Liste der gemeinsamen Variablen : { $common }.
+        Das Ergebnis ist \textbf {"{"} { $term1 } / { $term2} {"}"}  
+
+    .div_coefficient = Jetzt dividieren wir die Koeffizienten, und das Ergebnis ist \textbf {"{"} { $term1 } / { $term2} {"}"}  

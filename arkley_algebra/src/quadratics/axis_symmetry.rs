@@ -15,6 +15,12 @@ use super::IntegerQuadratic;
 #[derive(Debug, Clone)]
 pub struct AxisOfSymmetry<T>(pub(super) T);
 
+impl<T,O> From<T> for AxisOfSymmetry<IntegerQuadratic<O>> where T : Into<IntegerQuadratic<O>> , O : Num + Clone {
+    fn from(value: T) -> Self {
+        Self(value.into())
+    }
+}
+
 impl<T> Find<T> for AxisOfSymmetry<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + std::ops::Neg<Output = T> {
     // x = -b / 2a
     fn find(self) -> T {

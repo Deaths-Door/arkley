@@ -17,7 +17,12 @@ sum-integerquadratic = To find the sum of the roots (α and β) of a quadratic e
     use Vieta's Formula: \textbf {"{"} (α + β) = -b/a {"}"} where \textbf {"{"} b = { $b }{"}"} and \textbf {"{"} a = { $a } {"}"}.
 
 axis-symmetry-integerquadratic = To find the axis of symmetry of a quadratic equation, 
-    use the formula  \textbf {"{"} x = -b / (2a) {"}"} where \textbf {"{"} b = { $b }{"}"} and \textbf {"{"} a = { $a } {"}"}.
+    use the formula \textbf {"{"} x = -b / (2a) {"}"} where \textbf {"{"} b = { $b }{"}"} and \textbf {"{"} a = { $a } {"}"}.
+
+concavity-integerquadratic
+    .undefined = Since \textbf {"{"} a = 0 {"}"} where \textbf {"{"} a = { $a }{"}"}, the concave is undefined
+    .upwards = Since \textbf {"{"} a > 0 {"}"} where \textbf {"{"} a = { $a }{"}"}, the concave is upwards
+    .downwards = Since \textbf {"{"} a < 0 {"}"} where \textbf {"{"} a = { $a }{"}"}, the concave is downwards
 
 # Terms 
 
@@ -40,4 +45,7 @@ algebric-term
         Divide the two numbers 
 
     .div_cancel_common_variables = Now cancel common variables \textit {"{"} that appear in both the top and bottom {"}"}.
-        Here is the list of common variables : { $common }
+        Here is the list of common variables : { $common }.
+        This results in \textbf {"{"} { $term1 } / { $term2} {"}"}  
+    
+    .div_coefficient = Now we divide the coefficients and this results in \textbf {"{"} { $term1 } / { $term2} {"}"}  

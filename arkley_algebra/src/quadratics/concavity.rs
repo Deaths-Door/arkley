@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, collections::HashMap};
 
 use num_notation::Num;
 use crate::manipulation::Find;
@@ -23,17 +23,17 @@ impl<T,O> From<T> for Concavity<IntegerQuadratic<O>> where T : Into<IntegerQuadr
 /// An enum representing the concavity of a parabola.
 #[derive(Debug, Clone)]
 pub enum ConcavityType {
-    /// The parabola opens upward 🙂 (concave upward).
+    /// The parabola opens upward 🙂 (a > 0).
     Upward,
     
-    /// The parabola opens downward 🙁 (concave downward).
+    /// The parabola opens downward 🙁 (a < 0).
     Downward,
     
     /// Concavity is undefined 😡 (a = 0).
     Undefined,
 }
 
-impl<T> Concavity<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + Ord  {
+impl<T> Concavity<IntegerQuadratic<T>> where T : Num + Clone + Ord  {
     /// Determines the concavity of the parabola based on the coefficient `a`.
     ///
     /// If `a` is greater than 0, the parabola opens upward (concave upward).
@@ -115,8 +115,20 @@ use arkley_describe::{
 };
 
 #[cfg(feature="describe")]
-impl<T> Describe for Concavity<IntegerQuadratic<T>> where T : Num + Clone + std::fmt::Display {
+impl<T> Describe for Concavity<IntegerQuadratic<T>> where T : Num + Clone + Ord + std::fmt::Display {
     fn describe(self,resources:&StaticLoader,lang: &LanguageIdentifier) -> Option<Steps> {
-        
+        let text_id = match self.concavity_type() {
+            ConcavityType::Upward => "concavity-integerquadratic-upwards",
+            ConcavityType::Downward => "concavity-integerquadratic-downwards",
+            ConcavityType::Undefined => "concavity-integerquadratic-undefined",
+        };
+
+        let args = HashMap::from([
+            ("a",self.0.a.to_string().into())
+        ]);
+
+        let string = resources.lookup_single_language(lang,text_id, Some(&args))?;
+
+        vec![string].into()
     }
 }

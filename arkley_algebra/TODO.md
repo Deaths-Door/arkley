@@ -16,6 +16,27 @@ For cases like f(x) * f(x) maybe output (f(x))^2
 - units 
 - ui / web , mobile , cli
 
+todo so convaticy descrbie
+add tryfrom for interger quads 
+impl<T> TryFrom<Expression> for IntegerQuadratic<T> where T: Num + Clone + From<u8> + From<Number> {
+    type Error = QuadraticError;
+    fn try_from(value: Expression) -> Result<Self, Self::Error> {
+        
+    }   
+}
+
+
+
+#[cfg(feature="equation")]
+impl<T> TryFrom<Equation> for IntegerQuadratic<T> where T: Num + Clone + From<u8> + From<Number> {
+    type Error = QuadraticError;
+    fn try_from(value: Equation) -> Result<Self, Self::Error> {
+        let equation = value.try_make_subject(0.into()).unwrap(); // cuz it will always succed in rearanaing into 0 
+
+
+        equation.
+    }   
+}
 ## Quadratics 
 Factor the quadratic equation to solve for the roots.
 Complete the square to solve for the roots.
