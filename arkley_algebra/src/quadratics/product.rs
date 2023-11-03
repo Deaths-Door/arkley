@@ -11,6 +11,12 @@ use super::IntegerQuadratic;
 #[derive(Debug, Clone)]
 pub struct ProductOfRoots<T>(pub(super) T);
 
+impl<T,O> From<T> for ProductOfRoots<IntegerQuadratic<O>> where T : Into<IntegerQuadratic<O>> , O : Num + Clone {
+    fn from(value: T) -> Self {
+        Self(value.into())
+    }
+}
+
 impl<T> Find<T> for ProductOfRoots<IntegerQuadratic<T>> where T : Num + Clone + From<u8> {
     // c/a
     fn find(self) -> T {

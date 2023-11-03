@@ -21,6 +21,11 @@ impl<T> Find<T> for Discriminant<IntegerQuadratic<T>> where T : Num + Clone + Fr
     }
 }
 
+impl<T,O> From<T> for Discriminant<IntegerQuadratic<O>> where T : Into<IntegerQuadratic<O>> , O : Num + Clone {
+    fn from(value: T) -> Self {
+        Self(value.into())
+    }
+}
 
 #[cfg(feature="describe")]
 use arkley_describe::{

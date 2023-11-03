@@ -43,9 +43,7 @@ pub trait Quadratic<T> : Sized {
     /// # Returns
     ///
     /// A `Roots` struct representing the roots of the quadratic equation.
-    fn roots(self) -> Roots<T> {
-        self.discriminant().into()
-    }
+    fn roots(self) -> Roots<T>;
 
     /// Calculates the sum of roots using Vieta's Formulas.
     ///

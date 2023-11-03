@@ -99,4 +99,8 @@ impl<T> Quadratic<Self> for IntegerQuadratic<T> where T: Num + Clone + From<u8> 
     fn concavity(self) -> Concavity<Self> {
         Concavity(self)
     }
+
+    fn roots(self) -> Roots<Self> {
+        Roots(self.discriminant())
+    }
 }

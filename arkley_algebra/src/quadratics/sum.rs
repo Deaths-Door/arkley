@@ -11,6 +11,12 @@ use super::IntegerQuadratic;
 #[derive(Debug, Clone)]
 pub struct SumOfRoots<T>(pub(super) T);
 
+impl<T,O> From<T> for SumOfRoots<IntegerQuadratic<O>> where T : Into<IntegerQuadratic<O>> , O : Num + Clone {
+    fn from(value: T) -> Self {
+        Self(value.into())
+    }
+}
+
 impl<T> Find<T> for SumOfRoots<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + std::ops::Neg<Output = T> {
     // -b/a
     fn find(self) -> T {

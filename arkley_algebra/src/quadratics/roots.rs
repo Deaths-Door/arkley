@@ -12,9 +12,9 @@ use super::*;
 #[derive(Debug,Clone)]
 pub struct Roots<T>(pub(super) Discriminant<T>);
 
-impl<T> From<Discriminant<T>> for Roots<T> {
-    fn from(value: Discriminant<T>) -> Self {
-        Roots(value)
+impl<T,O> From<T> for Roots<O> where T : Into<Discriminant<O>> , O : Num + Clone {
+    fn from(value: T) -> Self {
+        Self(value.into())
     }
 }
 
