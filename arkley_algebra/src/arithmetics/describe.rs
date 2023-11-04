@@ -4,6 +4,7 @@ use arkley_describe::{
     DescribeAdd, Steps,
     fluent_templates::{StaticLoader, LanguageIdentifier}, DescribeSub, DescribeMul, DescribeDiv
 };
+use num_notation::One;
 
 use crate::{Term, manipulation::VariableAnalysis};
 
@@ -61,7 +62,7 @@ impl DescribeMul for Term {
 }
 
 impl DescribeDiv for Term {
-    fn describe_div(self,other:Self,resources: &StaticLoader,lang: &LanguageIdentifier) -> Option<Steps> {
+    fn describe_div(mut self,mut other:Self,resources: &StaticLoader,lang: &LanguageIdentifier) -> Option<Steps> {
         if other.coefficient == 1 && other.variables.is_empty() {
             let args = HashMap::from([
                 ("term",self.to_string().into())
@@ -84,32 +85,55 @@ impl DescribeDiv for Term {
             ].into()
         }
 
-        let self_variables = self.get_unique_variables();
-        let other_variables = other.get_unique_variables();
-        let common_variables : BTreeSet<_> = self_variables.intersection(&other_variables).collect();
-
-        let mut min_exponents = BTreeMap::new();
-        let mut coefficients = BTreeSet::new();
-
-        self.get_min_exponents_and_coefficient(&common_variables, &mut min_exponents, &mut coefficients);
-       /*  let expr_variables = self.get_unique_variables();
-        let term_variables = other.get_unique_variables();
-
-        let common_variables : Vec<_> = expr_variables.intersection(&term_variables).map(|c| c.to_string()).collect();
-        let joined_common_variables : String  = common_variables.join(", ");
-
-        let cancel_variables_args = HashMap::from([ ("common",joined_common_variables.into())]);
+        let s_keys: BTreeSet<_> = self.get_unique_variables();
+        let o_keys: BTreeSet<_> = other.get_unique_variables();
         
-        let cancel_variables_description = 
-            resources.lookup_single_language(lang, "algebric-term.div_cancel_common_variables", Some(&cancel_variables_args))
-                .unwrap();
+        let common_variables : BTreeSet<_> = s_keys.intersection(&o_keys).collect();
+        let mut min_exponents = HashMap::new();
 
+        let sclone = self.clone();
+        let oclone = other.clone();
 
-        vec![
-            cancel_variables_description,
+        sclone.get_min_exponents(&common_variables, &mut min_exponents);
+        oclone.get_min_exponents(&common_variables, &mut min_exponents);
+        
+        let mut descriptions = Vec::new();
 
-        ].into()*/
+        {
+            let joined_common_variables = common_variables.into_iter().fold("".to_owned(),|mut s,var| {
+                s.push(**var);
+                s.push(',');
+                s
+            });
 
-        todo!()
+            self.cancel_variables(&min_exponents);
+            other.cancel_variables(&min_exponents);
+
+            let args = HashMap::from([
+                ("common",joined_common_variables.into()),
+                ("term1",self.to_string().into()),
+                ("term2",other.to_string().into()),
+            ]);
+
+            let string = resources.lookup_single_language(lang, "algebric-term.div_cancel_common_variables", Some(&args))?;
+            descriptions.push(string)
+        }
+        
+        {
+            let gcd_coefficient = super::gcd(sclone.coefficient.clone(),oclone.coefficient.clone());
+
+            if !gcd_coefficient.is_one() {
+                let args = HashMap::from([
+                    ("term1",self.to_string().into()),
+                    ("term2",other.to_string().into()),
+                ]);
+               
+                let string = resources.lookup_single_language(lang, "algebric-term.div_coefficient", Some(&args))?;
+                
+                descriptions.push(string)
+            }
+        }
+
+       descriptions.into()
     }
 }

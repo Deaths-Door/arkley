@@ -187,7 +187,7 @@ fn calculate_gcd(mut coefficients: HashSet<Number>) -> Number {
 
 impl Term {
     /// Recursively calculates the minimum variable exponent 
-    fn get_min_exponents<'a>(&'a self,common_variables : &BTreeSet<&&char>,min_exponents : &mut HashMap<&'a char,&'a Number>) {
+    pub(super) fn get_min_exponents<'a>(&'a self,common_variables : &BTreeSet<&&char>,min_exponents : &mut HashMap<&'a char,&'a Number>) {
         self.variables.keys()
             .filter(|key| common_variables.contains(key))
             .for_each(|key|{
@@ -201,7 +201,7 @@ impl Term {
     /// Cancels common variables
     ///
     /// So 2x^2 / 2x = 2x / 2 with this methods
-    fn cancel_variables(&mut self,min_exponents : &HashMap<&char, &Number>) {
+    pub(super) fn cancel_variables(&mut self,min_exponents : &HashMap<&char, &Number>) {
         for (key,min_exponent) in min_exponents {
             match min_exponent.cmp(&self.variables.get(key).unwrap()) {
                 Ordering::Less => *self.variables.get_mut(key).unwrap() -= (*min_exponent).clone(),

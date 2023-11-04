@@ -2,7 +2,7 @@
 name = "arkley_describe"
 documentation = "https://docs.rs/arkley_describe"
 repository = "https://github.com/Deaths-Door/arkley/tree/main/arkley_describe"
-
+description = "This crate provides generators for human-readable explanations of complex mathematical operations"
 version.workspace = true
 edition.workspace = true
 readme.workspace = true
