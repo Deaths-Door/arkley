@@ -38,7 +38,7 @@ use arkley_describe::{
 #[cfg(feature="describe")]
 impl<T> Describe for AxisOfSymmetry<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + std::fmt::Display {
     fn describe(self,resources:&StaticLoader,lang: &LanguageIdentifier) -> Option<Steps> {
-        let mut args = std::collections::HashMap::from([
+        let args = std::collections::HashMap::from([
             ("b",self.0.b.to_string().into()),
             ("a",self.0.a.to_string().into())
         ]);

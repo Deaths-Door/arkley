@@ -96,9 +96,6 @@ impl DescribeDiv for Term {
 
         sclone.get_min_exponents(&common_variables, &mut min_exponents);
         oclone.get_min_exponents(&common_variables, &mut min_exponents);
-
-        self.cancel_variables(&min_exponents);
-        other.cancel_variables(&min_exponents);
         
         let mut descriptions = Vec::new();
 
@@ -109,7 +106,10 @@ impl DescribeDiv for Term {
                 s
             });
 
-            let mut args = HashMap::from([
+            self.cancel_variables(&min_exponents);
+            other.cancel_variables(&min_exponents);
+
+            let args = HashMap::from([
                 ("common",joined_common_variables.into()),
                 ("term1",self.to_string().into()),
                 ("term2",other.to_string().into()),

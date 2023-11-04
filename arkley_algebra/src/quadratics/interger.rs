@@ -79,7 +79,6 @@ impl<T> TryFrom<Term> for IntegerQuadratic<T> where T: Num + Clone + From<u8> + 
     }   
 }
 
-
 impl<T> Quadratic<Self> for IntegerQuadratic<T> where T: Num + Clone + From<u8>  {
     fn discriminant(self) -> Discriminant<Self> {
         Discriminant(self)

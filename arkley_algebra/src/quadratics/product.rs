@@ -34,7 +34,7 @@ use arkley_describe::{
 #[cfg(feature="describe")]
 impl<T> Describe for ProductOfRoots<IntegerQuadratic<T>> where T : Num + Clone + std::fmt::Display {
     fn describe(self,resources:&StaticLoader,lang: &LanguageIdentifier) -> Option<Steps> {
-        let mut args = std::collections::HashMap::from([
+        let args = std::collections::HashMap::from([
             ("c",self.0.c.to_string().into()),
             ("a",self.0.a.to_string().into())
         ]);
