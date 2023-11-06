@@ -1,0 +1,21 @@
+[package]
+name = "arkley_cli"
+documentation = "https://docs.rs/arkley_cli"
+repository = "https://github.com/Deaths-Door/arkley/tree/main/arkley_cli"
+version.workspace = true
+edition.workspace = true
+readme.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+
+[dependencies]
+arkley_describe.workspace = true
+arkley_algebra = { workspace = true , features = ["full"] }
+
+# For cli arg parsing
+clap = { version = "4.4.7" , features = ["derive"] }
+nom.workspace = true
+
+# For playground
+rustyline = "12.0.0"

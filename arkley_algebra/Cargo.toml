@@ -10,20 +10,25 @@ homepage.workspace = true
 license.workspace = true
 
 [features]
-# TODO : Remove equation / describe from default feature
-default = ["parse","function","equation","describe"] 
-parse = ["num-notation/nom"]
+# TODO : Remove equation feature
+default = ["parse","function"] 
+parse = ["nom","num-notation/nom"]
 equation = []
 function = []
 
 describe = ["arkley_describe"]
 
+full = ["parse","equation","describe"]
+
 [dependencies]
+# For Number
 num-notation = { version = "0.1.3" , features = ["num","hash"] }
-nom = "7.1.3"
 
+# Cuz im lazy
 strum = { version = "0.25", features = ["derive"] }
+nom = { workspace = true , optional = true }
 
+# For describe feature
 arkley_describe = { workspace = true , optional = true }
 
 [dev-dependencies]

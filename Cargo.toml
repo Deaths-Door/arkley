@@ -41,3 +41,6 @@ arkley_algebra = { path = "../arkley/arkley_algebra" }
 arkley_describe = { path = "../arkley/arkley_describe" }
 arkley_unit_convertor = { path = "../arkley/arkley_unit_convertor" }
 arkley_cli = { path = "../arkley/arkley_cli" }
+
+# For parsing feature
+nom =  "7.1.3"
