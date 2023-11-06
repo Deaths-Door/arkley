@@ -1,3 +1,4 @@
+/*
 mod expression;
 
 #[cfg(feature="equation")]
@@ -11,7 +12,8 @@ mod function;
 
 #[cfg(feature="function")]
 pub use function::*;
-
+*/
+/*
 use super::VariableSubstitution;
 
 
@@ -29,4 +31,4 @@ pub trait Evaluate<Output = Self> {
 
     /// Evaluate the expression with provided variable values and return the result.
     fn evaluate_with_variables<SV,MV>(self, variable_values:&mut MV) -> Output where Self: VariableSubstitution<SV,MV>, SV: Clone ;
-}
+}*/

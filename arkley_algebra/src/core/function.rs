@@ -111,11 +111,7 @@ impl Function {
                 .map(|(k,expr)| (k,expr.unwrap()))
                 .collect();
 
-            let mut expr = func.expression.unwrap();
-            
-            expr.replace_variables(&mut arguments);
-
-            *expr
+            func.expression.unwrap().replace_variables(&mut arguments)
         };
 
         Self { name , arguments , expression : Some(Box::new(expression)) , closure }

@@ -20,8 +20,10 @@ fn main() {
     match command.argument {
         Arguments::Playground => playground::open(),
         Arguments::Evaluate { expression_or_equation, context } 
-            if ['=','<','>'].into_iter().any(|c| expression_or_equation.contains(c))=> todo!(),
-        Arguments::Evaluate { expression_or_equation, context }  => todo!(),        
+            if ['=','<','>'].into_iter().any(|c| expression_or_equation.contains(c))=> {
+            
+            },
+        Arguments::Evaluate { expression_or_equation, context } => todo!(),        
         Arguments::Rearrange { equation, target, context } => todo!(),
         Arguments::Solve { equation, context } => todo!(),
         Arguments::Quadratic { subcommand } => todo!(),
