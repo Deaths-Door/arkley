@@ -6,6 +6,7 @@ use crate::{Expression, Function};
 
 use super::tokens::Token;
 
+
 /// A context that stores its mappings in hash maps.
 ///
 /// *Value and function mappings are stored independently, meaning that there can be a function and a value with the same identifier.*
@@ -13,34 +14,53 @@ use super::tokens::Token;
 /// It allows using variables , user-defined functions within an expression used during the parsing phase.
 /// When assigning to variables, the assignment is stored in a context. When the variable is read later on,
 /// it is read from the context. Contexts can be preserved between multiple calls by creating them yourself.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug,Default)]
 pub struct Context<'a> {
-    tags : HashMap<&'a str,fn() -> Expression>,
+    /// Used for storing input like
+    /// ```
+    /// a = 0
+    /// b = 543x
+    /// x = 4y + 5u
+    /// ```
+    values : HashMap<char,Expression>,
+
+    tags : ContextHashMap<'a,Expression>,
     #[cfg(feature="function")]
     // used cuz functions will have different 'parsing' logic
-    functions : HashMap<&'a str,fn() -> Function>
+    functions : ContextHashMap<'a,Function>
 }
 
-impl<'a> Context<'a> {
+type ContextHashMap<'a,T> =  HashMap<&'a str,T>;
+
+impl<'a> Context<'a,>{
+    /// Gets reference to the values eg x = 10 
+    pub const fn values(&self) -> &HashMap<char,Expression> {
+        &self.values
+    }
+    /// Gets mutable reference to the values eg x = 10 
+    pub fn values_mut(&mut self) -> &mut HashMap<char,Expression> {
+        &mut self.values
+    }
+
     /// Gets reference to the tags context 
-    pub const fn tags(&self) -> &HashMap<&'a str,fn() -> Expression> {
+    pub const fn tags(&self) -> &ContextHashMap<'a,Expression> {
         &self.tags
+    }
+ 
+    /// Gets a mutable reference to the tags context
+    pub fn tags_mut(&mut self) -> &mut ContextHashMap<'a,Expression> {
+        &mut self.tags
     }
 
     #[cfg(feature="function")]
     /// Gets reference to the function context 
-    pub const fn functions(&self) -> &HashMap<&'a str,fn() -> Function> {
+    pub const fn functions(&self) -> &ContextHashMap<'a,Function> {
         &self.functions
-    }
-
-    /// Gets a mutable reference to the tags context
-    pub fn tags_mut(&mut self) -> &mut HashMap<&'a str,fn() -> Expression> {
-        &mut self.tags
     }
 
     /// Gets a mutable reference to the function context
     #[cfg(feature="function")]
-    pub fn functions_mut(&mut self) -> &mut HashMap<&'a str,fn() -> Function> {
+    pub fn functions_mut(&mut self) -> &mut ContextHashMap<'a,Function> {
         &mut self.functions
     }
 }
@@ -63,9 +83,9 @@ mod tests {
     #[test]
     fn parsing_tag() {
         let mut context = Context::default();
-        context.tags_mut().insert("five", || 5.into());
-        context.tags_mut().insert("two", || 2.into());
-        context.tags_mut().insert("sieben", || 7.into());
+        context.tags_mut().insert("five", 5.into());
+        context.tags_mut().insert("two", 2.into());
+        context.tags_mut().insert("sieben", 7.into());
 
         let result = context.parse_tags()("five + sieben");
         
@@ -82,9 +102,9 @@ mod tests {
     #[test]
     fn with_context() {
         let mut context = Context::default();
-        context.tags_mut().insert("five", || 5.into());
-        context.tags_mut().insert("two", || 2.into());
-        context.tags_mut().insert("sieben", || 7.into());
+        context.tags_mut().insert("five", 5.into());
+        context.tags_mut().insert("two", 2.into());
+        context.tags_mut().insert("sieben", 7.into());
 
         let result = parse_expression(&context)("five * two + sieben");
 

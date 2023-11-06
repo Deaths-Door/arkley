@@ -6,14 +6,14 @@ use nom::{
     bytes::complete::{take_till, take}
 };
 
-use crate::{Function, FunctionArguments, parse_expression, Context};
+use crate::{Function, FunctionArguments, parse_expression, Context, Expression};
 use super::satisfies_variable_name;
 
 /// Parses a function definition from the given input string.
 ///
 /// This function takes an input string, `input`, and attempts to parse a function definition
 /// in the form of `name(arguments) = expression'.
-pub fn parse_function_definition<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,Function> {
+pub fn parse_function_definition<'a,T,F>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,Function>  where T : Fn() -> Expression , F : Fn() -> Function {
     move |input| {
         let (input,name) = Function::parse_name(input)?;
         let (input,arguments) = Function::parse_arguments(input)?;
@@ -40,8 +40,9 @@ pub fn parse_function<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> I
 
         let function = match context.functions().get(name) {
             None => todo!(), // for now , return error in future
-            Some(closure) => {
-                let mut func = closure();
+            Some(value) => {
+                let mut func = value.clone();
+                
                 func.arguments.append(&mut _arguments);
 
                 func
