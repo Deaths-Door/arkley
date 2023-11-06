@@ -10,7 +10,6 @@ homepage.workspace = true
 license.workspace = true
 
 [features]
-# TODO : Remove equation feature
 default = ["parse","function"] 
 parse = ["nom","num-notation/nom"]
 equation = []

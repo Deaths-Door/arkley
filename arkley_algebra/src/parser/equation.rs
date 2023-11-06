@@ -1,7 +1,7 @@
 use nom::{
     sequence::delimited, 
     character::complete::multispace0, 
-    bytes::complete::tag, branch::alt, combinator::{value, all_consuming}, IResult};
+    bytes::complete::tag, branch::alt, combinator::{value, all_consuming}, IResult, error::{ParseError, ErrorKind}};
 
 use crate::{Equation, RelationalOperator, parse_expression, Context};
 
@@ -48,11 +48,19 @@ fn parse_relation_operator(input: &str) -> IResult<&str,RelationalOperator> {
     ))(input)
 }
 
-// TODO : Add try_from for expression once the lifetime garbage can be fixed
-
-impl<'a> TryFrom<(&'a str,&'a Context<'a>)> for Equation {
+impl<'a> TryFrom<(&'a str,&'a Context<'_>)> for Equation {
     type Error = nom::Err<nom::error::Error<&'a str>>;
-    fn try_from((input,context): (&'a str,&'a Context<'a>)) -> Result<Self, Self::Error> {
-        all_consuming(parse_equation(context))(input).map(move |(_,eq)| eq)
+    fn try_from((input,context): (&'a str,&'a Context<'_>)) -> Result<Self, Self::Error> {
+        all_consuming(parse_equation(&context))(input)
+        .map(|(_,v)| v)
+    }
+}
+
+impl<'a> TryFrom<&'a str> for Equation {
+    type Error = nom::Err<nom::error::Error<()>>;
+    fn try_from(input: &'a str) -> Result<Self, Self::Error> {
+        let context = Context::default();
+        Self::try_from((input,&context))
+            .map_err(|_| nom::Err::Error(nom::error::Error::from_error_kind((), ErrorKind::Eof)))
     }
 }

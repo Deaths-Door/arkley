@@ -45,7 +45,7 @@ impl From<Expression> for Token {
 }
 
 impl Token {
-    fn parse_expression<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&str, Vec<Token>> {
+    fn parse_expression<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&str, Vec<Token>> {
         move |input: &str| {    
             let (input,mut vec1) = Self::parse_with_opt_implicit_mul(context)(input)?;
     
@@ -69,7 +69,7 @@ impl Token {
         }
     }
 
-    fn parse_nested_expression<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str, Vec<Token>> {
+    fn parse_nested_expression<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str, Vec<Token>> {
         move |input : &'a str| {
             let (input,(sign,expr)) = delimited(
                 pair(char('('),multispace0),
@@ -97,7 +97,7 @@ impl Token {
         }
     }
     
-    fn parse_with_opt_implicit_mul<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
+    fn parse_with_opt_implicit_mul<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
         move |input| {    
             alt((
                 Self::opt_implicit_mul_parser(context, Function::map_into_tokens(context)),
@@ -108,7 +108,7 @@ impl Token {
         }
     }
 
-    fn opt_implicit_mul_parser<'a>(context : &'a Context<'a>,first_parser : impl FnMut(&'a str) -> IResult<&str,Vec<Token>>) -> impl FnMut(&'a str) -> IResult<&str,Vec<Token>> {
+    fn opt_implicit_mul_parser<'a>(context : &'a Context<'_>,first_parser : impl FnMut(&'a str) -> IResult<&str,Vec<Token>>) -> impl FnMut(&'a str) -> IResult<&str,Vec<Token>> {
         let mut parser = separated_pair(
             first_parser,
             multispace0,
@@ -155,7 +155,7 @@ impl Term {
 }
 
 impl Function {
-    fn map_into_tokens<'a>(context : &'a Context<'a> ) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
+    fn map_into_tokens<'a>(context : &'a Context<'_> ) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
         map(parse_function(context),|func| Vec::from([Token::from(Expression::from(func))]) )
     }
 }
@@ -183,7 +183,7 @@ impl Token {
     /// - If the parsing is successful, it returns a `Result` with the remaining input and a
     ///   vector of `Token` representing the parsed tokens.
     #[inline(always)]
-    pub(super) fn into_tokens<'a>(input: &'a str,context : &'a Context<'a>) -> IResult<&'a str,Vec<Token>>  {  
+    pub(super) fn into_tokens<'a>(input: &'a str,context : &'a Context<'_>) -> IResult<&'a str,Vec<Token>>  {  
         Token::parse_expression(context)(input)
     }
 
