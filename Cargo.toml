@@ -11,17 +11,22 @@ license.workspace = true
 
 [features]
 default = ["algebra"]
-algebra = ["arkley_algebra"]
+algebra = ["arkley_algebra/full"]
 units = ["arkley_unit_convertor"]
 describe = ["arkley_algebra/describe","arkley_describe"]
 
 [dependencies]
-arkley_algebra = { workspace = true , optional = true}
-arkley_unit_convertor = { workspace = true , optional = true}
-arkley_describe = { workspace = true , optional = true}
+arkley_algebra = { workspace = true , optional = true }
+arkley_unit_convertor = { workspace = true , optional = true }
+arkley_describe = { workspace = true , optional = true }
 
 [workspace]
-members = ["arkley_algebra","arkley_describe","arkley_unit_convertor"]
+members = [
+    "arkley_algebra",
+    "arkley_describe",
+    "arkley_unit_convertor",
+    "arkley_cli"
+]
 
 [workspace.package]
 version = "0.0.2"
@@ -35,3 +40,4 @@ license = "MIT OR Apache-2.0"
 arkley_algebra = { path = "../arkley/arkley_algebra" }
 arkley_describe = { path = "../arkley/arkley_describe" }
 arkley_unit_convertor = { path = "../arkley/arkley_unit_convertor" }
+arkley_cli = { path = "../arkley/arkley_cli" }
