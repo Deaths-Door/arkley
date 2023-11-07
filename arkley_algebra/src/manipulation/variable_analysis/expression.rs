@@ -59,13 +59,4 @@ impl VariableAnalysis for Expression {
             Expression::Function { .. } => false,
         }
     }
-
-    fn has_all<'a,I>(&self,iterator : &mut I) -> bool where I : Iterator<Item = &'a char> {
-        match self {
-            Expression::Term(term) => term.has_all(iterator),
-            Expression::Binary { left, right, .. } => left.has_all(iterator) && right.has_all(iterator),
-            Expression::Nested(inner) => inner.has_all(iterator),
-            Expression::Function { .. } => true,
-        }
-    }
 }
