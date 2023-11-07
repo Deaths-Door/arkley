@@ -33,7 +33,8 @@ pub enum Nature<T> {
     NoRealRoots  
 }
 
-impl<T> Find<Nature<T>> for Roots<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + PartialOrd + std::ops::Neg<Output = T> + num_notation::Pow<T,Output = T> {
+impl<T> Find for Roots<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + PartialOrd + std::ops::Neg<Output = T> + num_notation::Pow<T,Output = T> {
+    type Output = Nature<T>;
     // Use the discriminant to determine the nature of the roots:
     fn find(self) -> Nature<T> {
         let d = self.0.clone().find();

@@ -17,7 +17,8 @@ impl<T,O> From<T> for SumOfRoots<IntegerQuadratic<O>> where T : Into<IntegerQuad
     }
 }
 
-impl<T> Find<T> for SumOfRoots<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + std::ops::Neg<Output = T> {
+impl<T> Find for SumOfRoots<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + std::ops::Neg<Output = T> {
+    type Output = T;
     // -b/a
     fn find(self) -> T {
         (-self.0.b) / self.0.a

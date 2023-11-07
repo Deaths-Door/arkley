@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
 use num_notation::{Num, Signed, Number};
 
-use crate::{Term, Equation, Expression};
+use crate::Term;
 
 use super::*;
 

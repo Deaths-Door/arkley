@@ -17,7 +17,9 @@ impl<T,O> From<T> for ProductOfRoots<IntegerQuadratic<O>> where T : Into<Integer
     }
 }
 
-impl<T> Find<T> for ProductOfRoots<IntegerQuadratic<T>> where T : Num + Clone + From<u8> {
+impl<T> Find for ProductOfRoots<IntegerQuadratic<T>> where T : Num + Clone {
+    type Output = T;
+
     // c/a
     fn find(self) -> T {
         self.0.c / self.0.a

@@ -100,7 +100,8 @@ impl<T> Concavity<IntegerQuadratic<T>> where T : Num + Clone + Ord  {
     }
 }
 
-impl<T> Find<T,ConcavityType> for Concavity<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + std::ops::Neg<Output = T> + Ord {
+impl<T> Find for Concavity<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + std::ops::Neg<Output = T> + Ord {
+    type Output = ConcavityType;
     // -b/a
     fn find(self) -> ConcavityType {
         self.concavity_type()
