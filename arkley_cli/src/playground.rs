@@ -1,7 +1,7 @@
 use std::process::exit;
 
 use nom::{
-    sequence::{preceded, delimited}, 
+    sequence::{preceded, pair}, 
     character::complete::multispace0,
     combinator::map, 
     branch::alt, 
@@ -45,10 +45,10 @@ For detailed information about how to use about the playground, please refer to 
 https://github.com/Deaths-Door/arkley/tree/main/arkley_cli/README.md"#;
     
     preceded(
-        delimited(
+        pair(
             multispace0, 
-            tag("--"), 
-            multispace0),
+            tag("--")
+        ),
         alt((
             map(tag("help"),|_| println!("{DOC_MSG}")),
             map(tag("exit"),|_| exit(0))

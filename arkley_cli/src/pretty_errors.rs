@@ -1,4 +1,4 @@
-use std::process::exit;
+use std::{process::exit, fmt::Display};
 
 use arkley_algebra::{Context, Equation, Term};
 use rustyline::DefaultEditor;
@@ -13,22 +13,11 @@ pub fn new_default_editor() -> DefaultEditor {
     }
 }
 
-// TODO : Make this more generic or improve it in general
-
-pub fn equation_try_from_with_message<'a>(input : &str,context : &Context<'a>) -> Equation {
-    match Equation::try_from((input,context)) {
-        Ok(eq) => eq,
+pub fn try_from_with_message<T : TryFrom<I>,I>(input : I) -> T {
+    match T::try_from(input) {
+        Ok(ok) => ok,
         Err(_) => {
-            eprintln!("Sadly given equation ({input}) is invalid , consider inputing a valid equation");
-            exit(1)
-        },
-    }
-}
-pub fn term_try_from_with_message(input : &str) -> Term {
-    match Term::try_from(input) {
-        Ok(term) => term,
-        Err(_) => {
-            eprintln!("Sadly given term ({input}) is invalid , consider inputing a valid term");
+            eprintln!("Sadly given input is invalid , consider inputing a valid input");
             exit(1)
         },
     }
