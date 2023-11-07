@@ -1,8 +1,10 @@
 use num_notation::Number;
 
-use crate::{Term,Expression,manipulation::Find};
+use crate::{Term,Expression,manipulation::Find, Function};
 
 use super::{VariableSubstitution, SingleVariableReplacements, MultipleVariableReplacements};
+
+// Term 
 
 macro_rules! impl_trait {
     ($($t : ty),*) => {
@@ -11,6 +13,8 @@ macro_rules! impl_trait {
             
             impl VariableSubstitution<$t> for Expression {}
             
+            impl VariableSubstitution<$t> for Function {}
+
             #[cfg(feature="equation")]
             impl VariableSubstitution<$t> for crate::Equation {}
         )*
@@ -44,10 +48,10 @@ macro_rules! impl_trait {
                 }
             }
         )*
-    }
+    };
 }
 impl_trait!(term => u8,u16,u32,u64,i8,i16,i32,i64,f32,f64);
-impl_trait!(u8,u16,u32,u64,i8,i16,i32,i64,f32,f64,Number,Term,Expression);
+impl_trait!(u8,u16,u32,u64,i8,i16,i32,i64,f32,f64,Number,Term,Function,Expression);
 
 impl Find for SingleVariableReplacements<Term,Number> {
     type Output = Term;
@@ -109,13 +113,60 @@ impl Find for MultipleVariableReplacements<'_,Term,Expression> {
     }
 }
 
+// -----------------
+// Function
+impl<T : Into<Expression>> Find for SingleVariableReplacements<Function,T> {
+    type Output = Function;
+    fn find(self) -> Self::Output {
+        let mut func = self.source;
+        let variable = self.variable;
+
+        let value = Some(self.value.into());
+
+        match func.arguments.get_mut(&variable) {
+            Some(e) => *e = value,
+            None => {
+                func.arguments.insert(variable, value);
+            },
+        };
+
+        func
+    }
+}
+
+impl<'a,T : Clone + Into<Expression>> Find for MultipleVariableReplacements<'a,Function,T> {
+    type Output = Function;
+    fn find(self) -> Self::Output {
+        let mut func = self.source;
+        let values = self.values;
+        
+        for (variable,value) in values {
+            let value = Some((*value).clone().into());
+
+            match func.arguments.get_mut(variable) {
+                Some(e) => *e = value,
+                None => {
+                    func.arguments.insert(*variable, value);
+                },
+            };
+        }
+    
+        func
+    }
+}
+
+// -----------------
+// Expression
+
 impl<T : Clone> Find for SingleVariableReplacements<Expression,T> 
     where 
     Term: VariableSubstitution<T>,
-    Expression : VariableSubstitution<T>,
-    Expression : From<<SingleVariableReplacements<Term,T> as Find>::Output>,
-    SingleVariableReplacements<Term, T> : Find
-    
+    Expression : VariableSubstitution<T>
+         + From<<SingleVariableReplacements<Term,T> as Find>::Output>
+         + From<<SingleVariableReplacements<Function, T> as Find>::Output>,
+    Function : VariableSubstitution<T> ,
+    SingleVariableReplacements<Term, T> : Find,
+    SingleVariableReplacements<Function, T> : Find
     {
 
     type Output = Expression;
@@ -132,7 +183,7 @@ impl<T : Clone> Find for SingleVariableReplacements<Expression,T>
                 Expression::Binary { operation , left , right }
             },
             Expression::Nested(inner) => inner.replace_single_variable(variable, value).find().into(),
-            Expression::Function(_) => todo!(),
+            Expression::Function(func) => func.replace_single_variable(variable, value).find().into(),
         }
     }
 }
@@ -140,10 +191,14 @@ impl<T : Clone> Find for SingleVariableReplacements<Expression,T>
 impl<'a,T : Clone + 'a> Find for MultipleVariableReplacements<'a,Expression,T> 
     where 
     Term: VariableSubstitution<T>,
-    Expression : VariableSubstitution<T> + From<<MultipleVariableReplacements<'a,Term, T> as Find>::Output>,
-    MultipleVariableReplacements<'a,Term, T> : Find
-    {
+    Expression : VariableSubstitution<T> 
+        + From<<MultipleVariableReplacements<'a,Term, T> as Find>::Output>
+        + From<<MultipleVariableReplacements<'a,Function, T> as Find>::Output>,
+    Function : VariableSubstitution<T> ,
 
+    MultipleVariableReplacements<'a,Term, T> : Find,
+    MultipleVariableReplacements<'a,Function, T> : Find
+    {
     type Output = Expression;
     fn find(self) -> Self::Output {
         let values = &self.values;
@@ -157,10 +212,55 @@ impl<'a,T : Clone + 'a> Find for MultipleVariableReplacements<'a,Expression,T>
                 Expression::Binary { operation , left , right }
             },
             Expression::Nested(inner) => inner.replace_variables(values).find().into(),
-            Expression::Function(_) => todo!(),
+            Expression::Function(func) => func.replace_variables(values).find().into(),
         }
     }
 }
+
+// -----------------
+// Equation
+
+#[cfg(feature="equation")]
+impl<T : Clone> Find for SingleVariableReplacements<crate::Equation,T> 
+    where 
+    Expression: VariableSubstitution<T> 
+        + From<<SingleVariableReplacements<Expression,T> as Find>::Output> 
+        + From<<SingleVariableReplacements<Term,T> as Find>::Output>,
+    Term: VariableSubstitution<T>,
+    SingleVariableReplacements<Expression,T> : Find ,
+    SingleVariableReplacements<Term, T> : Find  {
+    type Output = crate::Equation;
+    fn find(self) -> Self::Output {
+        let value = self.value;
+        let variable = &self.variable;
+        let mut equation = self.source;
+
+        equation.right = equation.right.replace_single_variable(variable, value.clone()).find().into();
+        equation.left = equation.left.replace_single_variable(variable, value).find().into();
+        equation
+    }
+}
+
+#[cfg(feature="equation")]
+impl<'a,T : Clone> Find for MultipleVariableReplacements<'a,crate::Equation,T> 
+    where 
+    Expression: VariableSubstitution<T> 
+        + From<<MultipleVariableReplacements<'a,Expression,T> as Find>::Output> 
+        + From<<MultipleVariableReplacements<'a,Term,T> as Find>::Output>,
+    Term: VariableSubstitution<T>,
+    MultipleVariableReplacements<'a,Expression,T> : Find ,
+    MultipleVariableReplacements<'a,Term, T> : Find  {
+    type Output = crate::Equation;
+    fn find(self) -> Self::Output { 
+        let values = self.values;
+        let mut equation = self.source;
+
+        equation.right = equation.right.replace_variables(values).find().into();
+        equation.left = equation.left.replace_variables(values).find().into();
+        equation
+    }
+}
+
 #[cfg(test)]
 mod expr {
     use super::*;
