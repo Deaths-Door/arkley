@@ -2,7 +2,7 @@ use std::{cmp::Ordering, collections::HashMap};
 
 use num_notation::Num;
 use crate::manipulation::Find;
-use super::{IntegerQuadratic, Nature};
+use super::IntegerQuadratic;
 
 /// A utility struct for determining the concavity of a parabola.
 ///

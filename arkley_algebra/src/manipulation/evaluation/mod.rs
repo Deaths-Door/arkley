@@ -4,6 +4,10 @@ mod gen;
 pub use inner::*;
 pub use gen::*;
 
+#[cfg(feature="describe")]
+mod describe;
+
+
 use std::collections::HashMap;
 use super::{VariableSubstitution, Find, SingleVariableReplacements, MultipleVariableReplacements};
 

@@ -49,3 +49,14 @@ algebric-term
         This results in \textbf {"{"} { $term1 } / { $term2} {"}"}  
     
     .div_coefficient = Now we divide the coefficients and this results in \textbf {"{"} { $term1 } / { $term2} {"}"}  
+
+# Expressions
+
+algebric-expression
+    .evalute = Do \textbf {"{"} { $lexpr } { $op } { $lexpr } {"}"} which is \textbf {"{"} $ans {"}"}
+
+# Equations
+
+algebric-equation
+    .start_with_left = We start with the left side of the equation.
+    .start_with_right = We start with the right side of the equation.
