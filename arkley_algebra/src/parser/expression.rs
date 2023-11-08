@@ -14,6 +14,7 @@ use super::tokens::Token;
 ///
 /// * `input`: A string containing the mathematical expression to be parsed.
 pub fn parse_expression<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,Expression> {
+    // TODO : This parses 2x = 5 into 5 as an equation and succeds for some reason
     move |input| {
         let (input,vec) = Token::into_tokens(input, context)?;
         let expression = Token::into_expression_tree(Token::to_rpn(vec));

@@ -15,6 +15,13 @@ fluent_templates::static_loader! {
     };
 }
 
+pub fn rearrange_equation(equation: Equation,target : Term) {
+    match equation.try_make_subject(target) {
+        Ok(equation) => println!("Result: {equation}"),
+        Err(err) => eprintln!("Error : {err}"),
+    }
+}
+
 impl Command {
     pub fn command_evaluate(locale : Option<LanguageIdentifier>,input : &str,context : Context<'_>) {
         match ['=','<','>'].into_iter().any(|c| input.contains(c)) {

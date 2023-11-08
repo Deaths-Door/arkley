@@ -102,6 +102,10 @@ impl Find for SingleVariableReplacements<Term,Expression> {
 impl Find for MultipleVariableReplacements<'_,Term,Term> {
     type Output = Expression;
     fn find(self) -> Self::Output {
+        if self.values.is_empty() {
+            return self.source.into()
+        }
+
         todo!("Implement this once `Pow` trait for expressions and terms is finished")
     }
 }
@@ -109,6 +113,10 @@ impl Find for MultipleVariableReplacements<'_,Term,Term> {
 impl Find for MultipleVariableReplacements<'_,Term,Expression> {
     type Output = Expression;
     fn find(self) -> Self::Output {
+        if self.values.is_empty() {
+            return self.source.into()
+        }
+
         todo!("Implement this once `Pow` trait for expressions and terms is finished")
     }
 }

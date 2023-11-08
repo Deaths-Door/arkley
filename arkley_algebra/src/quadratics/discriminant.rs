@@ -53,7 +53,7 @@ impl<T> Describe for Discriminant<IntegerQuadratic<T>> where T : Num + Clone + F
 
             resources.lookup_single_language(lang, "discriminant-integerquadratic.subsitiute",Some(&args))?
         };
-        
+    
         vec![format!("{haupteil}\n{nebenteil}")].into()
     }
 }
