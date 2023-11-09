@@ -3,7 +3,6 @@ use num_notation::Number;
 use crate::{Term,Expression,manipulation::Find, Function};
 
 use super::{VariableSubstitution, SingleVariableReplacements, MultipleVariableReplacements};
-
 // Term 
 
 macro_rules! impl_trait {

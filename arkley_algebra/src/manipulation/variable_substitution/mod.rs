@@ -1,6 +1,10 @@
 mod gen;
 mod inner;
+
 pub use inner::*;
+
+#[cfg(feature="describe")]
+mod describe;
 
 use std::collections::HashMap;
 

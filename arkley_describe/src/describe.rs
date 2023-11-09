@@ -2,7 +2,7 @@ use std::ops::*;
 use num_traits::Pow;
 use fluent_templates::{StaticLoader, LanguageIdentifier};
 
-/// As the author is lazy
+/// As the author is lazy and may change the return type in the future
 pub type Steps = Vec<String>;
 
 macro_rules! create_describe {
