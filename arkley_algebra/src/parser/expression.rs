@@ -1,4 +1,4 @@
-use nom::{IResult, combinator::all_consuming};
+use nom::{IResult, error::{ErrorKind, ParseError}, combinator::all_consuming};
 
 use crate::{Expression, Context};
 
@@ -13,7 +13,8 @@ use super::tokens::Token;
 /// # Arguments
 ///
 /// * `input`: A string containing the mathematical expression to be parsed.
-pub fn parse_expression<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Expression> {
+pub fn parse_expression<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,Expression> {
+    // TODO : This parses 2x = 5 into 5 as an equation and succeds for some reason
     move |input| {
         let (input,vec) = Token::into_tokens(input, context)?;
         let expression = Token::into_expression_tree(Token::to_rpn(vec));
@@ -22,10 +23,20 @@ pub fn parse_expression<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) ->
     }
 }
 
-impl<'a> TryFrom<(&'a str,&'a Context<'a>)> for Expression {
+impl<'a> TryFrom<(&'a str,&'a Context<'_>)> for Expression {
     type Error = nom::Err<nom::error::Error<&'a str>>;
-    fn try_from((input,context): (&'a str,&'a Context<'a>)) -> Result<Self, Self::Error> {
-        all_consuming(parse_expression(context))(input).map(|(_,expr)| expr)
+    fn try_from((input,context): (&'a str,&'a Context<'_>)) -> Result<Self, Self::Error> {
+        all_consuming( parse_expression(&context))(input)
+            .map(|(_,v)| v)
+    }
+}
+
+impl<'a> TryFrom<&'a str> for Expression {
+    type Error = nom::Err<nom::error::Error<()>>;
+    fn try_from(input: &'a str) -> Result<Self, Self::Error> {
+        let context = Context::default();
+        Self::try_from((input,&context))
+            .map_err(|_| nom::Err::Error(nom::error::Error::from_error_kind((), ErrorKind::Eof)))
     }
 }
 

@@ -1,6 +1,6 @@
 use std::{fmt::{Debug, Display}, collections::{BTreeMap, HashMap}};
 
-use crate::{Expression, manipulation::VariableSubstitution};
+use crate::{Expression, manipulation::{VariableSubstitution, Find}};
 
 /// Represents a mathematical function with a name and a set of arguments.
 // TODO : Create functions to validate arguemnts given to functions + corrcet number + corrcte ones etc
@@ -111,11 +111,7 @@ impl Function {
                 .map(|(k,expr)| (k,expr.unwrap()))
                 .collect();
 
-            let mut expr = func.expression.unwrap();
-            
-            expr.replace_variables(&mut arguments);
-
-            *expr
+            func.expression.unwrap().replace_variables(&mut arguments).find()
         };
 
         Self { name , arguments , expression : Some(Box::new(expression)) , closure }

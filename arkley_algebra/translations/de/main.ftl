@@ -46,3 +46,14 @@ algebric-term
         Das Ergebnis ist \textbf {"{"} { $term1 } / { $term2} {"}"}  
 
     .div_coefficient = Jetzt dividieren wir die Koeffizienten, und das Ergebnis ist \textbf {"{"} { $term1 } / { $term2} {"}"}  
+
+# Expressions
+
+algebric-expression
+    .evalute = Mach \textbf {"{"} { $lexpr } { $op } { $lexpr } {"}"} was \textbf {"{"} $ans {"}"} ergibt
+
+# Equations
+
+algebric-equation
+    .start_with_left = Wir beginnen mit der linken Seite der Gleichung.
+    .start_with_right = Wir beginnen mit der richten Seite der Gleichung.

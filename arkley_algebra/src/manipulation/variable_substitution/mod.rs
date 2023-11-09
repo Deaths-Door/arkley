@@ -1,50 +1,26 @@
-mod term;
-mod expression;
+mod gen;
+mod inner;
 
-#[cfg(feature="equation")]
-mod equation;
+pub use inner::*;
 
-#[cfg(feature="equation")]
-pub use equation::*;
-
-#[cfg(feature="function")]
-mod function;
-
-#[cfg(feature="function")]
-pub use function::*;
+#[cfg(feature="describe")]
+mod describe;
 
 use std::collections::HashMap;
 
-use num_notation::Number;
+use super::Find;
 
 /// A trait for types that support variable replacement.
 ///
 /// Types implementing this trait can perform variable substitution in various ways (this is done for optimzation reasons).
-pub trait VariableSubstitution<SV = Number,MV = HashMap<char,SV>> {
+pub trait VariableSubstitution<T> : Sized {
     /// Attempts to replace a single variable with a specified value.
-    ///
-    /// # Arguments
-    ///
-    /// - `variable`: A reference to the variable (char) to be replaced.
-    /// - `value`: The value (Number) to replace the variable with.
-    ///
-    /// # Returns
-    ///
-    /// An `Option<()>` where:
-    /// - `Some(())` indicates the variable was found and successfully replaced.
-    /// - `None` indicates the variable did not exist, and no replacement occurred.
-    fn replace_single_variable(&mut self, variable: &char, value: SV) -> Option<()>;
-
+    fn replace_single_variable(self, variable: &char, value: T) -> SingleVariableReplacements<Self,T> where SingleVariableReplacements<Self,T> : Find {
+        SingleVariableReplacements::new(self, *variable, value)
+    }
+    
     /// Attempts to replace multiple variables with specified values.
-    ///
-    /// # Arguments
-    ///
-    /// - `variable_values`: A reference to a `Variables` map containing variables and their values.
-    ///
-    /// # Returns
-    ///
-    /// The updated term with the specified variables replaced. Variables that do not exist in the term
-    /// are left unchanged in the `variable_values` map given.
-    // TODO : THIS MAY NOT WORK LIKE EXCEpTED eg for 2x + 2x the first x is replaced but not the second
-    fn replace_variables(&mut self, variable_values:&mut MV);
+    fn replace_variables<'a>(self, variable_values: &'a HashMap<char,T>) -> MultipleVariableReplacements<'a,Self,T> where MultipleVariableReplacements<'a,Self,T> : Find  {
+        MultipleVariableReplacements::new(self, variable_values)
+    }
 }

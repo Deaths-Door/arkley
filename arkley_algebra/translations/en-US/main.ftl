@@ -49,3 +49,22 @@ algebric-term
         This results in \textbf {"{"} { $term1 } / { $term2} {"}"}  
     
     .div_coefficient = Now we divide the coefficients and this results in \textbf {"{"} { $term1 } / { $term2} {"}"}  
+
+    .single_variable_replace = We replace \textbf {"{"} { $variable } {"}"} with its value 
+        and so we do \textbf {"{"} { $coefficient }({ $value }) ^ { $exponent } = { $result } {"}"} , 
+        which leads to \textbf {"{"} { $term } }{"}"
+    
+    .multi_variable_replace = We replace \textbf {"{"} { $variables } {"}"} with their values
+        and so we do \textbf {"{"} { $coefficient }{ $values } = { $result } {"}"} , 
+        which leads to \textbf {"{"} { $term } }{"}"
+
+# Expressions
+
+algebric-expression
+    .evalute = Do \textbf {"{"} { $lexpr } { $op } { $lexpr } {"}"} which is \textbf {"{"} $ans {"}"}
+
+# Equations
+
+algebric-equation
+    .start_with_left = We start with the left side of the equation.
+    .start_with_right = We start with the right side of the equation.

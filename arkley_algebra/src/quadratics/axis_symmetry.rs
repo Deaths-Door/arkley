@@ -21,7 +21,8 @@ impl<T,O> From<T> for AxisOfSymmetry<IntegerQuadratic<O>> where T : Into<Integer
     }
 }
 
-impl<T> Find<T> for AxisOfSymmetry<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + std::ops::Neg<Output = T> {
+impl<T> Find for AxisOfSymmetry<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + std::ops::Neg<Output = T> {
+    type Output = T;
     // x = -b / 2a
     fn find(self) -> T {
         (-self.0.b) / (T::from(2u8) * self.0.a)

@@ -17,12 +17,15 @@ pub use polynomial::*;
 ///
 /// This trait is used as a helper method trait in various contexts, such as
 /// calculating [Quadratic::discriminant], where one can get the value or describe it.
-pub trait Find<T,Output = T> {
+pub trait Find {
+    /// Output Type
+    type Output;
+
     /// Find and return a value of type `T`.
     ///
     /// # Returns
     ///
     /// A value of type `T` representing the result of the operation.
     #[must_use]
-    fn find(self) -> Output;
+    fn find(self) -> Self::Output;
 }

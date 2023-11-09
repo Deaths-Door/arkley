@@ -14,7 +14,9 @@ use super::IntegerQuadratic;
 #[derive(Debug,Clone)]
 pub struct Discriminant<T>(pub(super) T); 
 
-impl<T> Find<T> for Discriminant<IntegerQuadratic<T>> where T : Num + Clone + From<u8> {
+impl<T> Find for Discriminant<IntegerQuadratic<T>> where T : Num + Clone + From<u8> {
+    type Output = T;
+    
     // D = b^2 - 4ac
     fn find(self) -> T {
         (self.0.b.clone() * self.0.b) - (T::from(4u8) * self.0.a * self.0.c)
@@ -51,7 +53,7 @@ impl<T> Describe for Discriminant<IntegerQuadratic<T>> where T : Num + Clone + F
 
             resources.lookup_single_language(lang, "discriminant-integerquadratic.subsitiute",Some(&args))?
         };
-        
+    
         vec![format!("{haupteil}\n{nebenteil}")].into()
     }
 }

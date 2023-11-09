@@ -6,14 +6,14 @@ use nom::{
     bytes::complete::{take_till, take}
 };
 
-use crate::{Function, FunctionArguments, parse_expression, Context};
+use crate::{Function, FunctionArguments, parse_expression, Context, Expression};
 use super::satisfies_variable_name;
 
 /// Parses a function definition from the given input string.
 ///
 /// This function takes an input string, `input`, and attempts to parse a function definition
 /// in the form of `name(arguments) = expression'.
-pub fn parse_function_definition<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Function> {
+pub fn parse_function_definition<'a,T,F>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,Function>  where T : Fn() -> Expression , F : Fn() -> Function {
     move |input| {
         let (input,name) = Function::parse_name(input)?;
         let (input,arguments) = Function::parse_arguments(input)?;
@@ -33,15 +33,16 @@ pub fn parse_function_definition<'a>(context : &'a Context<'a>) -> impl FnMut(&'
 /// This function is designed to parse custom function definitions, which include user-defined functions
 /// and potentially more complex functions , as an example trigonometric functions (e.g., cos, sin, tan) defined using
 /// custom closures. The `context` parameter is used to provide context for parsing these functions.
-pub fn parse_function<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Function> {
+pub fn parse_function<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,Function> {
     move |input| {
         let (input,name) = Function::parse_name(input)?;
         let (input,mut _arguments) = Function::parse_arguments_with_context(context)(input)?;
 
         let function = match context.functions().get(name) {
             None => todo!(), // for now , return error in future
-            Some(closure) => {
-                let mut func = closure();
+            Some(value) => {
+                let mut func = value.clone();
+                
                 func.arguments.append(&mut _arguments);
 
                 func
@@ -78,7 +79,7 @@ impl Function {
         Ok((input,arguments))
     }
 
-    fn parse_arguments_with_context<'a>(_context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,FunctionArguments> {
+    fn parse_arguments_with_context<'a>(_context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,FunctionArguments> {
         move |input| {
             let (input,arguments_str) = take_till(|c| c == ')')(input)?;
 

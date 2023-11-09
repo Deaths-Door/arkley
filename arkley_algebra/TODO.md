@@ -17,3 +17,5 @@
 - Describe `try_make_subject` for equation
 - Support for various units (`km` , `cm` ) with describe feature
 - Add AlgebricQuadratics and intergate with quadratic trait with describe feature
+- Improve REAMDE's to include all features
+- Check why parser parses wrong when no spaced are given eg `2x+3`
