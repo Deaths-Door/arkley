@@ -1,12 +1,5 @@
 use std::collections::HashMap;
-
-use nom::{IResult, bytes::complete::{take_until1, take}};
-
-use crate::{Expression, Function, parse_expression};
-
-use super::tokens::Token;
-
-
+use crate::{Expression, Function};
 /// A context that stores its mappings in hash maps.
 ///
 /// *Value and function mappings are stored independently, meaning that there can be a function and a value with the same identifier.*
