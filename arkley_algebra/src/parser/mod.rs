@@ -6,7 +6,6 @@ mod tokens;
 mod expression;
 mod context;
 
-use nom::{combinator::value, bytes::complete::tag};
 pub use term::*;
 pub use expression::*;
 pub use op::*;
@@ -21,6 +20,8 @@ mod equation;
 pub use equation::*;
 
 fn alternative<'a,T : Clone>(alternatives: &'a std::collections::HashMap<&'a str,T>) -> impl FnMut(&'a str) -> nom::IResult<&'a str,T> {
+    use nom::{combinator::value, bytes::complete::tag};
+
     move |input| {
         let mut last_err = Err(nom::Err::Error(nom::error::Error { input, code: nom::error::ErrorKind::NonEmpty }));
 

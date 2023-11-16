@@ -13,30 +13,35 @@ use super::tokens::Token;
 /// # Arguments
 ///
 /// * `input`: A string containing the mathematical expression to be parsed.
-pub fn parse_expression<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,Expression> {
+pub fn parse_expression<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Expression> + 'b {
     // TODO : This parses 2x = 5 into 5 as an equation and succeds for some reason
     move |input| {
-        let (input,vec) = Token::into_tokens(input, context)?;
+        let (input,vec) = Token::parse(context)(input)?;
         let expression = Token::into_expression_tree(Token::to_rpn(vec));
     
         Ok((input,expression))
     }
 }
 
-impl<'a> TryFrom<(&'a str,&'a Context<'_>)> for Expression {
+impl<'a,'b> TryFrom<(&'a str,&'b Context<'b>)> for Expression {
     type Error = nom::Err<nom::error::Error<&'a str>>;
-    fn try_from((input,context): (&'a str,&'a Context<'_>)) -> Result<Self, Self::Error> {
-        all_consuming( parse_expression(&context))(input)
-            .map(|(_,v)| v)
+    fn try_from((input,context): (&'a str,&'b Context<'b>)) -> Result<Self, Self::Error> {
+        let (input,vec) = all_consuming(Token::parse(context))(input)?;
+        let expression = Token::into_expression_tree(Token::to_rpn(vec));
+    
+        Ok(expression)
     }
 }
 
 impl<'a> TryFrom<&'a str> for Expression {
-    type Error = nom::Err<nom::error::Error<()>>;
+    type Error = nom::Err<nom::error::Error<&'a str>>;
     fn try_from(input: &'a str) -> Result<Self, Self::Error> {
         let context = Context::default();
-        Self::try_from((input,&context))
-            .map_err(|_| nom::Err::Error(nom::error::Error::from_error_kind((), ErrorKind::Eof)))
+
+        let (input,vec) = all_consuming(Token::parse(&context))(input)?;
+        let expression = Token::into_expression_tree(Token::to_rpn(vec));
+    
+        Ok(expression)
     }
 }
 

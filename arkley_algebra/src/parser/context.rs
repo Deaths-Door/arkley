@@ -66,7 +66,8 @@ impl<'a> Context<'a,>{
 }
 
 impl<'a> Context<'a> {
-    pub(super) fn parse_tags(&'a self) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
+    #[deprecated]
+    pub(super) fn _parse_tags(&'a self) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
         move |input| {
             // TODO : Check why does this fail at + five , parses first tag then an operator stops ; figure out solution for wheni first encountered this issue
             let (input,expression) = super::alternative(&self.tags())(input)?;    
@@ -87,7 +88,7 @@ mod tests {
         context.tags_mut().insert("two", 2.into());
         context.tags_mut().insert("sieben", 7.into());
 
-        let result = context.parse_tags()("five + sieben");
+        let result = context._parse_tags()("five + sieben");
         
         assert!(result.is_ok());
 
