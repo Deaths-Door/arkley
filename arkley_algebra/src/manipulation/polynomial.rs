@@ -35,7 +35,6 @@ impl Expression {
         match self {
             Self::Term(term) => term.variables.get(variable).map_or(0, |_| 1),
             Self::Binary { left , right , .. } => left.get_max_exponent_for(variable) + right.get_max_exponent_for(variable),
-            Self::Nested(inner) => inner.get_max_exponent_for(variable),
             _ => 0
         }
     }

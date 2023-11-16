@@ -23,7 +23,6 @@ impl std::ops::Mul<Term> for Expression {
 
     fn mul(self,other : Term) -> Self::Output {
         let expr = match self {
-            Expression::Nested(inner) => *inner * other,
             Expression::Term(term) => term * other,
             Expression::Function(func) => func * other,
             // if operation == ArithmeticOperation::Durch as 3x * (3/x) can be more simpily done as (3x/1) * (3/x) then other solution
@@ -52,15 +51,10 @@ impl std::ops::Mul for Expression {
 
     fn mul(self,other : Self) -> Self::Output {
         match (self,other) {
-            (Expression::Nested(inner1),Expression::Nested(inner2)) => *inner1 * *inner2,
 
             (Expression::Term(t1),Expression::Term(t2)) => t1 * t2,
-            (Expression::Term(term),Expression::Nested(inner)) | (Expression::Nested(inner),Expression::Term(term)) => *inner * term,
             
             (Expression::Term(term),expr @_) | (expr @_,Expression::Term(term)) => expr * term,
-
-            (expr @_, Expression::Nested(inner)) |
-            (Expression::Nested(inner),expr @_) => *inner * expr,
 
             // div , div
             (Expression::Binary { operation : op2, left : left1, right : right1 }, 

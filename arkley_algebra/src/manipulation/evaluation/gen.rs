@@ -60,7 +60,6 @@ impl Find for EvaluateNoValues<Expression> {
             Expression::Term(_) => self.0,
             Expression::Binary { operation, left, right } => 
                 operation.operate_on(left.evaluate().find(), right.evaluate().find()),
-            Expression::Nested(inner) => inner.evaluate().find(),
             Expression::Function(func) => func.evaluate().find()
         }   
     }

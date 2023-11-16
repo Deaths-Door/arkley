@@ -189,7 +189,6 @@ impl<T : Clone> Find for SingleVariableReplacements<Expression,T>
 
                 Expression::Binary { operation , left , right }
             },
-            Expression::Nested(inner) => inner.replace_single_variable(variable, value).find().into(),
             Expression::Function(func) => func.replace_single_variable(variable, value).find().into(),
         }
     }
@@ -218,7 +217,6 @@ impl<'a,T : Clone + 'a> Find for MultipleVariableReplacements<'a,Expression,T>
 
                 Expression::Binary { operation , left , right }
             },
-            Expression::Nested(inner) => inner.replace_variables(values).find().into(),
             Expression::Function(func) => func.replace_variables(values).find().into(),
         }
     }
