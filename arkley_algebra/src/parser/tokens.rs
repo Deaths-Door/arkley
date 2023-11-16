@@ -17,12 +17,13 @@ use super::parse_add_sub;
 
 #[cfg_attr(test, derive(PartialEq,Debug))]
 pub(super) enum Token {
+    /// TODO : Maybe remove this variant and convert terms to expression so [`Token::Expression`]
     Term(Term),
     Operator(ArithmeticOperation),
     OpenParenthesis,
     CloseParenthesis,
 
-    /// Used for context parsing like "five_x_plus_y* x" => "(5x + y) * x" => "5x^2"
+    /// Used for context parsing like "five_x_plus_y * x" => "(5x + y) * x" => "5x^2"
     Expression(Expression) 
 }
 

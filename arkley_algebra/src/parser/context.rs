@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use nom::IResult;
+use nom::{IResult, bytes::complete::{take_until1, take}};
 
-use crate::{Expression, Function};
+use crate::{Expression, Function, parse_expression};
 
 use super::tokens::Token;
 
@@ -14,6 +14,8 @@ use super::tokens::Token;
 /// It allows using variables , user-defined functions within an expression used during the parsing phase.
 /// When assigning to variables, the assignment is stored in a context. When the variable is read later on,
 /// it is read from the context. Contexts can be preserved between multiple calls by creating them yourself.
+/// 
+/// TODO : Allow `context` to be in expression so no 'converting' maybe idk and also make the parser for values , tags and function thing
 #[derive(Clone, Debug,Default)]
 pub struct Context<'a> {
     /// Used for storing input like
@@ -65,7 +67,37 @@ impl<'a> Context<'a,>{
     }
 }
 
-impl<'a> Context<'a> {
+/*
+fn alternative<'a,T : Clone>(alternatives: &'a std::collections::HashMap<&'a str,T>) -> impl FnMut(&'a str) -> nom::IResult<&'a str,T> {
+    use nom::{combinator::value, bytes::complete::tag};
+
+    move |input| {
+        let mut last_err = Err(nom::Err::Error(nom::error::Error { input, code: nom::error::ErrorKind::NonEmpty }));
+
+        for (key,t) in alternatives {
+            match value(t,tag(*key))(input) {
+                Ok((input,other)) => return Ok((input,(*other).clone())),
+                error @ Err(_) => last_err = error,
+            }
+        }
+
+        last_err.map(|(i,v)| (i,v.clone()))
+    }
+}
+
+impl<'a : 'b,'b> Context<'a> {
+    /*pub fn parse_values(&'b mut self) -> impl FnMut(&'a str) -> IResult<&'a str,> {
+        move |input| {
+            let (input,key_str) = take_until1("=")(input)?;
+            let (input,_) = take(1usize)(input); // cuz take until = doesnt consume the =
+            let (input,expression) = parse_expression(context)?;
+
+
+
+            todo!()
+        }
+    }*/
+
     #[deprecated]
     pub(super) fn _parse_tags(&'a self) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
         move |input| {
@@ -76,41 +108,4 @@ impl<'a> Context<'a> {
             Ok((input,vec))
         }
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::{Context, parse_expression, parser::tokens::Token};
-    #[test]
-    fn parsing_tag() {
-        let mut context = Context::default();
-        context.tags_mut().insert("five", 5.into());
-        context.tags_mut().insert("two", 2.into());
-        context.tags_mut().insert("sieben", 7.into());
-
-        let result = context._parse_tags()("five + sieben");
-        
-        assert!(result.is_ok());
-
-        let (input,vec) = result.unwrap();
-
-        println!("{input}");
-
-        let expr = Token::into_expression_tree(Token::to_rpn(vec));
-        assert_eq!(&expr.to_string(),"5 + 7")
-    }
-
-    #[test]
-    fn with_context() {
-        let mut context = Context::default();
-        context.tags_mut().insert("five", 5.into());
-        context.tags_mut().insert("two", 2.into());
-        context.tags_mut().insert("sieben", 7.into());
-
-        let result = parse_expression(&context)("five * two + sieben");
-
-        assert!(result.is_ok());
-
-        assert_eq!(&result.unwrap().1.to_string(),"5 * 2 + 7")
-    }
-}
+}*/

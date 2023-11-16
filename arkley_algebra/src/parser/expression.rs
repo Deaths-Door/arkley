@@ -1,4 +1,4 @@
-use nom::{IResult, error::{ErrorKind, ParseError}, combinator::all_consuming};
+use nom::{IResult, combinator::all_consuming};
 
 use crate::{Expression, Context};
 
@@ -26,7 +26,7 @@ pub fn parse_expression<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a
 impl<'a,'b> TryFrom<(&'a str,&'b Context<'b>)> for Expression {
     type Error = nom::Err<nom::error::Error<&'a str>>;
     fn try_from((input,context): (&'a str,&'b Context<'b>)) -> Result<Self, Self::Error> {
-        let (input,vec) = all_consuming(Token::parse(context))(input)?;
+        let (_,vec) = all_consuming(Token::parse(context))(input)?;
         let expression = Token::into_expression_tree(Token::to_rpn(vec));
     
         Ok(expression)
@@ -38,7 +38,7 @@ impl<'a> TryFrom<&'a str> for Expression {
     fn try_from(input: &'a str) -> Result<Self, Self::Error> {
         let context = Context::default();
 
-        let (input,vec) = all_consuming(Token::parse(&context))(input)?;
+        let (_,vec) = all_consuming(Token::parse(&context))(input)?;
         let expression = Token::into_expression_tree(Token::to_rpn(vec));
     
         Ok(expression)
@@ -132,5 +132,19 @@ mod tests {
 
         assert!(parsed.is_ok());
         assert_eq!(&parsed.unwrap().1.to_string(),"(2 + 3)(4/4)");
+    }
+
+    #[test]
+    fn with_context() {
+        let mut context = Context::default();
+        context.tags_mut().insert("five", 5.into());
+        context.tags_mut().insert("two", 2.into());
+        context.tags_mut().insert("sieben", 7.into());
+
+        let result = parse_expression(&context)("five * two + sieben");
+
+        assert!(result.is_ok());
+
+        assert_eq!(&result.unwrap().1.to_string(),"5 * 2 + 7")
     }
 }
