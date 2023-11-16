@@ -29,11 +29,6 @@ pub enum Expression {
         right: Box<Expression>,
     },
 
-    /// Represents a more complex expression that contains nested expressions.
-    ///
-    /// The `Nested` variant allows expressions to be nested within parentheses.
-    Nested(Box<Expression>),
-
     /// Represents a mathematical expression that corresponds to a function.
     ///
     /// The `Function` variant represents a mathematical expression that is a function.
@@ -89,14 +84,6 @@ impl Expression {
     /// combining two expressions as operands in a division operation (`/`).
     pub fn new_durch(left: Expression, right: Expression) -> Self {
         Self::new_binary(ArithmeticOperation::Durch,left,right)
-    }
-
-    /// Create a new `Expression` representing an expression enclosed in parentheses.
-    ///
-    /// The `new_nested` function constructs an `Expression` with the `Expression::Nested` variant,
-    /// containing the provided expression as an expression enclosed in parentheses.
-    pub fn new_nested(inner: Expression) -> Self {
-        Expression::Nested(Box::new(inner))
     }
 
     /// Creates a new `Expression` representing a mathematical function.
@@ -164,7 +151,6 @@ impl std::fmt::Debug for Expression {
         use ArithmeticOperation::*;
         match self {
             Expression::Term(term) => write!(f, "{term}"),
-            Expression::Nested(inner) => write!(f,"({inner})"),
             #[cfg(feature="function")]
             Expression::Function(func) => write!(f,"{func}"),
             Expression::Binary { operation , left , right } 
@@ -230,20 +216,6 @@ mod test {
 
         // Expected output based on the Term implementation
         let expected = "3.14";
-
-        assert_eq!(formatted, expected);
-    }
-
-    #[test]
-    fn display_for_nested_expression() {
-        let inner_term = Term::new(Number::Decimal(2.0));
-        let expression = Expression::new_nested(inner_term.into());
-
-        // Format the expression using the Display trait
-        let formatted = format!("{}", expression);
-
-        // Expected output based on the Nested variant
-        let expected = "(2)";
 
         assert_eq!(formatted, expected);
     }

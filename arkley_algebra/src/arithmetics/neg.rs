@@ -17,7 +17,6 @@ impl Neg for Expression {
     fn neg(self) -> Self::Output {     
         match self {
             Expression::Term(term) => Expression::new_term(-term),
-            Expression::Nested(inner) => Expression::new_nested(-*inner),
             Expression::Binary { operation , left , right } if operation == ArithmeticOperation::Plus => Expression::new_binary(ArithmeticOperation::Minus ,-*left,*right),
             Expression::Binary { operation , left , right } if operation == ArithmeticOperation::Minus => Expression::new_binary(ArithmeticOperation::Plus,-*left,-*right),
             Expression::Binary { operation , left , right } => Expression::new_binary(operation,-*left,-*right),
@@ -65,10 +64,10 @@ mod expr {
 
     #[test]
     fn negate_nested() {
-        let expression : Expression = Expression::new_nested(create_term_with_variable(3.0, 'y', 1.0).into());
+        let expression : Expression = create_term_with_variable(3.0, 'y', 1.0).into();
         let negated = -expression;
 
-        check_expression_str(negated, "(-3y)");
+        check_expression_str(negated, "-3y");
     }
 
     #[test]

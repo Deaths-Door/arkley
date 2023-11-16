@@ -245,7 +245,6 @@ impl Expression {
                 left.get_min_exponents_and_coefficient(common_variables, min_exponents, coefficients);
                 right.get_min_exponents_and_coefficient(common_variables, min_exponents, coefficients);
             },
-            Expression::Nested(inner) => inner.get_min_exponents_and_coefficient(common_variables, min_exponents, coefficients),
             Expression::Function { .. } => (),
         }
     }
@@ -261,7 +260,6 @@ impl Expression {
                 left.cancel_variables_and_divide_coefficient(min_exponents, gcd_coefficient.clone());
                 right.cancel_variables_and_divide_coefficient(min_exponents, gcd_coefficient);
             },
-            Expression::Nested(inner) => inner.cancel_variables_and_divide_coefficient(min_exponents, gcd_coefficient),
             Expression::Function { .. } => (),
         }
     }

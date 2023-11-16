@@ -43,7 +43,6 @@ impl Expression {
             Expression::Term(term) => term.count_variable_occurrences(variables_to_count),
             Expression::Binary { left, right, .. } 
                 => left.count_variable_occurrences(variables_to_count) + right.count_variable_occurrences(variables_to_count),
-            Expression::Nested(inner) => inner.count_variable_occurrences(variables_to_count),
             Expression::Function (_)=> 0,
         }
     }
@@ -88,7 +87,6 @@ impl Expression {
                 vec.push(term); 
                 None // to tell tree has been 'removed' completely
             },
-            Self::Nested(expr) => Self::collect_all_add_sub_term_till_mul_div(*expr, vec, variables_to_count),
             Self::Binary { ref operation, .. } 
                 if operation == &ArithmeticOperation::Mal || operation == &ArithmeticOperation::Durch => Some(self),
             Self::Binary { operation, left,right } if operation == ArithmeticOperation::Plus => {

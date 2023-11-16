@@ -32,8 +32,6 @@ impl Expression {
     ) -> (Self,Self) 
     where F : Fn(&Self,&Self) -> bool {
         let (lexpr,rexpr) = match self {
-            Self::Nested(inner) => Self::move_nested(other, *inner),
-
             Self::Binary { operation, left, right } 
                 if operation == ArithmeticOperation::Durch => Self::move_durch(other, *right, *left),
             Self::Binary { operation, left, right } 
@@ -58,10 +56,6 @@ impl Expression {
 }
 
 impl Expression {
-    fn move_nested(other : Self,inner : Self) -> (Self,Self) {
-        (0.into(),Expression::new_minus(other, inner)) 
-    } 
-
     fn move_term(other : Self,term : Term) -> (Self,Self) {
         let operation = match term.coefficient.is_positive() {
             true => ArithmeticOperation::Minus,
