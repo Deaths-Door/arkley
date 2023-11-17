@@ -1,5 +1,10 @@
 use std::collections::HashMap;
+
+use nom::{combinator::value, bytes::complete::tag,IResult};
+
 use crate::{Expression, Function};
+
+use super::tokens::Token;
 /// A context that stores its mappings in hash maps.
 ///
 /// *Value and function mappings are stored independently, meaning that there can be a function and a value with the same identifier.*
@@ -8,7 +13,7 @@ use crate::{Expression, Function};
 /// When assigning to variables, the assignment is stored in a context. When the variable is read later on,
 /// it is read from the context. Contexts can be preserved between multiple calls by creating them yourself.
 /// 
-/// TODO : Allow `context` to be in expression so no 'converting' maybe idk and also make the parser for values , tags and function thing
+/// TODO : Allow `context` to be in expression so no 'converting' maybe idk and also make the parser for values and function feilds
 #[derive(Clone, Debug,Default)]
 pub struct Context<'a> {
     /// Used for storing input like
@@ -60,9 +65,29 @@ impl<'a> Context<'a,>{
     }
 }
 
-/*
-fn alternative<'a,T : Clone>(alternatives: &'a std::collections::HashMap<&'a str,T>) -> impl FnMut(&'a str) -> nom::IResult<&'a str,T> {
-    use nom::{combinator::value, bytes::complete::tag};
+impl Context<'_> {
+    pub(super) fn parse_tags<'a : 'b,'b>(&'b self) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> + 'b {
+        move |input|{
+            let (input,expression) = alternative(&self.tags())(input)?;    
+
+            let vec = vec![expression.into()];
+            Ok((input,vec))
+        }
+    }
+
+    /*pub fn parse_values<'a>(mut self) -> impl FnMut(&'a str) -> IResult<&'a str,Context<'_>>  {
+        move |input| {
+            let (input,key_str) = take_until1("=")(input)?;
+            let (input,_) = take(1usize)(input); // cuz take until = doesnt consume the =
+            let (input,expression) = parse_expression(&self)?;
+
+
+            todo!()
+        }
+    }*/
+}
+
+fn alternative<'a : 'b,'b,T : Clone>(alternatives: &'b HashMap<&'b str,T>) -> impl FnMut(&'a str) -> nom::IResult<&'a str,T> + 'b {
 
     move |input| {
         let mut last_err = Err(nom::Err::Error(nom::error::Error { input, code: nom::error::ErrorKind::NonEmpty }));
@@ -77,28 +102,3 @@ fn alternative<'a,T : Clone>(alternatives: &'a std::collections::HashMap<&'a str
         last_err.map(|(i,v)| (i,v.clone()))
     }
 }
-
-impl<'a : 'b,'b> Context<'a> {
-    /*pub fn parse_values(&'b mut self) -> impl FnMut(&'a str) -> IResult<&'a str,> {
-        move |input| {
-            let (input,key_str) = take_until1("=")(input)?;
-            let (input,_) = take(1usize)(input); // cuz take until = doesnt consume the =
-            let (input,expression) = parse_expression(context)?;
-
-
-
-            todo!()
-        }
-    }*/
-
-    #[deprecated]
-    pub(super) fn _parse_tags(&'a self) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
-        move |input| {
-            // TODO : Check why does this fail at + five , parses first tag then an operator stops ; figure out solution for wheni first encountered this issue
-            let (input,expression) = super::alternative(&self.tags())(input)?;    
-                    
-            let vec = vec![expression.into()];
-            Ok((input,vec))
-        }
-    }
-}*/

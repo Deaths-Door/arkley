@@ -1,7 +1,11 @@
 use nom::{
     sequence::delimited, 
     character::complete::multispace0, 
-    bytes::complete::tag, branch::alt, combinator::{value, all_consuming}, IResult, error::{ParseError, ErrorKind}};
+    bytes::complete::tag, 
+    branch::alt, 
+    combinator::{value, all_consuming}, 
+    IResult
+};
 
 use crate::{Equation, RelationalOperator, parse_expression, Context};
 
@@ -21,8 +25,7 @@ use crate::{Equation, RelationalOperator, parse_expression, Context};
 ///
 /// Returns an `Option<Equation>`, where `Some` contains a valid `Equation` object if
 /// both expressions are successfully parsed, and `None` if parsing fails.
-
-pub fn parse_equation<'a>(context : &'a Context<'a>) -> impl FnMut(&'a str) -> IResult<&'a str,Equation> {
+pub fn parse_equation<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Equation> + 'b {
     move |input| {
         let (input,lexpr) = parse_expression(context)(input)?;
 
@@ -48,19 +51,18 @@ fn parse_relation_operator(input: &str) -> IResult<&str,RelationalOperator> {
     ))(input)
 }
 
-impl<'a> TryFrom<(&'a str,&'a Context<'_>)> for Equation {
+impl<'a,'b> TryFrom<(&'a str,&'b Context<'b>)> for Equation {
     type Error = nom::Err<nom::error::Error<&'a str>>;
-    fn try_from((input,context): (&'a str,&'a Context<'_>)) -> Result<Self, Self::Error> {
+    fn try_from((input,context): (&'a str,&'b Context<'b>)) -> Result<Self, Self::Error> {
         all_consuming(parse_equation(&context))(input)
         .map(|(_,v)| v)
     }
 }
 
 impl<'a> TryFrom<&'a str> for Equation {
-    type Error = nom::Err<nom::error::Error<()>>;
+    type Error = nom::Err<nom::error::Error<&'a str>>;
     fn try_from(input: &'a str) -> Result<Self, Self::Error> {
         let context = Context::default();
         Self::try_from((input,&context))
-            .map_err(|_| nom::Err::Error(nom::error::Error::from_error_kind((), ErrorKind::Eof)))
     }
 }
