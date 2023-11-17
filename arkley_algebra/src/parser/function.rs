@@ -33,7 +33,7 @@ pub fn parse_function_definition<'a,T,F>(context : &'a Context<'_>) -> impl FnMu
 /// This function is designed to parse custom function definitions, which include user-defined functions
 /// and potentially more complex functions , as an example trigonometric functions (e.g., cos, sin, tan) defined using
 /// custom closures. The `context` parameter is used to provide context for parsing these functions.
-pub fn parse_function<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,Function> {
+pub fn parse_function<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Function> + 'b {
     move |input| {
         let (input,name) = Function::parse_name(input)?;
         let (input,mut _arguments) = Function::parse_arguments_with_context(context)(input)?;
@@ -79,7 +79,7 @@ impl Function {
         Ok((input,arguments))
     }
 
-    fn parse_arguments_with_context<'a>(_context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,FunctionArguments> {
+    fn parse_arguments_with_context<'a : 'b,'b>(_context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,FunctionArguments> {
         move |input| {
             let (input,arguments_str) = take_till(|c| c == ')')(input)?;
 

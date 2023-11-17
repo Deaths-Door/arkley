@@ -17,12 +17,13 @@ use super::parse_add_sub;
 
 #[cfg_attr(test, derive(PartialEq,Debug))]
 pub(super) enum Token {
+    /// TODO : Maybe remove this variant and convert terms to expression so [`Token::Expression`]
     Term(Term),
     Operator(ArithmeticOperation),
     OpenParenthesis,
     CloseParenthesis,
 
-    /// Used for context parsing like "five_x_plus_y* x" => "(5x + y) * x" => "5x^2"
+    /// Used for context parsing like "five_x_plus_y * x" => "(5x + y) * x" => "5x^2"
     Expression(Expression) 
 }
 
@@ -45,78 +46,42 @@ impl From<Expression> for Token {
 }
 
 impl Token {
-    fn parse_expression<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&str, Vec<Token>> {
-        move |input: &str| {    
-            let (input,mut vec1) = Self::parse_with_opt_implicit_mul(context)(input)?;
-    
-            let parser = separated_pair(
+    pub(super) fn parse<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> + 'b {
+        move |input| {
+            let (input,mut vec) = Self::parse_with_optional_implicit_mul(context)(input)?;
+
+            let inner_parser = separated_pair(
                 parse_operator, 
                 multispace0, 
-                Self::parse_with_opt_implicit_mul(context)
+                Self::parse_with_optional_implicit_mul(context)
             );
-            
-            let (input,vec2) = fold_many0(parser,Vec::new,|mut vec : Vec<Token>,(operation,tokens)|{
+
+            let (input,_vec) = fold_many0(inner_parser, Vec::new,|mut vec , (operation,tokens)|{
                 vec.push(operation.into());
     
                 vec.extend(tokens.into_iter());
     
                 vec
             })(input)?;
-    
-            vec1.extend(vec2.into_iter());
-    
-            Ok((input,vec1))
-        }
-    }
 
-    fn parse_nested_expression<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str, Vec<Token>> {
-        move |input : &'a str| {
-            let (input,(sign,expr)) = delimited(
-                pair(char('('),multispace0),
-                pair(
-                    opt(parse_add_sub),
-                    Token::parse_expression(context)
-                ), 
-                pair(multispace0,char(')')),
-            )(input)?;
-
-            let mut vec = vec![];
-                
-            if let Some(value) = sign {
-                vec.push(value.into())
-            }
-
-            vec.push(Token::OpenParenthesis);
-
-            vec.extend(expr.into_iter());
-
-            vec.push(Token::CloseParenthesis);
-
+            vec.extend(_vec.into_iter());
 
             Ok((input,vec))
         }
     }
-    
-    fn parse_with_opt_implicit_mul<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
-        move |input| {    
-            alt((
-                Self::opt_implicit_mul_parser(context, Function::map_into_tokens(context)),
-                Self::opt_implicit_mul_parser(context ,Self::parse_nested_expression(context)),
-                Self::opt_implicit_mul_parser(context,Term::map_into_tokens()),
-                Self::opt_implicit_mul_parser(context,context.parse_tags())
-            ))(input)
-        }
-    }
 
-    fn opt_implicit_mul_parser<'a>(context : &'a Context<'_>,first_parser : impl FnMut(&'a str) -> IResult<&str,Vec<Token>>) -> impl FnMut(&'a str) -> IResult<&str,Vec<Token>> {
-        let mut parser = separated_pair(
-            first_parser,
-            multispace0,
-            opt(Token::parse_expression(context))
-        );
-      
+    fn parse_with_optional_implicit_mul<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> + 'b {
         move |input| {
-            let (input,(lexpr,rexpr)) = (parser)(input)?;
+            let (input,(lexpr,rexpr)) = separated_pair(
+                alt((
+                    Function::map_into_tokens(context),
+                    Term::map_into_tokens(),
+                    Self::parse_nested_expression(context),
+                    context.parse_tags()
+                )),
+                multispace0,
+                opt(Token::parse(context))
+            )(input)?;
 
             let mut vec = vec![];
             
@@ -146,6 +111,33 @@ impl Token {
             Ok((input,vec))
         }
     }
+
+    fn parse_nested_expression<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> + 'b {
+        move |input| {
+            let (input,(sign,expr)) = delimited(
+                pair(char('('),multispace0),
+                pair(
+                    opt(parse_add_sub),
+                    Token::parse(context)
+                ), 
+                pair(multispace0,char(')')),
+            )(input)?;
+
+            let mut vec = vec![];
+
+            if let Some(value) = sign {
+                vec.push(value.into())
+            }
+
+            vec.push(Token::OpenParenthesis);
+
+            vec.extend(expr.into_iter());
+
+            vec.push(Token::CloseParenthesis);
+
+            Ok((input,vec))
+        }
+    }
 }
 
 impl Term {
@@ -155,7 +147,7 @@ impl Term {
 }
 
 impl Function {
-    fn map_into_tokens<'a>(context : &'a Context<'_> ) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> {
+    fn map_into_tokens<'a : 'b,'b>(context : &'b  Context<'b> ) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> + 'b {
         map(parse_function(context),|func| Vec::from([Token::from(Expression::from(func))]) )
     }
 }
@@ -170,23 +162,6 @@ impl ArithmeticOperation {
 }
 
 impl Token {
-    /// Parses an input string into a vector of tokens.
-    ///
-    /// This function tokenizes an input string and converts it into a vector of tokens.
-    ///
-    /// # Arguments
-    ///
-    /// * `input`: A reference to the input string to be parsed.
-    ///
-    /// # Returns
-    ///
-    /// - If the parsing is successful, it returns a `Result` with the remaining input and a
-    ///   vector of `Token` representing the parsed tokens.
-    #[inline(always)]
-    pub(super) fn into_tokens<'a>(input: &'a str,context : &'a Context<'_>) -> IResult<&'a str,Vec<Token>>  {  
-        Token::parse_expression(context)(input)
-    }
-
     /// Converts an infix expression represented by a vector of `Token` into Reverse Polish Notation (RPN).
     ///
     /// This function takes a vector of tokens and uses the Shunting Yard algorithm to convert the
@@ -269,6 +244,11 @@ impl Token {
 mod tests {
     use super::*;
 
+    impl Token {
+        fn into_tokens<'a>(input : &'a str,context : &Context<'_>) -> IResult<&'a str,Vec<Token>> {
+            Self::parse(context)(input)
+        }
+    }
     #[test]
     fn test_into_tokens_valid_input() {
         // Test with a valid input string
