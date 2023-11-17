@@ -6,7 +6,7 @@ use num_notation::{Number, One};
 use crate::{Term, Expression, manipulation::VariableAnalysis};
 
 impl Term  {
-    fn is_numeric_one(&self) -> bool {
+    pub(crate) fn is_numeric_one(&self) -> bool {
         self.coefficient.is_one() && self.variables.is_empty()
     }
 

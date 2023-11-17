@@ -32,6 +32,7 @@ pub fn parse_operator(input : &str) -> IResult<&str,ArithmeticOperation> {
             parse_add_sub,
             map(char('*'),|_| ArithmeticOperation::Mal),
             map(char('/'),|_| ArithmeticOperation::Durch),
+            map(char('^'),|_| ArithmeticOperation::Pow),
         ))
     )(input)
 }

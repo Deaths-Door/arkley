@@ -1,4 +1,4 @@
-use num_notation::Number;
+use num_notation::{Number, Signed, One};
 
 use crate::{
     Term, ArithmeticOperation, Variables, Function
@@ -19,7 +19,13 @@ pub enum Expression {
     /// and right operands as boxed expressions.
     Binary {
         /// - `operation`: The type of mathematical operation being performed, such as
-        ///    addition, subtraction, multiplication, or division. It is of type `ArithmeticOperation`.
+        ///    addition, subtraction, multiplication, or division. It is of type [ArithmeticOperation::Pow].
+        /// 
+        /// - For **exponentiation** (e.g., `2 ^ 3`), set to `ArithmeticOperation::Pow`.
+        ///   In this case, `left` is the base, and `right` is the exponent.
+        ///
+        /// - For **nth root** (e.g., `√(25)` for square root), set to [ArithmeticOperation::Root].
+        ///   In this case, `left` is n, and `right` is the expression for which we want the nth root.
         operation: ArithmeticOperation,
 
         /// - `left`: The left operand of the binary operation, represented as a boxed `Expression`.
@@ -56,7 +62,7 @@ impl Expression {
 
     /// Create a new `Expression` representing the addition of two expressions.
     ///
-    /// The `new_plus` function constructs an `Expression` with the `Expression::Plus` variant,
+    /// The `new_plus` function constructs an `Expression` with the [ArithmeticOperation::Plus] variant,
     /// combining two expressions as operands in an addition operation (`+`).
     pub fn new_plus(left: Expression, right: Expression) -> Self {
         Self::new_binary(ArithmeticOperation::Plus,left,right)
@@ -64,7 +70,7 @@ impl Expression {
 
     /// Create a new `Expression` representing the subtraction of two expressions.
     ///
-    /// The `new_minus` function constructs an `Expression` with the `Expression::Minus` variant,
+    /// The `new_minus` function constructs an `Expression` with the [ArithmeticOperation::Minus] variant,
     /// combining two expressions as operands in a subtraction operation (`-`).
     pub fn new_minus(left: Expression, right: Expression) -> Self {
         Self::new_binary(ArithmeticOperation::Minus,left,right)
@@ -72,7 +78,7 @@ impl Expression {
 
     /// Create a new `Expression` representing the multiplication of two expressions.
     ///
-    /// The `new_mal` function constructs an `Expression` with the `Expression::Mal` variant,
+    /// The `new_mal` function constructs an `Expression` with the [ArithmeticOperation::Mal] variant,
     /// combining two expressions as operands in a multiplication operation (`*`).
     pub fn new_mal(left: Expression, right: Expression) -> Self {
         Self::new_binary(ArithmeticOperation::Mal,left,right)
@@ -80,10 +86,28 @@ impl Expression {
 
     /// Create a new `Expression` representing the division of two expressions.
     ///
-    /// The `new_durch` function constructs an `Expression` with the `Expression::Durch` variant,
+    /// The function constructs an `Expression` with the [ArithmeticOperation::Durch] variant,
     /// combining two expressions as operands in a division operation (`/`).
     pub fn new_durch(left: Expression, right: Expression) -> Self {
         Self::new_binary(ArithmeticOperation::Durch,left,right)
+    }
+
+    
+    /// Create a new `Expression` representing the exponention of two expressions.
+    ///
+    /// The function constructs an `Expression` with the [ArithmeticOperation::Pow] variant,
+    /// combining two expressions as operands in a power operation (`^`).
+    pub fn new_pow(base: Expression, exponent: Expression) -> Self {
+        Self::new_binary(ArithmeticOperation::Pow,base,exponent)
+    }
+
+    
+    /// Create a new `Expression` representing the division of two expressions.
+    ///
+    /// The function constructs an `Expression` with the [ArithmeticOperation::Root] variant,
+    /// combining two expressions as operands in a root operation
+    pub fn new_root(n: Expression, expression: Expression) -> Self {
+        Self::new_binary(ArithmeticOperation::Root,n,expression)
     }
 
     /// Creates a new `Expression` representing a mathematical function.
@@ -150,14 +174,14 @@ impl std::fmt::Debug for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         use ArithmeticOperation::*;
         match self {
-            Expression::Term(term) => write!(f, "{term}"),
+            Self::Term(term) => write!(f, "{term}"),
             #[cfg(feature="function")]
-            Expression::Function(func) => write!(f,"{func}"),
-            Expression::Binary { operation , left , right } 
+            Self::Function(func) => write!(f,"{func}"),
+            Self::Binary { operation , left , right } 
                 if operation == &Plus => write!(f,"{left} + {right}"),
-            Expression::Binary { operation , left , right } 
+                Self::Binary { operation , left , right } 
                 if operation == &Minus => write!(f,"{left} - {right}"),
-            Expression::Binary { operation , left , right } 
+            Self::Binary { operation , left , right } 
                 if operation == &Mal => {
                     // Note : NO FUCKING CLUE WHY IT WORKS EXCEPT I WROTE IT AND NOW HAVE NO CLUE
                     let s = format!("{left}");
@@ -175,22 +199,42 @@ impl std::fmt::Debug for Expression {
                         _ => write!(f,"({right})")
                     }
                 },
-            Expression::Binary { operation , left , right } 
+            Self::Binary { operation , left , right } 
                 if operation == &Durch => {
                     match **left {
-                        Expression::Term(_) => write!(f,"{left}"),
+                        Self::Term(_) | Self::Function(_) => write!(f,"{left}"),
                         _ => write!(f,"({left})")
                     }?;
 
                     write!(f,"/")?;
 
                     match **right {
-                        Expression::Term(_) => write!(f,"{right}"),
+                        Self::Function(_) | Self::Term(_) => write!(f,"{right}"),
                         _ => write!(f,"({right})")
                     }
                 },
+            Self::Binary { operation, left : base, right: exponent } 
+                if operation == &Pow => {
+                    match **base {
+                        Self::Term(_) | Self::Function(_) => write!(f,"{base}"),
+                        _ => write!(f,"({base})")
+                    }?;
 
-            Expression::Binary { .. } => unreachable!()
+                    write!(f,"^")?;
+
+                    match **exponent {
+                        Self::Function(_) => write!(f,"{exponent}"),
+                        // if coeff is pos and vars empty 
+                        // if coeff not 1 and vars.length.isone
+                        // else brackets
+                        Self::Term(ref term) if term.is_numeric_one() || (!term.coefficient.is_one() && term.variables.len() == 1)  => write!(f,"{right}"),
+                        _ => write!(f,"({exponent})")
+                    }
+            },
+            Self::Binary { operation, left : n, right: expression } 
+                if operation == &Root => {
+                
+            }
         }
     }
 }

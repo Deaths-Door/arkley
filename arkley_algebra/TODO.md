@@ -19,3 +19,4 @@
 - Add AlgebricQuadratics and intergate with quadratic trait with describe feature
 - Improve REAMDE's to include all features
 - Check why parser parses wrong when no spaced are given eg `2x+3`
+- Add to README the sqrt + pow written / computer way is supported

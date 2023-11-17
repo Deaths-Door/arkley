@@ -1,16 +1,16 @@
 use nom::{
-    IResult, sequence::{delimited, pair, separated_pair},
+    IResult, sequence::{delimited, pair, separated_pair, tuple, preceded},
     multi::fold_many0, 
     character::complete::{multispace0,char},
-    combinator::{map, opt}, 
-    branch::alt
+    combinator::{map, opt, value}, 
+    branch::alt, bytes::complete::tag
 };
 
 use crate::{
     Expression, 
     ArithmeticOperation, 
     parse_term, parse_operator, 
-    Term, Context, parse_function, Function,
+    Term, Context, parse_function, Function, parse_expression,
 };
 
 use super::parse_add_sub;
@@ -77,6 +77,7 @@ impl Token {
                     Function::map_into_tokens(context),
                     Term::map_into_tokens(),
                     Self::parse_nested_expression(context),
+                    Self::parse_roots(context),
                     context.parse_tags()
                 )),
                 multispace0,
@@ -138,6 +139,59 @@ impl Token {
             Ok((input,vec))
         }
     }
+
+    fn parse_roots<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> + 'b {
+        move |input| {
+            alt((
+                Self::parse_roots_sign(context),
+                Self::parse_roots_text(context)
+            ))(input)
+        }
+    }
+
+    fn parse_roots_text<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> + 'b {
+        move |input| {
+            let (input,(root,_,expression,_)) = tuple((
+                alt((
+                    value(2,tag("sqrt")),
+                    value(3,tag("cbrt"))
+                )),
+                char('('),
+                parse_expression(context),
+                char(')')
+            ))(input)?;
+
+            let vec = vec![
+                Term::new((root as f64).into()).into(),
+                ArithmeticOperation::Root.into(),
+                Token::OpenParenthesis.into(),
+                expression.into(),
+                Token::CloseParenthesis.into(),
+            ];
+
+            Ok((input,vec))
+        }
+    }
+
+    fn parse_roots_sign<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> + 'b {
+        move |input|{
+            let (input,root) = alt((
+                value(2,char('√')),
+                value(3,char('∛'))
+            ))(input)?;
+
+            let (input,expression) = parse_expression(context)(input)?;
+
+            let vec = vec![
+                Term::new((root as f64).into()).into(),
+                Self::OpenParenthesis,
+                expression.into(),
+                Self::CloseParenthesis
+            ];
+        
+            Ok((input,vec))
+        }
+    }
 }
 
 impl Term {
@@ -157,6 +211,7 @@ impl ArithmeticOperation {
         match self {
             ArithmeticOperation::Plus | ArithmeticOperation::Minus => 1,
             ArithmeticOperation::Mal | ArithmeticOperation::Durch => 2,
+            ArithmeticOperation::Pow | ArithmeticOperation::Root => 3,
         }
     }
 }

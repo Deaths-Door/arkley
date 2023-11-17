@@ -19,7 +19,15 @@ pub enum ArithmeticOperation {
 
     /// Represents the division operation (/).
     #[strum(serialize = "/")]
-    Durch
+    Durch,
+
+    /// Represents the exponentatal operation (^).
+    #[strum(serialize = "^")]
+    Pow,
+
+    /// Represents the nth root operation
+    #[strum(serialize = "√")]
+    Root,
 }
 
 impl std::fmt::Debug for ArithmeticOperation {
