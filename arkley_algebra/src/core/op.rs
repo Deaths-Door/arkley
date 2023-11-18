@@ -35,3 +35,11 @@ impl std::fmt::Debug for ArithmeticOperation {
         write!(f, "{self}")
     }
 }
+
+impl ArithmeticOperation {
+    pub(crate) const SQRT_SIGN : char = '√';
+    pub(crate) const CBRT_SIGN : char = '∛';
+
+    pub(crate) const SQRT_TEXT : &str = "sqrt";
+    pub(crate) const CBRT_TEXT : &str = "cbrt";
+}

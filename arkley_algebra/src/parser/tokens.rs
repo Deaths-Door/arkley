@@ -153,8 +153,8 @@ impl Token {
         move |input| {
             let (input,(root,_,expression,_)) = tuple((
                 alt((
-                    value(2,tag("sqrt")),
-                    value(3,tag("cbrt"))
+                    value(2,tag(ArithmeticOperation::SQRT_TEXT)),
+                    value(3,tag(ArithmeticOperation::CBRT_TEXT))
                 )),
                 char('('),
                 parse_expression(context),
@@ -176,8 +176,8 @@ impl Token {
     fn parse_roots_sign<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<Token>> + 'b {
         move |input|{
             let (input,root) = alt((
-                value(2,char('√')),
-                value(3,char('∛'))
+                value(2,char(ArithmeticOperation::SQRT_SIGN)),
+                value(3,char(ArithmeticOperation::CBRT_SIGN))
             ))(input)?;
 
             let (input,expression) = parse_expression(context)(input)?;

@@ -224,17 +224,34 @@ impl std::fmt::Debug for Expression {
 
                     match **exponent {
                         Self::Function(_) => write!(f,"{exponent}"),
-                        // if coeff is pos and vars empty 
-                        // if coeff not 1 and vars.length.isone
-                        // else brackets
-                        Self::Term(ref term) if term.is_numeric_one() || (!term.coefficient.is_one() && term.variables.len() == 1)  => write!(f,"{right}"),
+                        Self::Term(ref t) if 
+                            (t.variables.is_empty() && t.coefficient.is_positive()) || 
+                            (t.coefficient.is_one() && t.variables.len() == 1)  => write!(f,"{exponent}"),
                         _ => write!(f,"({exponent})")
                     }
             },
             Self::Binary { operation, left : n, right: expression } 
                 if operation == &Root => {
+            
+                if let Self::Term(term) = &**n {
+                    if term.variables.is_empty() {
+                        let sign = if term.coefficient == 2 { ArithmeticOperation::SQRT_SIGN }
+                            else if term.coefficient == 3 { ArithmeticOperation::CBRT_SIGN }
+                            else { return write!(f,"{expression}^(1/{n})") };
+                            
+                        return match &**expression {
+                            Self::Term(t) if 
+                                (t.variables.is_empty() && t.coefficient.is_positive()) || 
+                                (t.coefficient.is_one() && t.variables.len() == 1) => write!(f,"{sign}{t}"),
+                            _ => write!(f,"{sign}({expression})")
+                        }
+                    }
+                } 
                 
+
+                write!(f,"{expression}^(1/{n})")
             }
+            _ => unreachable!()
         }
     }
 }
