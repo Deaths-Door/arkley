@@ -121,7 +121,7 @@ impl std::ops::Mul<Function > for Function  {
     type Output = Expression; 
     fn mul(self, rhs: Function ) -> Self::Output {
         // TODO : For cases like f(x) * f(x) maybe output (f(x))^2
-        Expression::new_mal(self.into(), rhs.into())
+        Expression::new_mal(self, rhs)
     }
 }
 
@@ -130,18 +130,12 @@ impl std::ops::Mul<Term> for Function  {
     type Output = Expression; 
     fn mul(self, rhs: Term) -> Self::Output {
         if rhs.variables.is_empty() {
-            return if rhs.coefficient.is_one() {
-                self.into()
-            }
-            else if rhs.coefficient.is_zero() {
-                0.0.into()
-            }
-            else {
-                Expression::new_mal(self.into(),rhs.into())
-            }
+            return if rhs.coefficient.is_one() { self.into() }
+            else if rhs.coefficient.is_zero() { 0.0.into() }
+            else { Expression::new_mal(self,rhs) }
         }
 
-        Expression::new_mal(self.into(),rhs.into())
+        Expression::new_mal(self,rhs)
     }
 }
 
@@ -153,7 +147,7 @@ impl std::ops::Mul<Function > for Expression {
             return rhs * value
         }
         // TODO : For cases like f(x) * f(x) maybe output (f(x))^2
-        Expression::new_mal(self.into(), rhs.into())
+        Expression::new_mal(self, rhs)
     }
 }
 
@@ -177,9 +171,9 @@ mod term {
 
         // 6x^3
         let expected_term = Term::new_with_variable(Number::Decimal(6.0), Variables::from([('x', Number::Decimal(3.0))]));
-        let expected_expression = Expression::new_term(expected_term);
+        let expected_expression = expected_term;
 
-        assert_eq!(result, expected_expression);
+        assert_eq!(result, expected_expression.into());
     }
 
     #[test]
@@ -195,9 +189,9 @@ mod term {
 
         // 2.5x^2 * 3.5x^3 = 8.75x^5
         let expected_term = Term::new_with_variable(Number::Decimal(8.75), Variables::from([('x', Number::Decimal(5.0))]));
-        let expected_expression = Expression::new_term(expected_term);
+        let expected_expression = expected_term;
 
-        assert_eq!(result, expected_expression);
+        assert_eq!(result, expected_expression.into());
     }
 }
 
@@ -208,13 +202,11 @@ mod expr {
     use num_notation::Number;
     use crate::Variables;
     // Helper function to create a Term with a single variable.
-    fn create_term_with_variable(coeff: f64, var: char, exp: f64) -> Term {
+    fn create_term_with_variable(coeff: f64, var: char, exp: f64) -> Expression {
         let mut variables = Variables::new();
         variables.insert(var, Number::Decimal(exp));
-        Term::new_with_variable(Number::Decimal(coeff), variables)
+        Term::new_with_variable(Number::Decimal(coeff), variables).into()
     }    
-
-    use crate::parse_expression;
 
     fn from_str(input :&str) -> Expression {
         Expression::try_from((input,&Default::default())).unwrap()
@@ -226,12 +218,12 @@ mod expr {
 
     #[test]
     fn combine_terms_with_mul() {
-        let expr1 : Expression = Term::new(Number::Decimal(1.0)).into();
+        let expr1 : Expression = 1.into();
         let expr2 : Expression = Expression::new_mal(
-            Expression::new_term(create_term_with_variable(3.0, 'x', 1.0)),
+            create_term_with_variable(3.0, 'x', 1.0),
             Expression::new_plus(
-                Expression::new_term(create_term_with_variable(2.0, 'x', 1.0)),
-                Expression::new_term(create_term_with_variable(2.0, 'x', 1.0)),
+                create_term_with_variable(2.0, 'x', 1.0),
+                create_term_with_variable(2.0, 'x', 1.0),
             )
         );
 
@@ -245,8 +237,8 @@ mod expr {
     fn mul_expression_by_term_addition() {
         // Test multiplying an expression containing addition by a term
         let expression = Expression::new_plus(
-            create_term_with_variable(2.0, 'x', 1.0).into(),
-            create_term_with_variable(3.0, 'y', 1.0).into(),
+            create_term_with_variable(2.0, 'x', 1.0),
+            create_term_with_variable(3.0, 'y', 1.0),
         );
 
         check_expression_str(expression.clone(), "2x + 3y");
@@ -264,8 +256,8 @@ mod expr {
     fn mul_expression_by_term_subtraction() {
         // Test multiplying an expression containing subtraction by a term
         let expression = Expression::new_minus(
-            create_term_with_variable(5.0, 'x', 1.0).into(),
-            create_term_with_variable(3.0, 'y', 1.0).into(),
+            create_term_with_variable(5.0, 'x', 1.0),
+            create_term_with_variable(3.0, 'y', 1.0),
         );
 
         check_expression_str(expression.clone(), "5x - 3y");
@@ -297,7 +289,7 @@ mod expr {
         let expression = from_str("5z - (2x + 3y)");
 
         // Create a term to multiply with the expression
-        let term_to_multiply : Expression = create_term_with_variable(2.0, 'w', 1.0).into();
+        let term_to_multiply : Expression = create_term_with_variable(2.0, 'w', 1.0);
 
         let result = expression * term_to_multiply;
 

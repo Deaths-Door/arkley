@@ -1,5 +1,5 @@
 use std::ops::{Add,Sub,Mul,Div};
-use num_notation::Number;
+use num_notation::{Number,Pow};
 
 use crate::{Term,Expression,Variables};
 
@@ -146,7 +146,47 @@ macro_rules! primitives_operations {
             }
         )*
     };
+    (pow_primitives => $($t:ty),*) => {
+        $(
+            impl Pow<$t> for Term {
+                type Output = Expression;
+                fn pow(self, other: $t) -> Expression {
+                    if other == 1u8 as $t {
+                        return self.into();
+                    }
 
+                    if other == 0u8 as $t {
+                        return 1u8.into();
+                    }
+
+                    Expression::new_pow(self,other)
+                }
+            }
+
+            impl Pow<$t> for Expression {
+                type Output = Expression;
+                fn pow(self, other: $t) -> Expression {
+                    
+                }
+            }
+
+            #[cfg(feature="function")]
+            impl Pow<$t> for Function  {
+                type Output = Expression; 
+                fn pow(self, other: $t) -> Self::Output {
+                    if other == 1u8 as $t {
+                        return self.into();
+                    }
+
+                    if other == 0u8 as $t {
+                        return 1u8.into();
+                    }
+
+                    Expression::new_pow(self,other)
+                }
+            }
+        )*
+    };
     (ops => $($t:ty),*) => {
         $(
             primitives_operations!(add => $t);
@@ -158,3 +198,4 @@ macro_rules! primitives_operations {
 }
 
 primitives_operations!(ops => i8, i16, i32, i64, u8, u16, u32, u64,f32, f64 , Number , Variables);
+primitives_operations!(pow_primitives => i8, i16, i32, i64, u8, u16, u32, u64,f32, f64);

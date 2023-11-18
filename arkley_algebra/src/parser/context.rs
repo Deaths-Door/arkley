@@ -14,6 +14,7 @@ use super::tokens::Token;
 /// it is read from the context. Contexts can be preserved between multiple calls by creating them yourself.
 /// 
 /// TODO : Allow `context` to be in expression so no 'converting' maybe idk and also make the parser for values and function feilds
+/// TODO : Make values , tags insert like Expression::new_binary with generics
 #[derive(Clone, Debug,Default)]
 pub struct Context<'a> {
     /// Used for storing input like

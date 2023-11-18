@@ -62,8 +62,8 @@ impl Expression {
 
                 for term in vec.into_iter() {
                     expression = match term.coefficient.is_positive() {
-                        true => Expression::new_plus(expression, term.into()),
-                        false => Expression::new_minus(expression, (-term).into()),
+                        true => Expression::new_plus(expression, term),
+                        false => Expression::new_minus(expression, -term),
                     };
                 }
 

@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, vec};
+use std::cmp::Ordering;
 
 use num_notation::Signed;
 
@@ -62,7 +62,7 @@ impl Expression {
             false => ArithmeticOperation::Plus
         };
 
-        (0.into(),Expression::new_binary(operation,other,term.into()))
+        (0.into(),Expression::new_binary(operation,other,term))
     }
 
     fn move_durch(other : Self,right : Self,left : Self) -> (Self,Self) {

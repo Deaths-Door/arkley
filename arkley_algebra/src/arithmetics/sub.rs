@@ -9,7 +9,7 @@ impl std::ops::Sub for Term {
             let variables = self.variables;
             return Expression::new_term(Term::new_with_variable(coefficient,variables));
         }
-        Expression::new_minus(self.into(),other.into())
+        Expression::new_minus(self,other)
     }
 }
 
@@ -26,7 +26,7 @@ impl std::ops::Sub<Term> for Expression {
     type Output = Expression;
 
     fn sub(self,other : Term) -> Self::Output {
-        Expression::new_minus(self,other.into()).combine_terms()
+        Expression::new_minus(self,other).combine_terms()
     }
 }
 
@@ -34,7 +34,7 @@ impl std::ops::Sub<Term> for Expression {
 impl std::ops::Sub<Term> for Function  {
     type Output = Expression; 
     fn sub(self, rhs: Term) -> Self::Output {
-        Expression::new_minus(self.into(),rhs.into())
+        Expression::new_minus(self,rhs)
     }
 }
 
@@ -45,12 +45,12 @@ use crate::Function;
 #[cfg(feature="function")]
 impl std::ops::Sub<Function> for Function  {
     type Output = Expression; 
-    fn sub(self, rhs: Function ) -> Self::Output {
+    fn sub(self, rhs: Function) -> Self::Output {
         match self.same(&rhs) && self.arguments_empty(&rhs) {
-            true => 0.0.into(),
+            true => 0.into(),
             false => Expression::new_minus(
-                self.into(), 
-                rhs.into()
+                self, 
+                rhs
             ),
         }
     }
@@ -62,11 +62,11 @@ impl std::ops::Sub<Function > for Expression {
     fn sub(self, rhs: Function ) -> Self::Output {
         match self {
             Self::Function(ref func) if func.arguments_empty(&rhs) => match func.same(&rhs) {
-                true => Expression::new_minus(0.0.into(), self.into()),
-                false => Expression::new_minus(self.into(),rhs.into()),
+                true => Expression::new_minus(0.0, self),
+                false => Expression::new_minus(self,rhs),
             },
-            Self::Function(_) => Expression::new_minus(self.into(),rhs.into()),
-            _ => Expression::new_minus(self.into(),rhs.into())
+            Self::Function(_) => Expression::new_minus(self,rhs),
+            _ => Expression::new_minus(self,rhs)
         }
     }
 }
@@ -111,7 +111,7 @@ mod term {
         let result = term1.clone() - term2.clone();
 
         // 5x - 5y
-        let expected_expression = Expression::new_minus(term1.into(), term2.into());
+        let expected_expression = Expression::new_minus(term1, term2);
 
         assert_eq!(result, expected_expression);
     }
@@ -127,7 +127,7 @@ mod term {
         // 5x^3 - 2.5x^2
         let result = term1.clone() - term2.clone();
 
-        let expected_expression = Expression::new_minus(term1.into(),term2.into());
+        let expected_expression = Expression::new_minus(term1,term2);
 
         assert_eq!(result, expected_expression);
     }
@@ -140,13 +140,13 @@ mod expr {
     use super::*;
 
     use num_notation::Number;
-    use crate::{Variables, parse_expression};
+    use crate::Variables;
     
     // Helper function to create a Term with a single variable.
-    fn create_term_with_variable(coeff: f64, var: char, exp: f64) -> Term {
+    fn create_term_with_variable(coeff: f64, var: char, exp: f64) -> Expression {
         let mut variables = Variables::new();
         variables.insert(var, Number::Decimal(exp));
-        Term::new_with_variable(Number::Decimal(coeff), variables)
+        Term::new_with_variable(Number::Decimal(coeff), variables).into()
     }    
 
     fn check_expression_str(expression : Expression,_str : &str) {
@@ -155,8 +155,8 @@ mod expr {
     
     #[test]
     fn combine_terms_subtract_same_variables() {
-        let expr1 : Expression = create_term_with_variable(2.0, 'x', 1.0).into();
-        let expr2 : Expression = create_term_with_variable(5.0, 'x', 1.0).into();
+        let expr1 : Expression = create_term_with_variable(2.0, 'x', 1.0);
+        let expr2 : Expression = create_term_with_variable(5.0, 'x', 1.0);
 
         let result = expr1 - expr2;
 
@@ -165,8 +165,8 @@ mod expr {
 
     #[test]
     fn combine_terms_subtract_different_variables() {
-        let expr1 : Expression = create_term_with_variable(3.0, 'x', 1.0).into();
-        let expr2 : Expression = create_term_with_variable(2.0, 'y', 1.0).into();
+        let expr1 : Expression = create_term_with_variable(3.0, 'x', 1.0);
+        let expr2 : Expression = create_term_with_variable(2.0, 'y', 1.0);
 
         let result = expr1 - expr2;
 
@@ -175,20 +175,20 @@ mod expr {
 
     #[test]
     fn combine_terms_subtract_nested() {
-        let expr1 = Expression::new_minus(create_term_with_variable(5.0, 'x', 1.0).into(),create_term_with_variable(3.0, 'x', 1.0).into());
-        let expr2 : Expression = create_term_with_variable(2.0, 'y', 1.0).into();
+        let expr1 = Expression::new_minus(create_term_with_variable(5.0, 'x', 1.0),create_term_with_variable(3.0, 'x', 1.0));
+        let expr2 : Expression = create_term_with_variable(2.0, 'y', 1.0);
 
         let result = expr1 - expr2;
 
         check_expression_str(result, "2x - 2y");
     }
 
-    fn cos(arg : Expression) -> Function {
-        Function::new_default("cos".into(), 1.into(),BTreeMap::from([('x',arg.into())]))
+    fn cos<T : Into<Expression>>(arg : T) -> Function {
+        Function::new_default("cos".to_owned(), 1,BTreeMap::from([('x',Some(arg.into()))]))
     }
 
-    fn sin(arg : Expression) -> Function {
-        Function::new_default("sin".into(), 1.into(),BTreeMap::from([('x',arg.into())]))
+    fn sin<T : Into<Expression>>(arg : T) -> Function {
+        Function::new_default("sin".to_owned(), 1,BTreeMap::from([('x',Some(arg.into()))]))
     }
 
     fn from_str(input :&str) -> Expression {
@@ -209,8 +209,8 @@ mod expr {
 
     #[test]
     fn func_sub_func() {
-        let cos1 = cos((-1).into());
-        let cos2 = cos(1.into());
+        let cos1 = cos(-1);
+        let cos2 = cos(1);
         let result = cos1 - cos2;
 
         check_expression_str(result, "cos(-1) - cos(1)");
@@ -218,8 +218,8 @@ mod expr {
 
     #[test]
     fn cos_x_and_sin_x() {
-        let cos_x = cos('x'.into());
-        let sin_x = sin('x'.into());
+        let cos_x = cos('x');
+        let sin_x = sin('x');
         let result = cos_x - sin_x;
 
         check_expression_str(result, "cos(x) - sin(x)");
@@ -227,15 +227,15 @@ mod expr {
 
     #[test]
     fn funcition_complex() {
-        let sin_x = sin('x'.into());
+        let sin_x = sin('x');
         
-        let cos_1 = cos(1.into());
-        let sin_1 = sin(1.into());
+        let cos_1 = cos(1);
+        let sin_1 = sin(1);
 
         let expr = from_str("2x - 7x - 5y");
 
-        let lexpr = Expression::new_plus(expr, sin_1.into()); // 2x - 7x - 5y + sin(1)
-        let rexpr = Expression::new_mal(cos_1.into(), sin_x.into()); // cos(1)sin(x)
+        let lexpr = Expression::new_plus(expr, sin_1); // 2x - 7x - 5y + sin(1)
+        let rexpr = Expression::new_mal(cos_1, sin_x); // cos(1)sin(x)
 
         // -5x - 5y + sin(1) - (cos(1) * sin(x))
         let result = lexpr - rexpr;

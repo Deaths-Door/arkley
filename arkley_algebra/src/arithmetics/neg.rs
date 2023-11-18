@@ -20,7 +20,7 @@ impl Neg for Expression {
             Expression::Binary { operation , left , right } if operation == ArithmeticOperation::Plus => Expression::new_binary(ArithmeticOperation::Minus ,-*left,*right),
             Expression::Binary { operation , left , right } if operation == ArithmeticOperation::Minus => Expression::new_binary(ArithmeticOperation::Plus,-*left,-*right),
             Expression::Binary { operation , left , right } => Expression::new_binary(operation,-*left,-*right),
-            Expression::Function { ..  } => Expression::new_minus(0.into(), self),
+            Expression::Function { ..  } => Expression::new_minus(0, self),
         }
     }
 }
@@ -32,7 +32,7 @@ use crate::Function;
 impl Neg for Function  {
     type Output = Expression; 
     fn neg(self) -> Self::Output {
-        Expression::new_minus(0.into(), self.into())
+        Expression::new_minus(0, self)
     }
 }
 
@@ -44,10 +44,10 @@ mod expr {
     use crate::Variables;
 
     // Helper function to create a Term with a single variable.
-    fn create_term_with_variable(coeff: f64, var: char, exp: f64) -> Term {
+    fn create_term_with_variable(coeff: f64, var: char, exp: f64) -> Expression {
         let mut variables = Variables::new();
         variables.insert(var, Number::Decimal(exp));
-        Term::new_with_variable(Number::Decimal(coeff), variables)
+        Term::new_with_variable(Number::Decimal(coeff), variables).into()
     }   
 
     fn check_expression_str(expression : Expression,_str : &str) {
@@ -56,7 +56,7 @@ mod expr {
 
     #[test]
     fn negate_term() {
-        let expression : Expression = create_term_with_variable(5.0, 'x', 1.0).into();
+        let expression : Expression = create_term_with_variable(5.0, 'x', 1.0);
         let negated = -expression;
 
         check_expression_str(negated, "-5x");
@@ -64,7 +64,7 @@ mod expr {
 
     #[test]
     fn negate_nested() {
-        let expression : Expression = create_term_with_variable(3.0, 'y', 1.0).into();
+        let expression : Expression = create_term_with_variable(3.0, 'y', 1.0);
         let negated = -expression;
 
         check_expression_str(negated, "-3y");
@@ -72,7 +72,7 @@ mod expr {
 
     #[test]
     fn negate_binary_expression() {
-        let expression = Expression::new_plus(create_term_with_variable(2.0, 'a', 1.0).into(),create_term_with_variable(3.0, 'b', 1.0).into());
+        let expression = Expression::new_plus(create_term_with_variable(2.0, 'a', 1.0),create_term_with_variable(3.0, 'b', 1.0));
         let negated = -expression;
 
         check_expression_str(negated, "-2a - 3b");

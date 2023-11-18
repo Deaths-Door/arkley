@@ -19,10 +19,10 @@ impl Term  {
 use crate::Function;
 
 #[cfg(feature="function")]
-impl std::ops::Div<Function > for Function  {
+impl std::ops::Div<Function> for Function  {
     type Output = Expression; 
     fn div(self, rhs: Function ) -> Self::Output {
-        if self.same(&rhs) { 1.into() } else { Expression::new_durch(self.into(),rhs.into()) }
+        if self.same(&rhs) { 1.into() } else { Expression::new_durch(self,rhs) }
     }
 }
 
@@ -34,7 +34,7 @@ impl std::ops::Div<Term> for Function  {
             return self.into();
         };
 
-        Expression::new_durch(self.into(),other.into())
+        Expression::new_durch(self,other)
     }
 }
 
@@ -44,7 +44,7 @@ impl std::ops::Div<Function > for Expression {
     fn div(self, rhs: Function) -> Self::Output {
         match self {
             Self::Function(func) if func == rhs => 1.into(),
-            _ => Expression::new_durch(self,rhs.into())
+            _ => Expression::new_durch(self,rhs)
         }        
     }
 }
@@ -82,7 +82,7 @@ impl std::ops::Div for Term {
 
         match other.is_numeric_one() && other.variables.is_empty() {
             true => self.into(),
-            false => Expression::new_durch(self.into(), other.into())
+            false => Expression::new_durch(self, other)
         }
     }
 }
@@ -120,7 +120,7 @@ impl std::ops::Div<Term> for Expression {
 
         match other.is_numeric_one() && other.variables.is_empty() {
             true => self,
-            false => Expression::new_durch(self, other.into())
+            false => Expression::new_durch(self, other)
         }
     }
 }
@@ -355,8 +355,8 @@ mod term {
             let et2 = Term::new_with_variable(Number::Decimal(1.0),ev2);
             // (x * y^2) / z
             let expected = Expression::new_durch(
-                et1.into(),
-                et2.into()
+                et1,
+                et2
             );
     
             assert_eq!(result, expected);
@@ -416,6 +416,6 @@ mod expression_tests {
         let num : Term = 3.0.into();
 
         let result = expr.clone() / num.clone();
-        assert_eq!(result,Expression::new_durch(expr, num.into()));
+        assert_eq!(result,Expression::new_durch(expr, num));
     }
 }

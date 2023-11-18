@@ -104,7 +104,7 @@ impl Function {
     ///
     /// This constructor creates a `Function` with the given `name`, `expression`, and `arguments`.
     /// It sets a default closure that processes the function's expression and arguments.
-    pub fn new_default(name: String,expression : Expression,arguments : FunctionArguments) -> Self {
+    pub fn new_default<T : Into<Expression>>(name: String,expression : T,arguments : FunctionArguments) -> Self {
         let closure = |func: Function| {
             let mut arguments : HashMap<char,Expression> = func.arguments.into_iter()
                 .filter(|(_,expr)| expr.is_some())
@@ -114,7 +114,7 @@ impl Function {
             func.expression.unwrap().replace_variables(&mut arguments).find()
         };
 
-        Self { name , arguments , expression : Some(Box::new(expression)) , closure }
+        Self { name , arguments , expression : Some(Box::new(expression.into())) , closure }
     }
     
     /// Creates a new `Function` instance with a custom closure function.

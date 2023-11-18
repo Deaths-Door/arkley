@@ -147,14 +147,14 @@ impl Expression {
             self = match coefficient.is_positive() {
                 true => {
                     let term = Term::new_with_variable(coefficient.clone(),variables);
-                    Expression::new_plus(self, term.into())
+                    Expression::new_plus(self, term)
                 }
                 
                 // If the coefficient is negative (-coefficient), the sign can be '-', but the number itself is positive. 
                 // For example, -3 represents a negative number, whereas --3 is not equal to -3; it represents a positive number.
                 false => {
                     let term = Term::new_with_variable(-coefficient,variables);
-                    Expression::new_minus(self, term.into())
+                    Expression::new_minus(self, term)
                 }
             }
         }
@@ -171,7 +171,7 @@ impl Expression {
         }
 
         Expression::new_mal(
-            count.into(), 
+            count, 
             function
         )
     }
@@ -188,14 +188,14 @@ impl Expression {
                 true => Expression::new_plus(
                     self, 
                     Expression::new_mal(
-                        count.into(), 
+                        count, 
                         function
                     )
                 ),
                 false => Expression::new_minus(
                     self, 
                     Expression::new_mal(
-                        (-count).into(), 
+                    -count, 
                         function
                     )
                 )

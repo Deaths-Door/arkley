@@ -54,7 +54,7 @@ mod tests {
         let input_str = "3 + 4";
         let context = Default::default();   
         let parsed = parse_expression(&context)(input_str);
-        let expected_expression = Expression::new_plus( 3.0.into(),  4.0.into());
+        let expected_expression = Expression::new_plus( 3.0,  4.0);
 
         assert!(parsed.is_ok());
         assert_eq!(parsed.unwrap().1,expected_expression);
@@ -77,8 +77,8 @@ mod tests {
         let parsed = parse_expression(&context)(input_str);
 
         let expected_expression = Expression::new_plus(
-            1.0.into(), 
-            Expression::new_mal(2.0.into(), 4.0.into())
+            1.0, 
+            Expression::new_mal(2.0, 4.0)
         );
         assert!(parsed.is_ok());
         assert_eq!(parsed.unwrap().1,expected_expression);
@@ -90,7 +90,7 @@ mod tests {
         let context = Default::default();   
 
         let parsed = parse_expression(&context)(input_str);
-        let expected_expression =  Expression::new_plus((-5.0).into(),  2.0.into());
+        let expected_expression =  Expression::new_plus(-5.0,  2.0);
 
         assert!(parsed.is_ok());
         assert_eq!(parsed.unwrap().1,expected_expression);
@@ -115,8 +115,8 @@ mod tests {
 
         let parsed = parse_expression(&context)(input_str);
         let expected_expression = Expression::new_minus(
-            Expression::new_plus(2.0.into(), Expression::new_mal(3.0.into(), 4.0.into())),
-            Expression::new_durch(5.0.into(), 1.0.into())
+            Expression::new_plus(2.0, Expression::new_mal(3.0, 4.0)),
+            Expression::new_durch(5.0, 1.0)
         );
 
         assert!(parsed.is_ok());

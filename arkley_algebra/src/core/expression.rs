@@ -55,16 +55,26 @@ impl Expression {
         Expression::Term(term)
     }
 
+    
+    /// Creates a new `Expression` representing a mathematical function.
+    ///
+    /// This function creates a new `Expression` of the `Function` variant with the provided function name
+    ///
+    #[cfg(feature="function")]
+    pub const fn new_function(func : Function) -> Self {
+        Self::Function(func)
+    }
+
     #[inline]
-    pub(crate) fn new_binary(operation: ArithmeticOperation,left: Expression,right: Expression) -> Self {
-        Expression::Binary { operation , left : Box::new(left) , right : Box::new(right) }
+    pub(crate) fn new_binary<L,R>(operation: ArithmeticOperation,left: L,right: R) -> Self where Self : From<L> + From<R> {
+        Expression::Binary { operation , left : Box::new(left.into()) , right : Box::new(right.into()) }
     }
 
     /// Create a new `Expression` representing the addition of two expressions.
     ///
     /// The `new_plus` function constructs an `Expression` with the [ArithmeticOperation::Plus] variant,
     /// combining two expressions as operands in an addition operation (`+`).
-    pub fn new_plus(left: Expression, right: Expression) -> Self {
+    pub fn new_plus<L,R>(left: L, right: R) -> Self  where Self : From<L> + From<R> {
         Self::new_binary(ArithmeticOperation::Plus,left,right)
     }
 
@@ -72,7 +82,7 @@ impl Expression {
     ///
     /// The `new_minus` function constructs an `Expression` with the [ArithmeticOperation::Minus] variant,
     /// combining two expressions as operands in a subtraction operation (`-`).
-    pub fn new_minus(left: Expression, right: Expression) -> Self {
+    pub fn new_minus<L,R>(left: L, right: R) -> Self  where Self : From<L> + From<R> {
         Self::new_binary(ArithmeticOperation::Minus,left,right)
     }
 
@@ -80,7 +90,7 @@ impl Expression {
     ///
     /// The `new_mal` function constructs an `Expression` with the [ArithmeticOperation::Mal] variant,
     /// combining two expressions as operands in a multiplication operation (`*`).
-    pub fn new_mal(left: Expression, right: Expression) -> Self {
+    pub fn new_mal<L,R>(left: L, right: R) -> Self  where Self : From<L> + From<R> {
         Self::new_binary(ArithmeticOperation::Mal,left,right)
     }
 
@@ -88,7 +98,7 @@ impl Expression {
     ///
     /// The function constructs an `Expression` with the [ArithmeticOperation::Durch] variant,
     /// combining two expressions as operands in a division operation (`/`).
-    pub fn new_durch(left: Expression, right: Expression) -> Self {
+    pub fn new_durch<L,R>(left: L, right: R) -> Self where Self : From<L> + From<R> {
         Self::new_binary(ArithmeticOperation::Durch,left,right)
     }
 
@@ -97,7 +107,7 @@ impl Expression {
     ///
     /// The function constructs an `Expression` with the [ArithmeticOperation::Pow] variant,
     /// combining two expressions as operands in a power operation (`^`).
-    pub fn new_pow(base: Expression, exponent: Expression) -> Self {
+    pub fn new_pow<L,R>(base: L, exponent: R) -> Self where Self : From<L> + From<R> {
         Self::new_binary(ArithmeticOperation::Pow,base,exponent)
     }
 
@@ -106,17 +116,8 @@ impl Expression {
     ///
     /// The function constructs an `Expression` with the [ArithmeticOperation::Root] variant,
     /// combining two expressions as operands in a root operation
-    pub fn new_root(n: Expression, expression: Expression) -> Self {
+    pub fn new_root<L,R>(n: L, expression: R) -> Self where Self : From<L> + From<R> {
         Self::new_binary(ArithmeticOperation::Root,n,expression)
-    }
-
-    /// Creates a new `Expression` representing a mathematical function.
-    ///
-    /// This function creates a new `Expression` of the `Function` variant with the provided function name
-    ///
-    #[cfg(feature="function")]
-    pub fn new_function(func : Function) -> Self {
-        Self::Function(func)
     }
 }
 
@@ -286,7 +287,7 @@ mod test {
         // Create two terms...
         let term1 = create_term_with_variable(2.5, 'x', 2.0);
         let term2 = create_term_with_variable(3.5, 'x', 2.0);
-        let expression = Expression::new_plus(term1.into(),term2.into());
+        let expression = Expression::new_plus(term1,term2);
 
         // Format the expression using the Display trait
         let formatted = format!("{}", expression);
@@ -302,7 +303,7 @@ mod test {
         // Create two terms...
         let term1 = create_term_with_variable(5.0, 'x', 3.0);
         let term2 = create_term_with_variable(2.5, 'x', 3.0);
-        let expression = Expression::new_minus(term1.into(),term2.into());
+        let expression = Expression::new_minus(term1,term2);
 
 
         // Format the expression using the Display trait
@@ -319,7 +320,7 @@ mod test {
         // Create two terms...
         let term1 = create_term_with_variable(2.0, 'x', 1.0);
         let term2 = create_term_with_variable(3.0, 'x', 2.0);
-        let expression = Expression::new_mal(term1.into(),term2.into());
+        let expression = Expression::new_mal(term1,term2);
 
 
         // Format the expression using the Display trait
@@ -336,7 +337,7 @@ mod test {
         // Create two terms...
         let term1 = create_term_with_variable(6.0, 'x', 3.0);
         let term2 = create_term_with_variable(2.0, 'x', 1.0);
-        let expression = Expression::new_durch(term1.into(),term2.into());
+        let expression = Expression::new_durch(term1,term2);
 
 
         // Format the expression using the Display trait
@@ -353,8 +354,8 @@ mod test {
         // Create two terms...
         let term1 = create_term_with_variable(6.0, 'x', 3.0);
         let term2 = create_term_with_variable(2.0, 'x', 1.0);
-        let inner = Expression::new_plus(term1.clone().into(),term2.into());
-        let expression = Expression::new_durch(term1.into(),inner);
+        let inner = Expression::new_plus(term1.clone(),term2);
+        let expression = Expression::new_durch(term1,inner);
 
         // Format the expression using the Display trait
         let formatted = format!("{}", expression);
