@@ -1,3 +1,5 @@
+use num_notation::Pow;
+
 use crate::{
     Term, Expression, Function, ArithmeticOperation, 
     manipulation::{
@@ -43,12 +45,15 @@ impl Find for EvaluateNoValues<Function> {
 }
 
 impl ArithmeticOperation {
-    fn operate_on(&self,left : Expression,right : Expression) -> Expression {
+    pub(super) fn operate_on(&self,left : Expression,right : Expression) -> Expression {
         match self {
             Self::Plus => left + right,
             Self::Minus => left - right,
             Self::Mal => left * right,
             Self::Durch => left / right,
+            Self::Pow => left.pow(right),
+            // Cuz eg 25 ^ 1/2 is same as sqrt(25) so using this maths trick
+            Self::Root => right.pow(Expression::new_durch(1, left)),
         }
     }
 }

@@ -146,27 +146,42 @@ macro_rules! primitives_operations {
             }
         )*
     };
-    (pow_primitives => $($t:ty),*) => {
+    (pow => $v:ty => $($t:ty),*) => {
+        impl Pow<$v> for Term {
+            type Output = Expression;
+            fn pow(self, other: $v) -> Expression {
+                Expression::new_pow(self,other)
+            }
+        }
+
+        impl Pow<$v> for Expression {
+            type Output = Expression;
+            fn pow(self, other: $v) -> Expression {
+                Expression::new_pow(self,other)
+            }
+        }
+
+        #[cfg(feature="function")]
+        impl Pow<$v> for Function  {
+            type Output = Expression; 
+            fn pow(self, other: $v) -> Self::Output {
+                Expression::new_pow(self,other)
+            }
+        }
+
         $(
             impl Pow<$t> for Term {
                 type Output = Expression;
                 fn pow(self, other: $t) -> Expression {
-                    if other == 1u8 as $t {
-                        return self.into();
-                    }
-
-                    if other == 0u8 as $t {
-                        return 1u8.into();
-                    }
-
-                    Expression::new_pow(self,other)
+                    __pow(self,other as f64)
                 }
             }
 
             impl Pow<$t> for Expression {
                 type Output = Expression;
                 fn pow(self, other: $t) -> Expression {
-                    
+                    // TODO : Check if any more simpilications can be done idk eg like 1/5 ^ 5 becomes 1 
+                    __pow(self,other as f64)
                 }
             }
 
@@ -174,15 +189,8 @@ macro_rules! primitives_operations {
             impl Pow<$t> for Function  {
                 type Output = Expression; 
                 fn pow(self, other: $t) -> Self::Output {
-                    if other == 1u8 as $t {
-                        return self.into();
-                    }
+                    __pow(self,other as f64)
 
-                    if other == 0u8 as $t {
-                        return 1u8.into();
-                    }
-
-                    Expression::new_pow(self,other)
                 }
             }
         )*
@@ -197,5 +205,17 @@ macro_rules! primitives_operations {
     };
 }
 
+fn __pow<T,V>(value : T,other : V) -> Expression where V : From<u8> + PartialEq ,Expression : From<T> + From<V> {
+    if other == V::from(1u8) {
+        return value.into();
+    }
+
+    if other == V::from(0u8) {
+        return 1u8.into();
+    }
+
+    Expression::new_pow(value,other)
+}
+
 primitives_operations!(ops => i8, i16, i32, i64, u8, u16, u32, u64,f32, f64 , Number , Variables);
-primitives_operations!(pow_primitives => i8, i16, i32, i64, u8, u16, u32, u64,f32, f64);
+primitives_operations!(pow => Variables => i8, i16, i32, i64, u8, u16, u32, u64,f32, f64);

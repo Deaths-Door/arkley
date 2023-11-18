@@ -17,7 +17,7 @@ impl Term {
     }
 }
 
-/// TODO : Make this so it 'handles' cases like a/a or things like that so it simplifys itself
+/// TODO : Make this so it 'handles' cases like a/a or things like that so it simplifys itself make it handle ^ or root and * in same manner even without evalute
 /// Used to combine terms like 2x + x into 3x 
 impl Expression { 
     /// Collects all terms of addition (+) or subtraction (-) variants into 'treemap'

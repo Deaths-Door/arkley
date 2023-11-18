@@ -21,3 +21,4 @@
 - Check why parser parses wrong when no spaced are given eg `2x+3`
 - Add to README the sqrt + pow written / computer way is supported
 - Add DescribePow/ DescribeSqrt for term , expression
+- Add to READE that ops like + - */^ try to keep the expression as simple as possible eg 1 times 1 would be 1 not 1*1 even without evalute 

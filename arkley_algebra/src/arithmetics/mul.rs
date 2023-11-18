@@ -108,6 +108,7 @@ impl std::ops::Mul for Expression {
 
                 lexpr + rexpr
             },
+            // Try to simplify this for cases for pow , root like sqrt(25) * sqrt(25) would just be 25
             (left @_,right @_) => Expression::new_mal(left, right),
         } 
     }

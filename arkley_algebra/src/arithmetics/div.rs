@@ -74,7 +74,6 @@ impl std::ops::Div for Term {
         sclone.get_min_exponents(&common_variables,&mut min_exponents);
         oclone.get_min_exponents(&common_variables,&mut min_exponents);
 
-        // TODO : Remove clone when borrorwing is 'ov
         let gcd_coefficient = gcd(sclone.coefficient.clone(),oclone.coefficient.clone());
 
         self.cancel_variables_and_divide_coefficient(&min_exponents, gcd_coefficient.clone());

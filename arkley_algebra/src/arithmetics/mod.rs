@@ -3,6 +3,7 @@ mod add;
 mod sub;
 mod mul;
 mod div;
+mod pow;
 mod neg;
 mod macro_gen;
 mod combiner;
@@ -11,6 +12,7 @@ pub use add::*;
 pub use sub::*;
 pub use mul::*;
 pub use div::*;
+pub use pow::*;
 pub use neg::*;
 pub use macro_gen::*;
 

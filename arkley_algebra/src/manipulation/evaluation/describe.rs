@@ -30,12 +30,7 @@ impl ArithmeticOperation {
             ("op",self.to_string().into()),
         ]);
 
-        let ans = match self {
-            Self::Plus => left + right,
-            Self::Minus => left - right,
-            Self::Mal => left * right,
-            Self::Durch => left / right,
-        };
+        let ans = self.operate_on(left,right);
 
         args.insert("ans",ans.to_string().into());
 
