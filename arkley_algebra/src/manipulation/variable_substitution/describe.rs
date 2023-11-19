@@ -106,7 +106,7 @@ macro_rules! impl_trait {
                         curr.push(',');
                         curr
                     }).into());
-                    args.insert("values",values_vec.join(""));
+                    args.insert("values",values_vec.join("").into());
 
                     args.insert("result",term.coefficient.to_string().into());
                     args.insert("term",term.to_string().into());

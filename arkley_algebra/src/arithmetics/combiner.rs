@@ -29,7 +29,6 @@ impl Expression {
     /// `None` = No expr left
     fn collect_terms(self,term_map : &mut BTreeMap<Variables,Number>,fn_map : &mut HashMap<Function,i16>) -> Option<Expression> {
         match self {
-            Self::Nested(inner) => Some(Expression::new_nested(inner.combine_terms())),
             Self::Term(term) => {
                 term_map.entry(term.variables)
                     .and_modify(|value| *value += term.coefficient.clone())

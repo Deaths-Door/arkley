@@ -2,11 +2,8 @@
 - Calculate maximum or minimum values of expressions
 - Implement `derivatives` , `integrations` and `sequences`
 - Implement UI options for web, mobile, and command-line interfaces
-- Add to REAMDE that this group of crates is extendable with custom types
 - Add to REAMDE of each crate using describe about the `translations` directory
-- Improve main README descripting all features crates offer , like `evalexpr` README
 - Create buildscript to include (copy) `translations` via buildscript
-- Deprecate `Expression::Nested` as it maybe is redundant
 - Implement `try_from` for `integerquadratics` && `algebricquadractics` with expression and equation
 - Solve quadratic equations by factoring or completing the square to find roots.
 - Vertex Form Conversion: Implement methods to convert between standard form `(ax^2 + bx + c)` and vertex form `(a(x-h)^2 + k)`.
@@ -17,5 +14,5 @@
 - Describe `try_make_subject` for equation
 - Support for various units (`km` , `cm` ) with describe feature
 - Add AlgebricQuadratics and intergate with quadratic trait with describe feature
-- Improve REAMDE's to include all features
 - Check why parser parses wrong when no spaced are given eg `2x+3`
+- Add DescribePow/ DescribeSqrt for term , expression

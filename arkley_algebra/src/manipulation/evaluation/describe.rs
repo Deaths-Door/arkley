@@ -52,7 +52,6 @@ impl Expression {
             Expression::Term(_) => Some(self),
             Expression::Binary { operation, left, right } => 
                 operation.operate_on_describe(resource,lang,*left,*right,steps),
-            Expression::Nested(inner) => inner.show(resource, lang, steps),
             Expression::Function(func) => todo!()
         }   
     }
