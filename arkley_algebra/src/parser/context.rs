@@ -5,6 +5,7 @@ use nom::{combinator::value, bytes::complete::tag,IResult};
 use crate::{Expression, Function};
 
 use super::tokens::Token;
+
 /// A context that stores its mappings in hash maps.
 ///
 /// *Value and function mappings are stored independently, meaning that there can be a function and a value with the same identifier.*
