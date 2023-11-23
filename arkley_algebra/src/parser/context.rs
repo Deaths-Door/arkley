@@ -1,10 +1,13 @@
 use std::collections::HashMap;
 
-use nom::{combinator::value, bytes::complete::tag,IResult};
+use nom::{combinator::value, bytes::complete::tag,IResult, sequence::{preceded, delimited}, character::complete::{multispace0, char}};
 
-use crate::{Expression, Function};
+use crate::{Expression, Function, parse_expression};
 
-use super::tokens::Token;
+use super::{
+    satisfies_variable_name,
+    tokens::Token
+};
 
 /// A context that stores its mappings in hash maps.
 ///
@@ -76,20 +79,40 @@ impl Context<'_> {
         }
     }
 
-    /*pub fn parse_values<'a>(mut self) -> impl FnMut(&'a str) -> IResult<&'a str,Context<'_>>  {
-        move |input| {
-            let (input,key_str) = take_until1("=")(input)?;
-            let (input,_) = take(1usize)(input); // cuz take until = doesnt consume the =
-            let (input,expression) = parse_expression(&self)?;
+    /// Used for parsing input like
+    /// ```
+        /// a = 0
+        /// b = 543x
+        /// x = 4y + 5u
+        /// ```
+        pub fn parse_values<'a : 'b,'b>(&'b mut self) -> impl FnMut(&'a str) -> IResult<&'a str,()> + 'b {
+            move |input| {
+                // space .. var .. space .. = .. expr
+                let (input,symbol) = delimited(
+                    multispace0, 
+                    satisfies_variable_name,
+                    multispace0
+                )(input)?;
+    
+                let (input,expression) = preceded(
+                    char('='),
+                    parse_expression(self)
+                )(input)?;
+    
+                 let (input,expression) = preceded(
+                    char('='),
+                    parse_expression(self)
+                )(input)?;
+                
+                self.values_mut().insert(symbol, expression);
 
-
-            todo!()
+                Ok((input,()))
+            }
         }
-    }*/
+    
 }
 
 fn alternative<'a : 'b,'b,T : Clone>(alternatives: &'b HashMap<&'b str,T>) -> impl FnMut(&'a str) -> nom::IResult<&'a str,T> + 'b {
-
     move |input| {
         let mut last_err = Err(nom::Err::Error(nom::error::Error { input, code: nom::error::ErrorKind::NonEmpty }));
 
