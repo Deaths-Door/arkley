@@ -1,6 +1,6 @@
 use std::{ops::*, fs::File, io::Write, path::Path};
 use num_traits::Pow;
-use fluent_templates::{StaticLoader, LanguageIdentifier, Loader};
+use fluent_templates::{StaticLoader, LanguageIdentifier};
 
 /// As the author is lazy and may change the return type in the future
 pub type Steps = Vec<String>;

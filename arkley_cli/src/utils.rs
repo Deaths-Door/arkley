@@ -1,30 +1,28 @@
-use std::{fmt::Display, process::exit, path::Path};
+use std::{fmt::Display, process::exit, path::PathBuf, sync::OnceLock};
 
-use arkley_algebra::{Equation, Expression, Context, quadratics::{IntegerQuadratic,Quadratic, Nature}, Number, manipulation::Find};
-use arkley_describe::{*, fluent_templates::LanguageIdentifier};
+use arkley_algebra::{Equation, Expression, Context, quadratics::{IntegerQuadratic,Quadratic, Nature}, manipulation::Find, Term};
+use arkley_describe::{*, fluent_templates::{LanguageIdentifier,static_loader}};
 use crate::command::{QuadraticsCommands, QuadraticArguments};
 
-arkley_describe::fluent_templates::static_loader! {
+static_loader! {
     static LOCALES = {
         // TODO : Change this later
         locales: r"C:\Users\Aarav Aditya Shah\Documents\GitHub\project-codebases\rust\arkley\arkley_algebra\translations",
         fallback_language: "en-US",
     };
 }
+
+pub static CURRENT_EXE_DIR : OnceLock<PathBuf> = OnceLock::new();
+
+
 pub enum ExpressionOrEquation {
     Eq(Equation),
     Expr(Expression)
 }
 
-impl ExpressionOrEquation {
-    fn condition(input : &str) -> bool {
-        ['=','<','>'].into_iter().any(|c| input.contains(c))
-    }
-}
-
 impl From<(&str,&Context<'_>)> for ExpressionOrEquation {
     fn from((input,context): (&str,&Context<'_>)) -> Self {
-        match Self::condition(input) {
+        match ['=','<','>'].into_iter().any(|c| input.contains(c)) {
             true => ExpressionOrEquation::Eq(try_from_with_message((input,context))),
             false => ExpressionOrEquation::Expr(try_from_with_message((input,context))),
         }
@@ -41,25 +39,68 @@ fn try_from_with_message<T : TryFrom<I>,I>(input : I) -> T {
     }
 }
 
-fn find_or_describe<T,O,P,D>(
-    locale : Option<LanguageIdentifier>,
-    path : P,
+fn find_or_describe<T,O,D>(
+    locale : &Option<LanguageIdentifier>,
     item : T,
     print : impl FnOnce(O) -> D 
 ) where 
     T : Describe + Find<Output = O> , 
-    P :AsRef<Path>,
-    D : Display
-    {
+    D : Display {
     match locale {
-        Some(locale) => write_description_to_file(
-            &LOCALES,
-            &locale, 
-            item,
-            path.as_ref(), 
-            || eprintln!("Check whether required resources are availiable"), 
-        ).expect("Error in proccessing file"),
+        Some(locale) => {
+            let uuid = uuid::Uuid::new_v4().to_string();
+            let mut path = CURRENT_EXE_DIR.get().unwrap().clone();
+            path.push(uuid);
+
+            write_description_to_file(
+                &LOCALES,
+                &locale, 
+                item,
+                path,
+                || eprintln!("Check whether required resources are availiable"), 
+            ).expect("Error in proccessing file");
+
+            todo!("Convert this to a pdf or html and show it to user")
+        },
         None => println!("{}",print(item.find())),
+    }
+}
+
+pub fn evaluate_handler(expr_eq : String,locale : &Option<LanguageIdentifier>,context : &Context<'_>) {
+    todo!("Describe for it not done yet")
+   /*  
+   
+impl ExpressionOrEquation {
+   fn handle(self,expr : impl FnOnce(Expression),eq : impl FnOnce(Equation)) {
+        match self {
+            ExpressionOrEquation::Eq(v) => eq(v),
+            ExpressionOrEquation::Expr(v) => expr(v),
+        }
+   }
+}
+   ExpressionOrEquation::from((expr_eq.as_str(),context))
+        .handle(
+            |v| 
+            /*|v| find_or_describe(
+                locale, 
+                |v : Expression| v.evaluate_with_multiple_values(context.values()),
+                |v| format!("{v}")),
+            |v| find_or_describe(
+                locale, 
+                v,
+                |v| format!("{v}")),*/
+        )*/
+}
+
+pub fn command_rearrange(locale : &Option<LanguageIdentifier>,equation : &str,context : &Context<'_>,target : &str) {
+    let eq : Equation = try_from_with_message((equation,context));
+    let target : Term = try_from_with_message(target);
+    match locale {
+        Some(locale) => todo!("Describe for it is still penting"),
+        None => match eq.try_make_subject(target) {
+            Ok(ok) => println!("Result : {ok}"),
+            Err(err) => eprintln!("Error : {err}"),
+        },
     }
 }
 
@@ -79,7 +120,7 @@ impl QuadraticsCommands {
                 context, 
                 input, 
                 arguments,
-                locale, 
+                &locale, 
                 |v| TEMP.discriminant(),
                 |v| v.parse_abc().discriminant(),
                 |v: f64| format!("The discriminant is {v}")
@@ -88,7 +129,7 @@ impl QuadraticsCommands {
                 context, 
                 input, 
                 arguments,
-                locale, 
+                &locale, 
                 |v| TEMP.roots(),
                 |v| v.parse_abc().roots(),
                 |v| match v {
@@ -101,7 +142,7 @@ impl QuadraticsCommands {
                 context, 
                 input, 
                 arguments,
-                locale, 
+                &locale, 
                 |v| TEMP.sum_of_roots(),
                 |v| v.parse_ab().sum_of_roots(),
                 |v: f64| format!("The sum of roots is {v}")
@@ -111,7 +152,7 @@ impl QuadraticsCommands {
                 context, 
                 input, 
                 arguments,
-                locale, 
+                &locale, 
                 |v| TEMP.product_of_roots(),
                 |v| v.parse_ac().product_of_roots(),
                 |v: f64| format!("The product of roots is {v}")
@@ -121,7 +162,7 @@ impl QuadraticsCommands {
                 context, 
                 input, 
                 arguments,
-                locale, 
+                &locale, 
                 |v| TEMP.axis_of_symmetry(),
                 |v| v.parse_ab().axis_of_symmetry(),
                 |v: f64| format!("The axis of symmetry is {v}")
@@ -131,7 +172,7 @@ impl QuadraticsCommands {
                 context, 
                 input, 
                 arguments,
-                locale, 
+                &locale, 
                 |v| TEMP.concavity(),
                 |v| v.parse_a().concavity(),
                 |v| format!(r"The concavity is {v}")
@@ -144,7 +185,7 @@ impl QuadraticsCommands {
         context : &Context<'_>, 
         input : Option<String>,
         arguments : QuadraticArguments,
-        locale : Option<LanguageIdentifier>,
+        locale : &Option<LanguageIdentifier>,
         expreq : F1 ,
         quad : F2,
         print : impl FnOnce(O) -> D 
@@ -155,11 +196,11 @@ impl QuadraticsCommands {
         F2 : FnOnce(QuadraticArguments) -> T2,
         D : Display {
         if let Some(i) = input {
-            find_or_describe(locale,"",expreq(ExpressionOrEquation::from((i.as_str(),context))),print);
+            find_or_describe(locale,expreq(ExpressionOrEquation::from((i.as_str(),context))),print);
             return 
         };
         
-        find_or_describe(locale,"", quad(arguments),print)
+        find_or_describe(locale, quad(arguments),print)
     }
 }
 

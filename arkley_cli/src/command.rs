@@ -25,6 +25,40 @@ pub enum Arguments {
     #[clap(about = "Interactive math playground")]
     Playground,
 
+    #[clap(about = "Evaluate a mathematical expression")]
+    Evaluate {
+        expr_eq : String,
+    },
+
+    #[clap(about = "Rearrange an equation to isolate a variable")]
+    Rearrange {
+        #[arg(
+            short,
+            long,
+            required = true,
+        )]
+        /// Parse into `arkley_algebra::Equation` using `TryFrom<&str>`
+        equation: String,
+
+        #[arg(
+            short,
+            long,
+            required = true,
+        )]
+        /// Parse into `arkley_algebra::Term` using `TryFrom<&str>`
+        target : String,
+    },
+
+    #[clap(about = "Solve an equation for a specific variable")]
+    Solve {
+        #[arg(
+            short,
+            long,
+            required = true,
+        )]
+        equation: String,
+    },
+
     #[clap(about = "Handle quadratic equations")]
     Quadratic {
         #[clap(subcommand)]
