@@ -1,25 +1,24 @@
 use std::process::exit;
 
-use arkley_algebra::{parse_expression, Context, manipulation::{EvaluteWithValues, Find}, parse_equation, parse_term, Equation, Term};
+use arkley_algebra::{Context, parse_term};
+use arkley_describe::fluent_templates::LanguageIdentifier;
+use rustyline::DefaultEditor;
 use nom::{
-    sequence::{preceded, pair, delimited, tuple, terminated}, 
+    sequence::{preceded, pair, terminated, separated_pair, delimited}, 
     character::complete::{multispace0, multispace1},
-    combinator::map, 
+    combinator::{map, opt, map_res}, 
     branch::alt, 
-    bytes::complete::{tag, take_until, take}, IResult
+    bytes::complete::{tag, take_until}, IResult
 };
 
-use crate::{pretty_errors::{new_default_editor, self}, utils};
+use crate::utils::{find_or_describe, command_evaluate, self};
 
-
-pub fn open() {
+pub fn open(mut context : Context<'_>) {
     let mut rl = new_default_editor();
-    let context = Context::default();
-
     loop {
         let readline = rl.readline(">> ");
         match readline {
-            Ok(line) => parse_syntax(&line,&context),
+            Ok(line) => parse_syntax(&line,&mut context),
             Err(err) => {
                 eprintln!("Error: {:?}", err);
                 break
@@ -28,14 +27,25 @@ pub fn open() {
     }
 }
 
+fn new_default_editor() -> DefaultEditor {
+    match DefaultEditor::new() {
+        Ok(e) => e,
+        Err(error) => {
+            eprintln!("Error creating playground {error}");
+            exit(1)
+        },
+    }
+}
+
 fn parse_syntax(input : &str,context : &Context<'_>) {
-    let mut parser = alt((
+    let mut f = alt((
         parse_reserved_commands,
-        parse_evaluate_command(&context),
-        parse_rearrange_command(&context)
+
+        parse_evaluate(context),
+        parse_rearrange(context)
     ));
 
-    match parser(input)   {
+    match f(input)   {
         Ok(_) => (),
         Err(err) => eprintln!("Please provide valid syntax! : {:?}",err),
     }
@@ -60,83 +70,51 @@ https://github.com/Deaths-Door/arkley/tree/main/arkley_cli/README.md"#;
     )(input)        
 }
 
-/// Parses `evaluate eq/expr`
-fn parse_evaluate_command<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,()>  {
+fn parse_evaluate<'a : 'b,'b>(context : &'b Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,()> + 'b {
     move |input| {
-        let (input,_) = delimited(
-            multispace0,
-            tag("evaluate"),
-            multispace1
-        )(input)?;
+        let (input,locale) = parse_command_syntax("evaluate")(input)?;
 
-        alt((
-            map(parse_equation(&context),|v| println!("Result: {}",v.evaluate_with_multiple_values(context.values()).find())),
-            map(parse_expression(&context),|v| println!("Result: {}",v.evaluate_with_multiple_values(context.values()).find()))
-        ))(input)
-    }
-}
-
-fn parse_rearrange_command<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,()>  {
-    move |input| {        
-        let (input,_) = delimited(
-            multispace0,
-            tag("rearrange"),
-            multispace1
-        )(input)?;
-
-        let (input,eq_str) = take_until("into")(input)?;
-        let (input, _) = tag("into")(input)?;
-        let (input, term_str) = multispace1(input)?;
-
-        let equation : Option<Equation> = pretty_errors::try_from_with_message_no_exit((eq_str.trim_end(),context));
-        let term  : Option<Term> = pretty_errors::try_from_with_message_no_exit(term_str.trim_end());
-        
-        if equation.is_some() && term.is_some() {
-            utils::rearrange_equation(equation.unwrap(),term.unwrap());
-        }
-
+        utils::command_evaluate(input, &locale, context);
 
         Ok((input,()))
     }
 }
-/* 
-/// rearrange .. eq into term
-fn parse_rearrange_command<'a>(context : &'a Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,()>  {
+
+fn parse_rearrange<'a : 'b,'b>(context : &'b Context<'_>) -> impl FnMut(&'a str) -> IResult<&'a str,()> + 'b {
     move |input| {
-        let (input,v) = pair(
-            parse_command(
-                "rearrange", parse_equation(&context), 
-                |expression| println!("Result: {}",expression.evaluate_with_multiple_values(context.values()).find())
-            ) , 
-            preceded(
-                tag("into"), 
-                parse_term
+        let (input,locale) = parse_command_syntax("rearrange")(input)?;
+
+        let (input,equation) = take_until(" into")(input)?;
+        utils::command_rearrange(&locale, equation.trim(), context, input.trim());
+
+        Ok(("",()))
+    }
+}
+
+// describe? lang=SYS_LANG? command ..
+fn parse_command_syntax<'a>(command : &'a str) -> impl FnMut(&'a str) -> IResult<&'a str,Option<LanguageIdentifier>> {
+    move |input| {
+        let (input,result) = opt(
+            separated_pair(
+                // Some means describe none means dont describe
+                tag("describe"), 
+                multispace0,
+                // Some means default lang value means this lang
+                opt(
+                    map_res(take_until(" "),|s : &str| s.trim().parse::<LanguageIdentifier>())
+                )
             )
         )(input)?;
         
-        /**/
-
-    todo!()
-    }
-}
-fn parse_command<'a,P,T,F>(command : &'a str,mut parser: P,map : F) -> impl FnMut(&'a str) -> IResult<&'a str,()> 
-where
-    P: FnMut(&'a str) -> IResult<&'a str,T> ,
-    F : Fn(T) -> ()
-    {
-    // evalute .. expr 
-    // rearrange .. expr
-    // solve .. expr 
-    move |input| {
-        // space .. command .. space .. arg
         let (input,_) = delimited(
             multispace0,
             tag(command),
-            multispace0
+            multispace1
         )(input)?;
 
-        let (input,arg) = (parser)(input)?;
-    
-        Ok((input,(map)(arg)))
+        // None if describe not there , lang given? no => default to "en-US"
+        let lang = result.and_then(|(_,v)| Some(v.unwrap_or("en-US".parse().unwrap())));
+
+        Ok((input,lang))
     }
-}*/
+}

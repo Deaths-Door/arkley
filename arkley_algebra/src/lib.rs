@@ -18,6 +18,8 @@
     non_snake_case
 )]
 
+pub use num_notation::*;
+
 mod core;
 mod arithmetics;
 

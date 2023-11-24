@@ -1,21 +1,21 @@
-mod commands;
+mod command;
 mod playground;
-mod pretty_errors;
 mod utils;
 
 use clap::Parser;
-use commands::{Command,Arguments};
+use command::{Command,Arguments};
 
 fn main() {
-    let command = Command::parse();
+    utils::CURRENT_EXE_DIR.get_or_init(|| std::env::current_exe().expect("Unable to get current path"));
 
+    let command = Command::parse();
+    
     match command.argument {
-        Arguments::Playground => playground::open(),
-        Arguments::Evaluate { expression_or_equation, context } 
-            => Command::command_evaluate(command.locale,&expression_or_equation, context),        
-        Arguments::Rearrange { equation, target, context } 
-            => Command::command_rearrange(command.locale, &equation, context, &target),
-        Arguments::Solve { equation, context } => todo!(),
-        Arguments::Quadratic { subcommand } => todo!(),
+        Arguments::Playground => playground::open(command.context),
+        Arguments::Quadratic { subcommand  , input , named } 
+            => subcommand.handle_subcommands(input,named,&command.context,command.locale),
+        Arguments::Evaluate { expr_eq } => utils::command_evaluate(&expr_eq, &command.locale,&command.context),
+        Arguments::Rearrange { equation, target } => utils::command_rearrange(&command.locale, &equation, &command.context, &target),
+        Arguments::Solve { equation } => todo!(),
     }
 }
