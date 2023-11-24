@@ -12,10 +12,12 @@ license.workspace = true
 [dependencies]
 arkley_describe.workspace = true
 arkley_algebra = { workspace = true , features = ["full"] }
+#tectonic.workspace = true
 
 # For cli arg parsing
-clap = { version = "4.4.7" , features = ["derive"] }
+clap = { version = "4.4.8" , features = ["derive"] }
 nom.workspace = true
 
 # For playground
 rustyline = "12.0.0"
+open = "5.0.0"

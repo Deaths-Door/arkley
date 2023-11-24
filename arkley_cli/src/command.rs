@@ -1,6 +1,6 @@
 use arkley_algebra::Context;
 use arkley_describe::fluent_templates::LanguageIdentifier;
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, Args};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about)]
@@ -24,4 +24,49 @@ pub enum Arguments {
     /// A more 'code' like experience
     #[clap(about = "Interactive math playground")]
     Playground,
+
+    #[clap(about = "Handle quadratic equations")]
+    Quadratic {
+        #[clap(subcommand)]
+        subcommand: QuadraticsCommands,
+
+        #[arg(short, long, group = "unnamed", conflicts_with = "named")]
+        input: Option<String>,
+
+        #[clap(flatten)]
+        named: QuadraticArguments,
+    },
+}
+
+
+#[derive(Subcommand)]
+pub enum QuadraticsCommands {
+    #[clap(about = "Calculate discriminant of a quadratic equation")]
+    Discriminant,
+
+    #[clap(about = "Calculate roots of a quadratic equation")]
+    Roots,
+
+    #[clap(about = "Calculate sum of roots of a quadratic equation")]
+    SumOfRoots,
+
+    #[clap(about = "Calculate product of roots of a quadratic equation")]
+    ProductOfRoots,
+
+    #[clap(about = "Calculate axis of symmetry of a quadratic equation")]
+    AxisOfSymmetry,
+
+    #[clap(about = "Determine concavity of a quadratic equation")]
+    Concavity,
+}
+
+#[derive(Args)]
+#[group(id = "named")]
+pub struct QuadraticArguments {
+    #[arg(short)]
+    pub a: Option<String>,
+    #[arg(short)]
+    pub b: Option<String>,
+    #[arg(short)]
+    pub c: Option<String>, 
 }

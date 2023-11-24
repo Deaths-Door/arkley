@@ -53,9 +53,9 @@ For detailed documentation, please visit the [core crate's documentation](https:
 
 ## Getting Started 
 
-- To use it on the web, mobile, or desktop, refer to this [link](https://github.com/Deaths-Door/arkley/tree/main/arkley_ui)
-- For command-line usage, refer to this [link](https://github.com/Deaths-Door/arkley/tree/main/arkley_cli)
-- To use it as a library or explore its individual components, refer to this [link](https://github.com/Deaths-Door/arkley/tree/main/arkley_algebra)
+- To use it on the web, mobile, or desktop, refer to this [link](https://github.com/Deaths-Door/arkley/tree/main/arkley_ui/README.md)
+- For command-line usage, refer to this [link](https://github.com/Deaths-Door/arkley/tree/main/arkley_cli/README.md)
+- To use it as a library or explore its individual components, refer to this [link](https://github.com/Deaths-Door/arkley/tree/main/arkley_algebra/README.md)
 
 ## Documentation
 

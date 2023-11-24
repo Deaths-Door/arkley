@@ -23,10 +23,6 @@ pub struct Command {
 
 #[derive(Subcommand)]
 pub enum Arguments {
-    /// A more 'code' like experience
-    #[clap(about = "Interactive math playground")]
-    Playground,
-
     #[clap(about = "Evaluate a mathematical expression")]
     Evaluate {
         expression_or_equation : String,
@@ -65,38 +61,5 @@ pub enum Arguments {
     Quadratic {
         #[clap(subcommand)]
         subcommand: QuadraticsCommands,
-    },
-}
-
-#[derive(Subcommand)]
-pub enum QuadraticsCommands {
-    #[clap(about = "Calculate discriminant of a quadratic equation")]
-    Discriminant {
-        input : String
-    },
-
-    #[clap(about = "Calculate roots of a quadratic equation")]
-    Roots {
-        input : String
-    },
-
-    #[clap(about = "Calculate sum of roots of a quadratic equation")]
-    SumOfRoots {
-        input : String
-    },
-
-    #[clap(about = "Calculate product of roots of a quadratic equation")]
-    ProductOfRoots {
-        input : String
-    },
-
-    #[clap(about = "Calculate axis of symmetry of a quadratic equation")]
-    AxisOfSymmetry {
-        input : String
-    },
-
-    #[clap(about = "Determine concavity of a quadratic equation")]
-    Concavity {
-        input : String
     },
 }

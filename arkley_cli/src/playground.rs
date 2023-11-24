@@ -3,11 +3,11 @@ use std::process::exit;
 use arkley_algebra::Context;
 use rustyline::DefaultEditor;
 use nom::{
-    sequence::{preceded, pair, delimited, tuple, terminated}, 
-    character::complete::{multispace0, multispace1},
+    sequence::{preceded, pair}, 
+    character::complete::multispace0,
     combinator::map, 
     branch::alt, 
-    bytes::complete::{tag, take_until, take}, IResult
+    bytes::complete::tag, IResult
 };
 
 pub fn open(mut context : Context<'_>) {
@@ -37,6 +37,7 @@ fn new_default_editor() -> DefaultEditor {
 fn parse_syntax(input : &str,context : &mut Context<'_>) {
     let mut f = alt((
         parse_reserved_commands,
+        // TODO : Remove this
         parse_reserved_commands
     ));
 
@@ -64,3 +65,16 @@ https://github.com/Deaths-Door/arkley/tree/main/arkley_cli/README.md"#;
         ))
     )(input)        
 }
+
+/* 
+fn parse_context<'a : 'b,'b : 'l,'l>(context : &'b mut Context<'l>) -> impl FnMut(&'a str) -> IResult<&'a str,()> + 'b {
+    move |input| {
+        // TODO : Implement this weird af function
+        /*match context.parse_tags()(input) {
+            res => return res,
+            _ => context.parse_tags()(input)
+        }
+        fold_many1(alt_context,|| (),|acc,_| acc)(input)*/
+        Ok((input,()))
+    }
+}*/

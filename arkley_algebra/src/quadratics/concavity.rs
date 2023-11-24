@@ -1,6 +1,8 @@
 use std::{cmp::Ordering, collections::HashMap};
 
 use num_notation::Num;
+use strum::Display;
+
 use crate::manipulation::Find;
 use super::IntegerQuadratic;
 
@@ -21,19 +23,22 @@ impl<T,O> From<T> for Concavity<IntegerQuadratic<O>> where T : Into<IntegerQuadr
 }
 
 /// An enum representing the concavity of a parabola.
-#[derive(Debug, Clone)]
+#[derive(Display, Debug, Clone)]
 pub enum ConcavityType {
     /// The parabola opens upward 🙂 (a > 0).
+    #[strum(serialize = "upwards")]
     Upward,
     
     /// The parabola opens downward 🙁 (a < 0).
+    #[strum(serialize = "downwards")]
     Downward,
     
     /// Concavity is undefined 😡 (a = 0).
+    #[strum(serialize = "undefined")]
     Undefined,
 }
 
-impl<T> Concavity<IntegerQuadratic<T>> where T : Num + Clone + Ord  {
+impl<T> Concavity<IntegerQuadratic<T>> where T : Num + Clone + PartialOrd  {
     /// Determines the concavity of the parabola based on the coefficient `a`.
     ///
     /// If `a` is greater than 0, the parabola opens upward (concave upward).
@@ -92,15 +97,21 @@ impl<T> Concavity<IntegerQuadratic<T>> where T : Num + Clone + Ord  {
     /// - `ConcavityType::Downward` if the parabola is concave downward.
     /// - `ConcavityType::Undefined` if concavity is undefined.
     pub fn concavity_type(&self) -> ConcavityType {
-        match self.0.a.cmp(&T::zero()) {
-            Ordering::Less => ConcavityType::Downward,
-            Ordering::Equal =>  ConcavityType::Undefined,
-            Ordering::Greater => ConcavityType::Upward,
+        let a = &self.0.a;
+        let zero = &T::zero();
+        if a < zero {
+            ConcavityType::Downward
+        }
+        else if a > zero {
+            ConcavityType::Upward
+        }
+        else {
+            ConcavityType::Undefined
         }
     }
 }
 
-impl<T> Find for Concavity<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + std::ops::Neg<Output = T> + Ord {
+impl<T> Find for Concavity<IntegerQuadratic<T>> where T : Num + Clone + From<u8> + std::ops::Neg<Output = T> + PartialOrd {
     type Output = ConcavityType;
     // -b/a
     fn find(self) -> ConcavityType {
@@ -116,7 +127,7 @@ use arkley_describe::{
 };
 
 #[cfg(feature="describe")]
-impl<T> Describe for Concavity<IntegerQuadratic<T>> where T : Num + Clone + Ord + std::fmt::Display {
+impl<T> Describe for Concavity<IntegerQuadratic<T>> where T : Num + Clone + PartialOrd + std::fmt::Display {
     fn describe(self,resources:&StaticLoader,lang: &LanguageIdentifier) -> Option<Steps> {
         let text_id = match self.concavity_type() {
             ConcavityType::Upward => "concavity-integerquadratic-upwards",

@@ -15,4 +15,4 @@
 - Support for various units (`km` , `cm` ) with describe feature
 - Add AlgebricQuadratics and intergate with quadratic trait with describe feature
 - Check why parser parses wrong when no spaced are given eg `2x+3`
-- Add DescribePow/ DescribeSqrt for term , expression
+- Add DescribePow/ DescribeSqrt for term , expression\

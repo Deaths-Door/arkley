@@ -1,6 +1,6 @@
-use std::ops::*;
+use std::{ops::*, fs::File, io::Write, path::Path};
 use num_traits::Pow;
-use fluent_templates::{StaticLoader, LanguageIdentifier};
+use fluent_templates::{StaticLoader, LanguageIdentifier, Loader};
 
 /// As the author is lazy and may change the return type in the future
 pub type Steps = Vec<String>;
@@ -50,3 +50,34 @@ create_describe!(op => DescribeSub,Sub,describe_sub);
 create_describe!(op => DescribeMul,Mul,describe_mul);
 create_describe!(op => DescribeDiv,Div,describe_div);
 create_describe!(op => DescribePow,Pow,describe_pow);
+
+/// A description 'write' the describption to a file 
+pub fn write_description_to_file<T,S>(
+    resources : &StaticLoader,
+    locale : &LanguageIdentifier,
+    item : T,
+    path : S,
+    on_not_described : impl FnOnce() -> (),
+) -> std::io::Result<()>
+    where S : AsRef<Path>,
+    T : Describe,
+{
+    const LATEX_BEGIN : &[u8] = r"\documentclass{article}\begin{document}".as_bytes();
+    const LATEX_END : &[u8]= r"\end{{document}}".as_bytes();
+
+    // Same as File::create_new(path)
+    let mut file = File::options().read(true).write(true).create_new(true).open(path.as_ref())?;
+
+    let steps =  item.describe(resources, &locale);
+    match steps {
+        None =>{
+            on_not_described();
+            Ok(())
+        },
+        Some(steps) => {
+            file.write_all(LATEX_BEGIN)?;
+            file.write_all(steps.join("\n").as_bytes())?;
+            file.write_all(LATEX_END)
+        }
+    }
+}

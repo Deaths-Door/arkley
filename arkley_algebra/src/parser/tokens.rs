@@ -77,7 +77,7 @@ impl Token {
                     Function::map_into_tokens(context),
                     Term::map_into_tokens(),
                     Self::parse_nested_expression(context),
-                    context.parse_tags()
+                    context.parse_tags_into_tokens()
                 )),
                 multispace0,
                 opt(Token::parse(context))
