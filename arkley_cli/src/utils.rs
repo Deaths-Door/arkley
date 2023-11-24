@@ -39,7 +39,7 @@ fn try_from_with_message<T : TryFrom<I>,I>(input : I) -> T {
     }
 }
 
-fn find_or_describe<T,O,D>(
+pub fn find_or_describe<T,O,D>(
     locale : &Option<LanguageIdentifier>,
     item : T,
     print : impl FnOnce(O) -> D 
@@ -66,7 +66,7 @@ fn find_or_describe<T,O,D>(
     }
 }
 
-pub fn evaluate_handler(expr_eq : String,locale : &Option<LanguageIdentifier>,context : &Context<'_>) {
+pub fn command_evaluate(expr_eq : &str,locale : &Option<LanguageIdentifier>,context : &Context<'_>) {
     todo!("Describe for it not done yet")
    /*  
    
@@ -95,6 +95,7 @@ impl ExpressionOrEquation {
 pub fn command_rearrange(locale : &Option<LanguageIdentifier>,equation : &str,context : &Context<'_>,target : &str) {
     let eq : Equation = try_from_with_message((equation,context));
     let target : Term = try_from_with_message(target);
+    // TODO : Depreacte this technique use find or describe once try_make_subject can be used with it
     match locale {
         Some(locale) => todo!("Describe for it is still penting"),
         None => match eq.try_make_subject(target) {
