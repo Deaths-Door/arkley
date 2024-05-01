@@ -20,6 +20,9 @@ arkley_algebra = { workspace = true , optional = true }
 arkley_unit_convertor = { workspace = true , optional = true }
 arkley_describe = { workspace = true , optional = true }
 
+[dev-dependencies]
+test-case = { workspace = true , version = "3.3.1" }
+
 [workspace]
 members = [
     "arkley_algebra",
@@ -44,3 +47,10 @@ arkley_cli = { path = "../arkley/arkley_cli" }
 
 # For parsing feature
 nom =  "7.1.3"
+
+# For testing
+test-case = { workspace = true , version = "3.3.1" }
+
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--html-in-header", "katex.html"]

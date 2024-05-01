@@ -1,13 +1,10 @@
-use num_notation::{Number, Signed, One};
-
-use crate::{
-    Term, ArithmeticOperation, Variables, Function
-};
+use dyn_clone::clone_box;
+use num_notation::{Signed, One};
+use crate::{ArithmeticOperation, CustomizableExpression, Term};
 
 /// An enum representing a mathematical expression.
 ///
 /// The `Expression` enum allows building complex mathematical expressions
-#[derive(Clone,Hash)]
 #[cfg_attr(test, derive(PartialEq))]
 pub enum Expression {
     /// Represents a basic unit in a mathematical expression.
@@ -35,15 +32,8 @@ pub enum Expression {
         right: Box<Expression>,
     },
 
-    /// Represents a mathematical expression that corresponds to a function.
-    ///
-    /// The `Function` variant represents a mathematical expression that is a function.
-    /// It includes the name of the function as a string.
-    ///
-    /// - `name`: The name of the function, represented as a string. This can be used to
-    ///   identify the specific mathematical function being applied.
-    #[cfg(feature="function")]
-    Function(Function)
+    /// Represents a custom or extended expression type.
+    Custom(Box<dyn CustomizableExpression>)
 }
 
 // To create Self
@@ -51,18 +41,8 @@ impl Expression {
     /// Create a new `Expression` containing a single `Term`.
     ///
     /// The `new_term` function wraps the provided `Term` into an `Expression::Term` variant.
-    pub const fn new_term(term: Term) -> Self {
-        Expression::Term(term)
-    }
-
-    
-    /// Creates a new `Expression` representing a mathematical function.
-    ///
-    /// This function creates a new `Expression` of the `Function` variant with the provided function name
-    ///
-    #[cfg(feature="function")]
-    pub const fn new_function(func : Function) -> Self {
-        Self::Function(func)
+    pub fn new_term<T>(term: T) -> Self where T : Into<Term> {
+        Expression::Term(T::into(term))
     }
 
     #[inline]
@@ -111,7 +91,6 @@ impl Expression {
         Self::new_binary(ArithmeticOperation::Pow,base,exponent)
     }
 
-    
     /// Create a new `Expression` representing the division of two expressions.
     ///
     /// The function constructs an `Expression` with the [ArithmeticOperation::Root] variant,
@@ -119,51 +98,29 @@ impl Expression {
     pub fn new_root<L,R>(n: L, expression: R) -> Self where Self : From<L> + From<R> {
         Self::new_binary(ArithmeticOperation::Root,n,expression)
     }
-}
 
-impl From<Term> for Expression {
-    fn from(value : Term) -> Self {
-        Expression::new_term(value)
+    /// Constructs a new `Expression` variant of [Expression::Custom].
+    pub fn new_custom<T>(value : T) -> Self where T : CustomizableExpression + 'static {
+        Self::Custom(Box::new(value))
     }
 }
 
-impl From<Number> for Expression {
-    fn from(value : Number) -> Self {
-        Expression::new_term(value.into())
+
+impl<T> From<T> for Expression where Term : From<T> {
+    fn from(value: T) -> Self {
+        Self::new_term(value)
     }
 }
 
-impl From<Variables> for Expression {
-    fn from(value : Variables) -> Self {
-        Term::new_with_variable(Number::Decimal(1.0),value).into()
+impl Clone for Expression {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Term(arg0) => Self::Term(arg0.clone()),
+            Self::Binary { operation, left, right } => Self::Binary { operation: operation.clone(), left: left.clone(), right: right.clone() },
+            Self::Custom(arg0) => Self::Custom(clone_box(&**arg0)),
+        }
     }
 }
-
-impl From<char> for Expression {
-    fn from(value :char) -> Self {
-        Term::from(value).into()
-    }
-}
-
-impl From<Function> for Expression {
-    fn from(value: Function) -> Self {
-        Self::new_function(value)
-    }
-}
-
-macro_rules! from {
-    ($($t:ty),*) => {
-        $(
-            impl From<$t> for Expression {
-                fn from(value : $t) -> Self {
-                    Expression::new_term(num_notation::Number::Decimal(value as f64).into())
-                }
-            } 
-        )*
-    };
-}
-
-from!(u8,u16,u32,u64,i8,i16,i32,i64,f32,f64,usize);
 
 impl std::fmt::Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -176,15 +133,13 @@ impl std::fmt::Debug for Expression {
         use ArithmeticOperation::*;
         match self {
             Self::Term(term) => write!(f, "{term}"),
-            #[cfg(feature="function")]
-            Self::Function(func) => write!(f,"{func}"),
             Self::Binary { operation , left , right } 
                 if operation == &Plus => write!(f,"{left} + {right}"),
                 Self::Binary { operation , left , right } 
                 if operation == &Minus => write!(f,"{left} - {right}"),
             Self::Binary { operation , left , right } 
                 if operation == &Mal => {
-                    // Note : NO FUCKING CLUE WHY IT WORKS EXCEPT I WROTE IT AND NOW HAVE NO CLUE
+                    // This works except I have no fucking idea why , even though i wrote it
                     let s = format!("{left}");
 
                     match s.char_indices().find(|(_,c)| "+*-/".contains(*c)) {
@@ -195,36 +150,32 @@ impl std::fmt::Debug for Expression {
                         } 
                     };
 
-                    match **right {
-                        Expression::Function(_) => write!(f,"{right}"),
-                        _ => write!(f,"({right})")
-                    }
+                    write!(f,"({})",right)
                 },
             Self::Binary { operation , left , right } 
                 if operation == &Durch => {
                     match **left {
-                        Self::Term(_) | Self::Function(_) => write!(f,"{left}"),
+                        Self::Term(_) => write!(f,"{left}"),
                         _ => write!(f,"({left})")
                     }?;
 
                     write!(f,"/")?;
 
                     match **right {
-                        Self::Function(_) | Self::Term(_) => write!(f,"{right}"),
+                        Self::Term(_) => write!(f,"{right}"),
                         _ => write!(f,"({right})")
                     }
                 },
             Self::Binary { operation, left : base, right: exponent } 
                 if operation == &Pow => {
                     match **base {
-                        Self::Term(_) | Self::Function(_) => write!(f,"{base}"),
+                        Self::Term(_) => write!(f,"{base}"),
                         _ => write!(f,"({base})")
                     }?;
 
                     write!(f,"^")?;
 
                     match **exponent {
-                        Self::Function(_) => write!(f,"{exponent}"),
                         Self::Term(ref t) if 
                             (t.variables.is_empty() && t.coefficient.is_positive()) || 
                             (t.coefficient.is_one() && t.variables.len() == 1)  => write!(f,"{exponent}"),
@@ -259,14 +210,9 @@ impl std::fmt::Debug for Expression {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use num_notation::Number;
 
-    // Helper function to create a Term with a single variable.
-    fn create_term_with_variable(coeff: f64, var: char, exp: f64) -> Term {
-        let mut variables = Variables::new();
-        variables.insert(var, Number::Decimal(exp));
-        Term::new_with_variable(Number::Decimal(coeff), variables)
-    }   
+    use super::*;
 
     #[test]
     fn display_for_term() {
@@ -285,8 +231,8 @@ mod test {
     #[test]
     fn display_for_plus_expression() {
         // Create two terms...
-        let term1 = create_term_with_variable(2.5, 'x', 2.0);
-        let term2 = create_term_with_variable(3.5, 'x', 2.0);
+        let term1 = Term::new_with_variable_to(2.5, 'x',2.0);
+        let term2 = Term::new_with_variable_to(3.5, 'x', 2.0);
         let expression = Expression::new_plus(term1,term2);
 
         // Format the expression using the Display trait
@@ -301,8 +247,8 @@ mod test {
     #[test]
     fn display_for_minus_expression() {
         // Create two terms...
-        let term1 = create_term_with_variable(5.0, 'x', 3.0);
-        let term2 = create_term_with_variable(2.5, 'x', 3.0);
+        let term1 = Term::new_with_variable_to(5.0, 'x', 3.0);
+        let term2 = Term::new_with_variable_to(2.5, 'x', 3.0);
         let expression = Expression::new_minus(term1,term2);
 
 
@@ -318,8 +264,8 @@ mod test {
     #[test]
     fn display_for_mal_expression() {
         // Create two terms...
-        let term1 = create_term_with_variable(2.0, 'x', 1.0);
-        let term2 = create_term_with_variable(3.0, 'x', 2.0);
+        let term1 = Term::new_with_variable_to(2.0, 'x', 1.0);
+        let term2 = Term::new_with_variable_to(3.0, 'x', 2.0);
         let expression = Expression::new_mal(term1,term2);
 
 
@@ -335,8 +281,8 @@ mod test {
     #[test]
     fn display_for_durch_expression() {
         // Create two terms...
-        let term1 = create_term_with_variable(6.0, 'x', 3.0);
-        let term2 = create_term_with_variable(2.0, 'x', 1.0);
+        let term1 = Term::new_with_variable_to(6.0, 'x', 3.0);
+        let term2 = Term::new_with_variable_to(2.0, 'x', 1.0);
         let expression = Expression::new_durch(term1,term2);
 
 
@@ -352,8 +298,8 @@ mod test {
     #[test]
     fn display_for_durch_expression_with_bracke() {
         // Create two terms...
-        let term1 = create_term_with_variable(6.0, 'x', 3.0);
-        let term2 = create_term_with_variable(2.0, 'x', 1.0);
+        let term1 = Term::new_with_variable_to(6.0, 'x', 3.0);
+        let term2 = Term::new_with_variable_to(2.0, 'x', 1.0);
         let inner = Expression::new_plus(term1.clone(),term2);
         let expression = Expression::new_durch(term1,inner);
 

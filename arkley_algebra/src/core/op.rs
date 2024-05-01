@@ -36,10 +36,25 @@ impl std::fmt::Debug for ArithmeticOperation {
     }
 }
 
+impl TryFrom<char> for ArithmeticOperation {
+    type Error = char;
+
+    fn try_from(value: char) -> Result<Self, Self::Error> {
+        use ArithmeticOperation::*;
+        match value {
+            '+' => Ok(Plus),
+            '-' => Ok(Minus),
+            '*' => Ok(Mal),
+            '/' => Ok(Durch),
+            _ => Err(value)
+        }
+    }
+}
+
 impl ArithmeticOperation {
     pub(crate) const SQRT_SIGN : char = '√';
     pub(crate) const CBRT_SIGN : char = '∛';
 
-    pub(crate) const SQRT_TEXT : &str = "sqrt";
-    pub(crate) const CBRT_TEXT : &str = "cbrt";
+    pub(crate) const SQRT_TEXT : &'static str = "sqrt";
+    pub(crate) const CBRT_TEXT : &'static str = "cbrt";
 }

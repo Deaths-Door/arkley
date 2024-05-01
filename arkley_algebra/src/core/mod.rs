@@ -1,13 +1,13 @@
 mod expression;
 mod term;
 mod op;
+mod variables;
+mod label;
+mod custom;
 
 pub use self::op::*;
 pub use self::term::*;
 pub use self::expression::*;
-
-#[cfg(feature="function")]
-mod function;
-
-#[cfg(feature="function")]
-pub use function::*;
+pub use self::variables::*;
+pub use self::label::*;
+pub use self::custom::*;
