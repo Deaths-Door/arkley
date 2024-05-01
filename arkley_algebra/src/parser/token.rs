@@ -14,8 +14,6 @@ use crate::{parse_operator, parse_term, parser::parse_add_sub, ArithmeticOperati
 pub(super) enum ExpressionToken {
     /// Used for context parsing like "five_x_plus_y * x" => "(5x + y) * x" => "5x^2" and Terms 
     Expression(Expression),
-    // TODO : Check if this rly improves output
-    Term(Term),
     Operator(ArithmeticOperation),
     Custom(Box<dyn CustomizableExpression>),
     OpenParenthesis,
@@ -324,7 +322,7 @@ impl ArithmeticOperation {
 
 impl Term {
     fn map_into_tokens<'a>() -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> {
-        map(parse_term,|term| Vec::from([ExpressionToken::Term(term)]) )
+        map(parse_term,|term| Vec::from([ExpressionToken::Expression(term.into())]) )
     }
 }
 
@@ -347,7 +345,7 @@ impl ExpressionToken {
 
         for token in vec {
             match token {
-                ExpressionToken::Term(_) | ExpressionToken::Expression(_) | ExpressionToken::Custom(_) => output.push(token),
+                ExpressionToken::Expression(_) | ExpressionToken::Custom(_) => output.push(token),
                 ExpressionToken::Operator(op1) => {
                     while let Some(&ExpressionToken::Operator(ref op2)) = operator_stack.last() {
                         match op1.precedence() <= op2.precedence() {
@@ -391,7 +389,6 @@ impl ExpressionToken {
 
         for token in rpn_tokens.into_iter() {
             match token {
-                ExpressionToken::Term(term) => stack.push(term.into()),
                 ExpressionToken::Expression(expr) => stack.push(expr),
                 ExpressionToken::Custom(value) => stack.push(Expression::Custom(value)),
                 ExpressionToken::Operator(operator) => {
@@ -419,27 +416,27 @@ mod tests {
 
 
     #[test_case("2 + 3 * 4",[
-        ExpressionToken::Term(2.0.into()),
+        ExpressionToken::Expression(2.0.into()),
         ExpressionToken::Operator(ArithmeticOperation::Plus),
-        ExpressionToken::Term(3.0.into()),
+        ExpressionToken::Expression(3.0.into()),
         ExpressionToken::Operator(ArithmeticOperation::Mal),
-        ExpressionToken::Term(4.0.into()),
+        ExpressionToken::Expression(4.0.into()),
     ])]
     #[test_case("2 ++ 3",[
-        ExpressionToken::Term(2.0.into()),
+        ExpressionToken::Expression(2.0.into()),
         ExpressionToken::Operator(ArithmeticOperation::Plus.into()),
-        ExpressionToken::Term(3.into()),
+        ExpressionToken::Expression(3.into()),
     ])]
     #[test_case("5(2x - 3y) + z",[
-        ExpressionToken::Term(5.into()),
+        ExpressionToken::Expression(5.into()),
         ExpressionToken::Operator('*'.try_into().unwrap()), 
         ExpressionToken::OpenParenthesis,
-        ExpressionToken::Term((Number::Decimal(2f64),'x').into()), 
+        ExpressionToken::Expression((Number::Decimal(2f64),'x').into()), 
         ExpressionToken::Operator('-'.try_into().unwrap()), 
-        ExpressionToken::Term((Number::Decimal(3f64),'y').into()), 
+        ExpressionToken::Expression((Number::Decimal(3f64),'y').into()), 
         ExpressionToken::CloseParenthesis, 
         ExpressionToken::Operator('+'.try_into().unwrap()), 
-        ExpressionToken::Term('z'.into()), 
+        ExpressionToken::Expression('z'.into()), 
     ])]
     fn tokens_are_valid<const S : usize>(input : &str,expected_tokens : [ExpressionToken;S]) {
         let context = Default::default();

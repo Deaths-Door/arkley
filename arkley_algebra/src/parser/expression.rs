@@ -50,6 +50,7 @@ mod tests {
     #[test_case("-5 + 2","-5 + 2")]
     #[test_case("2 + 3 * 4 - 5 / 1","2+3(4)-5/1")]
     #[test_case("(2 + 3)(4/3)","(2 + 3)(4/3)")]
+    // TODO : check about this , this fails cuz 4/4 = 1 and is parsed as a fraction , decide wtf to do about this
     #[test_case("(2 + 3)(4/4)","(2 + 3)(4/4)")]
     #[test_case("(2 + 3)(4/5)","(2 + 3)(4/5)")]
     #[test_case("(5-6)(2+3)","(5-6)(2+3)")]
