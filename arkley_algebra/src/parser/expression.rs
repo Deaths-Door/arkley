@@ -25,10 +25,8 @@ pub fn parse_expression<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a
 impl<'a,'b> TryFrom<(&'a str,&'b Context<'b>)> for Expression {
     type Error = nom::Err<nom::error::Error<&'a str>>;
     fn try_from((input,context): (&'a str,&'b Context<'b>)) -> Result<Self, Self::Error> {
-        let (_,tokens) = all_consuming(ExpressionToken::parse(context))(input)?;
-        let expression = ExpressionToken::into_expression_tree(ExpressionToken::to_rpn(tokens));
-    
-        Ok(expression)
+        all_consuming(parse_expression(context))(input)
+            .map(|(_,expression)| expression)
     }
 }
 
@@ -43,64 +41,37 @@ impl<'a> TryFrom<&'a str> for Expression {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Term;
+    use nom_supreme::final_parser::final_parser;
     use test_case::test_case;
-    use num_notation::Number;
 
-    #[test_case("3 + 4",Expression::new_plus(3,4))]
-    #[test_case("1 + (2 * 3)",Expression::new_plus(1,Expression::new_mal(2,3)))]
-    #[test_case("1 + 2(4)",Expression::new_plus(1,Expression::new_mal(2,4)))]
-    #[test_case("-5 + 2",Expression::new_plus(-5,2))]
-    #[test_case("2 + 3 * 4 - 5 / 1",Expression::new_minus(
-        Expression::new_plus(2, Expression::new_mal(3, 4)),
-        Expression::new_durch(5, 1)
-    ))]
-    #[test_case("(2 + 3)(4/4)",Expression::new_mal(
-        Expression::new_plus(2,3),
-        Expression::new_durch(4,4)
-    ))]
-    #[test_case("(5-6)(2+3)",Expression::new_mal(
-        Expression::new_minus(5,-6),
-        Expression::new_plus(2,3),
-    ))]
-    #[test_case("2x^2 + 4y/8u^2", Expression::new_plus(
-        Expression::new_term(Term::new_with_variable_to(2f64,'x',2f64)),
-        Expression::new_durch(
-            Expression::new_term(Term::new_with_variable(4f64,'y')),
-            Expression::new_term(Term::new_with_variable_to(8f64,'u',2f64))
+    #[test_case("3 + 4","3 + 4")]
+    #[test_case("1 + (2 * 3)","1 + 2(3)")]
+    #[test_case("1 + 2(4)","1 + 2(4)")]
+    #[test_case("-5 + 2","-5 + 2")]
+    #[test_case("2 + 3 * 4 - 5 / 1","2+3(4)-5/1")]
+    #[test_case("(2 + 3)(4/3)","(2 + 3)(4/3)")]
+    #[test_case("(2 + 3)(4/4)","(2 + 3)(4/4)")]
+    #[test_case("(2 + 3)(4/5)","(2 + 3)(4/5)")]
+    #[test_case("(5-6)(2+3)","(5-6)(2+3)")]
+    #[test_case("2x^2 + 4y/8u^2","2x^2 + 4y/8u^2")]
+    #[test_case("3a - 2b^3","3a - 2b^3")]
+    #[test_case("-(x + y)","-(x + y)")]
+    #[test_case("5(2x - 3y) + z","5(2x - 3y) + z")]
+    #[test_case("(a^2 + b)(c - d)","(a^2 + b)(c - d)")]
+    #[test_case("x / (y + z)","x/(y + z)")]
+    #[test_case("1-5/8","1-5/8")]
+    fn parse_basic_and_complex_expressions(input : &str,expected : &str) {
+        let context = Default::default();
+        let parsed : Result<Expression,nom::error::Error<&str>> = final_parser(parse_expression(&context))(input);
+
+        // We are comparing strings as the divide sign is interpreted as a fraction,
+        // which is not wrong its just not what i was expecting
+        // And we are replacing whitespaces , so that the format of the input 
+        // and my [std::fmt::Display] can be correctly compared
+        assert_eq!(
+            parsed.map(|v| v.to_string().replace(" ", "")),
+            Ok(expected.to_string().replace(" ", ""))
         )
-    ))]
-    #[test_case("3a - 2b^3", Expression::new_minus(
-        Expression::new_term((Number::from(3f64),'a')),
-        Expression::new_term(Term::new_with_variable_to(2f64,'b',3f64))
-    ))]
-    #[test_case("-(x + y)", Expression::new_minus(
-        0,
-        Expression::new_plus(Expression::new_term('x'), Expression::new_term('y'))
-    ))]
-    #[test_case("5(2x - 3y) + z", Expression::new_plus(
-        Expression::new_mal(
-            5, Expression::new_minus(
-                Expression::new_term((Number::from(2f64),'x')),
-                Expression::new_term((Number::from(3f64),'y'))
-            )
-        ),
-        Expression::new_term('z')
-    ))]
-    #[test_case("(a^2 + b)(c - d)", Expression::new_mal(
-        Expression::new_plus(
-            Expression::new_pow(Expression::new_term('a'), 2),
-            Expression::new_term('b')
-        ),
-        Expression::new_minus(Expression::new_term('c'), Expression::new_term('d'))
-    ))]
-    #[test_case("x / (y + z)", Expression::new_durch(
-        Expression::new_term('x'),
-        Expression::new_plus(Expression::new_term('y'), Expression::new_term('z'))
-    ))]
-    #[test_case("1-5/8",Expression::new_minus(1,Expression::new_durch(5,8)))]
-    fn parse_basic_and_complex_expressions(input : &str,expected : Expression) {
-        assert_eq!(Expression::try_from(input).map(|v| v.to_string()),Ok(expected.to_string()))
     }
 
     #[test]
@@ -108,7 +79,7 @@ mod tests {
         let input_str = "5 + (2 * 3"; 
         let context = Default::default();   
 
-        let parsed = parse_expression(&context)(input_str);
+        let parsed  = parse_expression(&context)(input_str);
        
         // one would thing it should be none but parser stops checking at 5 + so output is 5 , for full consumuing use try_from
         let unwrapped = parsed.unwrap().1;

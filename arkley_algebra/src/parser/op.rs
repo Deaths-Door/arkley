@@ -26,14 +26,11 @@ use crate::ArithmeticOperation;
 /// - If a special sequence '+-' or '-+' is found (with or without whitespace), it returns '-'.
 /// - If a special sequence '--' is found (with or without whitespace), it returns '+'.
 pub fn parse_operator(input : &str) -> IResult<&str,ArithmeticOperation> {
-    preceded(
-        multispace0, 
-        alt((
-            parse_add_sub,
-            map(char('*'),|_| ArithmeticOperation::Mal),
-            map(char('/'),|_| ArithmeticOperation::Durch),
-        ))
-    )(input)
+    alt((
+        parse_add_sub,
+        map(char('*'),|_| ArithmeticOperation::Mal),
+        map(char('/'),|_| ArithmeticOperation::Durch),
+    ))(input)
 }
 
 /// space .. + 

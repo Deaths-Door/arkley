@@ -45,10 +45,11 @@ arkley_describe = { path = "../arkley/arkley_describe" }
 arkley_unit_convertor = { path = "../arkley/arkley_unit_convertor" }
 arkley_cli = { path = "../arkley/arkley_cli" }
 
-# For parsing feature
+# For Parsing
 nom =  "7.1.3"
 
 # For testing
+nom-supreme = "0.8.0"
 test-case = { workspace = true , version = "3.3.1" }
 
 

@@ -1,4 +1,4 @@
-use nom::{branch::alt, character::complete::{char, multispace0}, combinator::{map, opt}, multi::fold_many0, sequence::{delimited, pair, separated_pair}, IResult};
+use nom::{branch::alt, character::complete::{char, multispace0}, combinator::{map, opt}, multi::fold_many0, sequence::{delimited, pair, separated_pair, tuple}, IResult, Parser};
 
 use crate::{parse_operator, parse_term, parser::parse_add_sub, ArithmeticOperation, Context, CustomizableExpression, Expression, Term};
 
@@ -33,37 +33,118 @@ impl ArithmeticOperation {
         match self {
             ArithmeticOperation::Plus | ArithmeticOperation::Minus => 1,
             ArithmeticOperation::Mal | ArithmeticOperation::Durch => 2,
-            ArithmeticOperation::Pow |  ArithmeticOperation::Root=> 3,
+            ArithmeticOperation::Pow |  ArithmeticOperation::Root => 3,
         }
     }
 }
 
 impl ExpressionToken {
-    // TODO : ADD CUSTOM PARSERS TO IT
     pub(super) fn parse<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> + 'b {
         move |input| {
-            let (input,mut vec) = Self::parse_with_optional_implicit_mul(context)(input)?;
+            let (input,mut tokens) = Self::parse_with_optional_implicit_mul(context)(input)?;
+
+            let inner_parser = tuple((
+                multispace0,
+                parse_operator,
+                multispace0,
+                Self::parse_with_optional_implicit_mul(context)
+            ));
+
+            let (input,follinow_tokens) = fold_many0(inner_parser, Vec::new,|mut tokens , (_,operation,_,inner_tokens)|{
+                tokens.push(operation.into());
+                tokens.extend(inner_tokens.into_iter());
+                tokens
+            })(input)?;
+
+            tokens.extend(follinow_tokens.into_iter());
+
+            Ok((input,tokens))
+        }
+    }
+
+    fn parse_with_optional_implicit_mul<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> + 'b {
+        move |input| {
+            let (input,(lexpr_tokens,rexpr_tokens)) = 
+                separated_pair(
+                    alt((
+                        Term::map_into_tokens(),
+                        Self::parse_nested_expression(context),
+                        context.parse_tags(),
+                        context.parse_values()
+                    )),
+                    multispace0,
+                    opt(Self::parse_nested_expression(context)).map(|v| v.unwrap_or_default())
+                )(input)?;
+           
+
+            let mut tokens = vec![];
+            
+            // Do not put brackets around a single token
+            match lexpr_tokens.len() == 1 {
+                true => tokens.extend(lexpr_tokens.into_iter()),
+                false => {
+                    tokens.push(ExpressionToken::OpenParenthesis);
+    
+                    tokens.extend(lexpr_tokens.into_iter());
+        
+                    tokens.push(ExpressionToken::CloseParenthesis);
+                }
+            };
+    
+            if !rexpr_tokens.is_empty() {
+                tokens.push(ArithmeticOperation::Mal.into());
+    
+                // No requirement to add bracktets as [Self::parse_nested_expression] already adds it
+                tokens.extend(rexpr_tokens.into_iter());    
+            }
+
+            Ok((input,tokens))
+        }
+    }
+
+    fn parse_nested_expression<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> + 'b {
+        move |input| {
+            let (input,mut tokens) = delimited(
+                pair(char('('),multispace0),
+                ExpressionToken::parse(context), 
+                pair(multispace0,char(')')),
+            )(input)?;
+
+            tokens.insert(0,ExpressionToken::OpenParenthesis);
+            tokens.push(ExpressionToken::CloseParenthesis);
+
+            Ok((input,tokens))
+        }
+    }
+}
+
+/*
+impl ExpressionToken {
+    // TODO : ADD CUSTOM PARSERS TO IT
+   /* */ // Genenral shit $expr ...
+    pub(super) fn parse<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> + 'b {
+        move |input| {
+            let (input,mut tokens) = Self::parse_with_optional_implicit_mul(context)(input)?;
 
             let inner_parser = separated_pair(
-                parse_operator, 
+                pair(multispace0,parse_operator), 
                 multispace0, 
                 Self::parse_with_optional_implicit_mul(context)
             );
 
-            let (input,_vec) = fold_many0(inner_parser, Vec::new,|mut vec , (operation,tokens)|{
-                vec.push(operation.into());
-    
-                vec.extend(tokens.into_iter());
-    
-                vec
+            let (input,mut follow_up_tokens) = fold_many0(inner_parser,Vec::new, |mut tokens,(operation,inner_tokens) | {
+                tokens.push(operation.1.into());
+                tokens.extend(inner_tokens.into_iter());
+                tokens
             })(input)?;
 
-            vec.extend(_vec.into_iter());
+            tokens.append(&mut follow_up_tokens);
 
-            Ok((input,vec))
+            Ok((input,follow_up_tokens))
         }
     }
 
+    // Implicit Mul $term | $op ($expr)
     fn parse_with_optional_implicit_mul<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> + 'b {
         move |input| {
             let (input,(lexpr,rexpr)) = separated_pair(
@@ -71,7 +152,7 @@ impl ExpressionToken {
                     Term::map_into_tokens(),
                     Self::parse_nested_expression(context),
                     context.parse_values(),
-                    context.parse_tags()
+                    context.parse_tags(),
                 )),
                 multispace0,
                 opt(ExpressionToken::parse(context))
@@ -105,7 +186,108 @@ impl ExpressionToken {
             Ok((input,vec))
         }
     }
+     /*    move |input| {
+            // Basically a term can be followed by an optional nested expression
+            // But '+' or '-' needs to be followed by an nested expression
+            let (input,(lexpr_tokens,rexpr_tokens)) = alt((
+                separated_pair(
+                    ArithmeticOperation::map_add_and_subtract_into_tokens(), 
+                    multispace0, 
+                    Self::parse_nested_expression(context)
+                ),
+                separated_pair(
+                    alt((
+                        Term::map_into_tokens(), 
+                        Self::parse_nested_expression(context),
+                        context.parse_values(),
+                        context.parse_tags()
+                    )), 
+                    multispace0, 
+                    opt(Self::parse_nested_expression(context))
+                ).map(|(l,r)| (l,r.unwrap_or_default()))
+            ))(input)?;
 
+            let mut tokens = vec![];
+
+            // Do not put brackets around a single token
+            match lexpr_tokens.len() == 1 {
+                true => tokens.extend(lexpr_tokens.into_iter()),
+                false => {
+                    tokens.push(ExpressionToken::OpenParenthesis);
+                    tokens.extend(lexpr_tokens.into_iter());
+                    tokens.push(ExpressionToken::CloseParenthesis);
+                }
+            }
+            
+            if !rexpr_tokens.is_empty() {
+                tokens.push(ArithmeticOperation::Mal.into());
+
+                // No requirement to add bracktets as [Self::parse_nested_expression] already adds it
+                tokens.extend(rexpr_tokens.into_iter());
+            }
+
+            Ok((input,tokens))
+        }
+    }
+*/
+    // Double Brackets ($expr)($expr)
+    fn parse_nested_expression<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> + 'b {
+        move |input| {
+            let (input,mut tokens) = delimited(
+                pair(char('('),multispace0),
+                ExpressionToken::parse(context), 
+                pair(multispace0,char(')')),
+            )(input)?;
+            
+            tokens.insert(0, ExpressionToken::OpenParenthesis);
+            tokens.push(ExpressionToken::OpenParenthesis);
+            
+            Ok((input,tokens))
+        }
+    }
+    /*
+     fn parse_with_optional_implicit_mul<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> + 'b {
+        move |input| {
+            let (input,(lexpr,rexpr)) = separated_pair(
+                alt((
+                    Term::map_into_tokens(),
+                    Self::parse_nested_expression(context),
+                    context.parse_values(),
+                    context.parse_tags(),
+                )),
+                multispace0,
+                opt(ExpressionToken::parse(context))
+            )(input)?;
+
+            let mut vec = vec![];
+            
+            // length one means only one token which means only one thing hence no brackets are required
+            match lexpr.len() == 1 {
+                true => vec.extend(lexpr.into_iter()),
+                false => {
+                    vec.push(ExpressionToken::OpenParenthesis);
+    
+                    vec.extend(lexpr.into_iter());
+        
+                    vec.push(ExpressionToken::CloseParenthesis);
+                }
+            };
+    
+            if let Some(value) = rexpr {
+                vec.push(ArithmeticOperation::Mal.into());
+    
+                vec.push(ExpressionToken::OpenParenthesis);
+    
+                vec.extend(value.into_iter());
+    
+                vec.push(ExpressionToken::CloseParenthesis);
+    
+            }
+
+            Ok((input,vec))
+        }
+    }
+*//* 
     fn parse_nested_expression<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> + 'b {
         move |input| {
             let (input,(sign,expr)) = delimited(
@@ -131,6 +313,12 @@ impl ExpressionToken {
 
             Ok((input,vec))
         }
+    }*/
+}
+*/
+impl ArithmeticOperation {
+    fn map_add_and_subtract_into_tokens<'a>() -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> {
+        map(parse_add_sub,|op| Vec::from([ExpressionToken::Operator(op)]) )
     }
 }
 
@@ -187,6 +375,8 @@ impl ExpressionToken {
         output
     }
 
+    const INVALID_RPN_TOKENS_MESSAGE: &'static str = "This is unexpected. If you reach this point, either check your input for errors or create an issue to report the problem.";
+    
     /// Converts an expression in Reverse Polish Notation (RPN) represented by a vector of `ExpressionToken`
     /// into an expression tree represented by the `Expression` enum.
     ///
@@ -205,8 +395,8 @@ impl ExpressionToken {
                 ExpressionToken::Expression(expr) => stack.push(expr),
                 ExpressionToken::Custom(value) => stack.push(Expression::Custom(value)),
                 ExpressionToken::Operator(operator) => {
-                    let right = stack.pop().expect("Expected valid input : Check parser");
-                    let left = stack.pop().expect("Expected valid input : Check parser");
+                    let right = stack.pop().expect(Self::INVALID_RPN_TOKENS_MESSAGE);
+                    let left = stack.pop().expect(Self::INVALID_RPN_TOKENS_MESSAGE);
                     stack.push(Expression::new_binary(operator, left, right));  
                 },
                 ExpressionToken::OpenParenthesis | ExpressionToken::CloseParenthesis => unreachable!(),
@@ -215,7 +405,7 @@ impl ExpressionToken {
 
         match stack.len() {
             1 => stack.pop().unwrap(),
-            _ => panic!("Expected valid input : Check parser")
+            _ => panic!("{} for stack = {:?}",Self::INVALID_RPN_TOKENS_MESSAGE,stack)
         }
     }
 }
@@ -250,8 +440,7 @@ mod tests {
         ExpressionToken::CloseParenthesis, 
         ExpressionToken::Operator('+'.try_into().unwrap()), 
         ExpressionToken::Term('z'.into()), 
-    ]
-    )]
+    ])]
     fn tokens_are_valid<const S : usize>(input : &str,expected_tokens : [ExpressionToken;S]) {
         let context = Default::default();
         let parsing_result = ExpressionToken::parse(&context)(input);

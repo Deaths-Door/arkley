@@ -46,6 +46,7 @@ thiserror = { version = "1.0.50", optional = true }
 [dev-dependencies]
 concat-idents = "1.1.5"
 test-case.workspace = true
+nom-supreme.workspace = true
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "../katex.html"]
