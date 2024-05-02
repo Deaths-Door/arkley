@@ -60,9 +60,26 @@ impl ExpressionToken {
         }
     }
 
+    fn create_tokens_for_optional_implicit_mul(mut lexpr_tokens : Vec<ExpressionToken>,rexpr_tokens : Vec<ExpressionToken>) -> Vec<ExpressionToken> {            
+        // Do not put brackets around a single token
+        if lexpr_tokens.len() != 1 {
+            lexpr_tokens.insert(0, ExpressionToken::OpenParenthesis);
+            lexpr_tokens.push(ExpressionToken::CloseParenthesis);
+        }
+
+        if !rexpr_tokens.is_empty() {
+            lexpr_tokens.push(ArithmeticOperation::Mal.into());
+
+            // No requirement to add bracktets as [Self::parse_nested_expression] already adds it
+            lexpr_tokens.extend(rexpr_tokens.into_iter());    
+        }
+
+        lexpr_tokens
+    }
+
     fn parse_with_optional_implicit_mul<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> + 'b {
         move |input| {
-            let (input,(lexpr_tokens,rexpr_tokens)) = 
+            let option1 = map(
                 separated_pair(
                     alt((
                         Term::map_into_tokens(),
@@ -71,31 +88,29 @@ impl ExpressionToken {
                         context.parse_values()
                     )),
                     multispace0,
-                    opt(Self::parse_nested_expression(context)).map(|v| v.unwrap_or_default())
-                )(input)?;
-           
+                    opt(Self::parse_nested_expression(context))
+                ),
+                |(lexpr_tokens,rexpr_tokens)| Self::create_tokens_for_optional_implicit_mul(lexpr_tokens,rexpr_tokens.unwrap_or_default())
+            );
 
-            let mut tokens = vec![];
-            
-            // Do not put brackets around a single token
-            match lexpr_tokens.len() == 1 {
-                true => tokens.extend(lexpr_tokens.into_iter()),
-                false => {
-                    tokens.push(ExpressionToken::OpenParenthesis);
-    
-                    tokens.extend(lexpr_tokens.into_iter());
-        
-                    tokens.push(ExpressionToken::CloseParenthesis);
+            let option2 = map(
+                separated_pair(
+                    ArithmeticOperation::map_add_and_subtract_into_tokens(),
+                    multispace0,
+                    Self::parse_nested_expression(context)
+                ),
+                |(lexpr_tokens,rexpr_tokens)| {
+                    let mut tokens = Self::create_tokens_for_optional_implicit_mul(
+                        Vec::with_capacity(lexpr_tokens.capacity()), 
+                        rexpr_tokens
+                    );
+                    tokens.insert(0, ExpressionToken::Expression((-1).into()));
+                    tokens
                 }
-            };
-    
-            if !rexpr_tokens.is_empty() {
-                tokens.push(ArithmeticOperation::Mal.into());
-    
-                // No requirement to add bracktets as [Self::parse_nested_expression] already adds it
-                tokens.extend(rexpr_tokens.into_iter());    
-            }
+            );
 
+            let (input,tokens) = alt(( option1,option2)) (input)?;
+                        
             Ok((input,tokens))
         }
     }
@@ -413,7 +428,6 @@ mod tests {
     use itertools::Itertools;
     use num_notation::Number;
     use test_case::test_case;
-
 
     #[test_case("2 + 3 * 4",[
         ExpressionToken::Expression(2.0.into()),

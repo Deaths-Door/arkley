@@ -1,5 +1,7 @@
+use std::fmt::Write;
+
 use dyn_clone::clone_box;
-use num_notation::{Signed, One};
+use num_notation::{Number, One, Signed};
 use crate::{ArithmeticOperation, CustomizableExpression, Term};
 
 /// An enum representing a mathematical expression.
@@ -139,15 +141,22 @@ impl std::fmt::Debug for Expression {
                 if operation == &Minus => write!(f,"{left} - {right}"),
             Self::Binary { operation , left , right } 
                 if operation == &Mal => {
-                    // This works except I have no fucking idea why , even though i wrote it
-                    let s = format!("{left}");
+                    match &**left {
+                        // Write Nothing
+                        Self::Term(term) if term.coefficient.is_one() => (),
+                        Self::Term(term) if term.coefficient == Number::from(-1f64) => f.write_char('-')?,
+                        _ => {
+                            let s = format!("{left}");
 
-                    match s.char_indices().find(|(_,c)| "+*-/".contains(*c)) {
-                        None => write!(f,"{s}")?,
-                        Some((pos,op)) => match op == '-' && s.chars().nth(pos + 1).map(|c| c.is_digit(10) || c.is_ascii_lowercase()).unwrap_or(false) {
-                            true => write!(f,"{s}")?,
-                            false => write!(f,"({s})")?,
-                        } 
+                            // This works except I have no fucking idea why , even though i wrote it
+                            match s.char_indices().find(|(_,c)| "+*-/".contains(*c)) {
+                                None => write!(f,"{s}")?,
+                                Some((pos,op)) => match op == '-' && s.chars().nth(pos + 1).map(|c| c.is_digit(10) || c.is_ascii_lowercase()).unwrap_or(false) {
+                                    true => write!(f,"{s}")?,
+                                    false => write!(f,"({s})")?,
+                                } 
+                            };
+                        }
                     };
 
                     write!(f,"({})",right)
