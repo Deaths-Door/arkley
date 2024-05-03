@@ -1,6 +1,7 @@
 use std::{borrow::{Borrow, Cow}, collections::HashMap};
 
-use nom::{IResult,bytes::complete::tag, combinator::value};
+use itertools::Itertools;
+use nom::{bytes::complete::tag, combinator::value, error::{Error, ErrorKind}, IResult, InputLength, Or, Parser};
 
 use crate::{Expression, Variable};
 
@@ -15,28 +16,12 @@ use super::ExpressionToken;
 /// it is read from the context. Contexts can be preserved between multiple calls by creating them yourself.
 #[derive(Clone,Debug,Default)]
 pub struct Context<'a> {
-    /// Used for storing input like
-    /// ```no-test
-    /// a = 0
-    /// b = 543x
-    /// x = 4y + 5u
-    /// ```
-    values : HashMap<Variable,Expression>,
     tags : ContextHashMap<'a,Expression>,
 }
 
 type ContextHashMap<'a,T> =  HashMap<&'a str,T>;
 
 impl<'a> Context<'a,> {
-    /// Gets reference to the values eg x = 10 
-    pub const fn values(&self) -> &HashMap<Variable,Expression> {
-        &self.values
-    }
-    /// Gets mutable reference to the values eg x = 10 
-    pub fn values_mut(&mut self) -> &mut HashMap<Variable,Expression> {
-        &mut self.values
-    }
-
     /// Gets reference to the tags context 
     pub const fn tags(&self) -> &ContextHashMap<'a,Expression> {
         &self.tags
@@ -51,32 +36,58 @@ impl<'a> Context<'a,> {
 impl Context<'_> {
     pub(super) fn parse_tags<'a : 'b,'b>(&'b self) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> + 'b {
         move |input| {
-            let (input,tag_expr) = alternative(&self.tags())(input)?;
-            let vec = vec![ExpressionToken::Expression(tag_expr)];
-            Ok((input,vec))
-        }
-    }
-
-    pub(super) fn parse_values<'a : 'b,'b>(&'b self) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> + 'b {
-        move |input| {
-            let (input,tag_expr) = alternative(&self.values())(input)?;
-            let vec = vec![ExpressionToken::Expression(tag_expr)];
-            Ok((input,vec))
+            match self.tags()
+                .iter()
+                .find(|(key,_)| input.starts_with(*key)) {
+                Some((key,value)) => {
+                    println!("found => {key} for {input} so new input is {}",&input[key.len()..]);
+                    Ok((&input[key.len()..],vec![ExpressionToken::Expression((*value).clone())]))
+                },
+                None => Err(nom::Err::Error(Error { input, code: ErrorKind::Fail }))
+            }
         }
     }
 }
 
-fn alternative<'a : 'b,'b,T,K>(alternatives: &'b HashMap<K,T>) -> impl FnMut(&'a str) -> nom::IResult<&'a str,T> + 'b  where T: Clone , K : ToString {
-    move |input| {
-        let mut last_err = Err(nom::Err::Error(nom::error::Error { input, code: nom::error::ErrorKind::NonEmpty }));
+fn alternative<'a,T>(input: &str, alternatives: impl Iterator<Item = (&'a &'a str,&'a T)>) -> IResult<&str,T> where T : Clone + 'a {
+    let mut last_err = None;
 
-        for (key,t) in alternatives {
-            match value(t,tag(key.to_string().as_str()))(input) {
-                Ok((input,other)) => return Ok((input,(*other).clone())),
-                error @ Err(_) => last_err = error,
+    for (key,generic_value) in alternatives {
+        match value(generic_value,tag(*key))(input) {
+            Ok((input,value)) => return Ok((input,(*value).clone())),
+            Err(error) => {
+                last_err = Some(error);
             }
         }
+    }
 
-        last_err.map(|(i,v)| (i,v.clone()))
+    Err(last_err.unwrap_or(nom::Err::Error(Error { input, code: ErrorKind::NonEmpty })))
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn parse_alternatives(){
+        let hashmap = HashMap::from([("gravity",1u32)]);
+        assert_eq!(
+            alternative("gravity", hashmap.iter()),
+            Ok(("",1))
+        )
+    }
+
+    
+    #[test]
+    fn parse_alternatives_tags(){
+        let expression = Expression::new_term(9.81);
+        let hashmap = HashMap::from([("gravity",expression.clone())]);
+        let mut context = Context::default();
+        *context.tags_mut() = hashmap;
+
+        assert_eq!(
+            context.parse_tags()("gravity"),
+            Ok(("",vec![ExpressionToken::Expression(expression)]))
+        );
     }
 }

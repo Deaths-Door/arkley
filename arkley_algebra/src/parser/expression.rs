@@ -40,6 +40,8 @@ impl<'a> TryFrom<&'a str> for Expression {
 
 #[cfg(test)]
 mod tests {
+    use crate::Variable;
+
     use super::*;
     use nom_supreme::final_parser::final_parser;
     use test_case::test_case;
@@ -50,7 +52,6 @@ mod tests {
     #[test_case("-5 + 2","-5 + 2")]
     #[test_case("2 + 3 * 4 - 5 / 1","2+3(4)-5/1")]
     #[test_case("(2 + 3)(4/3)","(2 + 3)(4/3)")]
-    // TODO : check about this , this fails cuz 4/4 = 1 and is parsed as a fraction , decide wtf to do about this
     #[test_case("(2 + 3)(4/4)","(2 + 3)(4/4)")]
     #[test_case("(2 + 3)(4/5)","(2 + 3)(4/5)")]
     #[test_case("(5-6)(2+3)","(5-6)(2+3)")]
@@ -87,18 +88,27 @@ mod tests {
         assert_eq!(&unwrapped.to_string(),"5")
     }
 
-    // TODO : ADD MORE WITH CONTEXTS 
-    #[test]
-    fn with_context() {
+    #[test_case("a + lightspeed", "3 + 299792458", &[("lightspeed", "299792458"),("a", "3")])]
+    #[test_case("b * conversion_rate", "543x(1.23)", &[("conversion_rate", "1.23"),("b", "543x")])]
+    #[test_case("(gravity)", "9.81", &[("gravity", "9.81")])]
+    #[test_case("area * price", "(length * width)(10)", &[("price", "10"),("area", "length * width")])]
+    #[test_case("tax_rate * income", "0.25(salary + bonus)", &[("tax_rate", "0.25"),("income", "salary + bonus")])]
+    #[test_case("discount(total)", "discounted_price((x + y) * z)", &[("discount", "discounted_price"),("total", "x + y * z")])]
+    #[test_case("target / efficiency", "(goal - progress) / rate", &[("efficiency", "rate"),("target", "goal"), ("progress", "progress")])]
+    #[test_case("current_year + age", "2024 + y", &[("current_year", "2024"), ("age", "y")])]
+    #[test_case("name_length(full_name)", "get_length(first_name + last_name)", &[("name_length", "get_length"),("full_name", "first_name + last_name")])]
+    fn with_context(input : &str,output : &str,tags : &[(&str,&str)]) {
         let mut context = Context::default();
-        context.tags_mut().insert("five", 5.into());
-        context.tags_mut().insert("two", 2.into());
-        context.tags_mut().insert("sieben", 7.into());
+        
+        context.tags_mut().extend(
+            tags.into_iter().map(|(k,v)| 
+                (*k,Expression::try_from(*v).unwrap())
+            )
+        );
 
-        let result = parse_expression(&context)("five * two + sieben");
-
-        assert!(result.is_ok());
-
-        assert_eq!(&result.unwrap().1.to_string(),"5 * 2 + 7")
+        assert_eq!(
+            Expression::try_from((input,&context)).map(|s| s.to_string().replace(" ","")),
+            Ok(output.replace(" ",""))
+        )
     }
 }
