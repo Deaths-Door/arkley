@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, hash::Hash, ops::Deref};
 use itertools::Itertools;
 use num_notation::{Number, One};
 

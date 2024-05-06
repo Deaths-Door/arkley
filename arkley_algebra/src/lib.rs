@@ -19,6 +19,7 @@
 )]
 
 mod core;
+mod arithmetics;
 
 pub use core::*;
 

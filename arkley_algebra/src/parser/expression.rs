@@ -91,6 +91,8 @@ mod tests {
     #[test_case("a + lightspeed", "3 + 299792458", &[("lightspeed", "299792458"),("a", "3")])]
     #[test_case("b * conversion_rate", "543x(1.23)", &[("conversion_rate", "1.23"),("b", "543x")])]
     #[test_case("(gravity)", "9.81", &[("gravity", "9.81")])]
+    
+    // TODO : I am not sure on how to approach these kinds of situations
     #[test_case("area * price", "(length * width)(10)", &[("price", "10"),("area", "length * width")])]
     #[test_case("tax_rate * income", "0.25(salary + bonus)", &[("tax_rate", "0.25"),("income", "salary + bonus")])]
     #[test_case("discount(total)", "discounted_price((x + y) * z)", &[("discount", "discounted_price"),("total", "x + y * z")])]
