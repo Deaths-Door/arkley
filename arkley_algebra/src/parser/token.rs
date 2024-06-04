@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use nom::{branch::alt, character::complete::{char, multispace0}, combinator::{map, opt}, multi::fold_many0, sequence::{delimited, pair, separated_pair, tuple}, IResult, Parser};
 
 use crate::{parse_operator, parse_term, parser::parse_add_sub, ArithmeticOperation, Context, CustomizableExpression, Expression, Term};
@@ -119,14 +121,14 @@ impl ExpressionToken {
         move |input| {
             let (input,mut tokens) = delimited(
                 pair(char('('),multispace0),
-                ExpressionToken::parse(context), 
-                pair(multispace0,char(')')),
+                ExpressionToken::parse(context),
+                pair(multispace0,char(')'))
             )(input)?;
 
             tokens.insert(0,ExpressionToken::OpenParenthesis);
             tokens.push(ExpressionToken::CloseParenthesis);
 
-            Ok((input,tokens))
+            Ok((input.into(),tokens))
         }
     }
 }
@@ -137,9 +139,21 @@ impl ArithmeticOperation {
     }
 }
 
+fn map_into_cow<'a,'b,F,T>(mut parser : F) -> 
+    impl FnMut(&'a str) -> IResult<Cow<'a,str>,T> 
+    where F : FnMut(&'a str) -> IResult<&'a str,T>
+{
+    move |input|{
+        match (parser)(input) {
+            Ok((i,v)) => Ok((i.into(),v)),
+            Err(error) => Err(error.map_input(|i| i.into())),
+        }
+    }
+}
+
 impl Term {
     fn map_into_tokens<'a>() -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> {
-        map(parse_term,|term| Vec::from([ExpressionToken::Expression(term.into())]) )
+        map(parse_term,|term| Vec::from([ExpressionToken::Expression(term.into())]))
     }
 }
 

@@ -1,9 +1,7 @@
-use std::{borrow::{Borrow, Cow}, collections::HashMap};
+use std::{borrow::Cow, collections::HashMap};
+use nom::{bytes::complete::tag, combinator::value, error::{Error, ErrorKind}, IResult};
 
-use itertools::Itertools;
-use nom::{bytes::complete::tag, combinator::value, error::{Error, ErrorKind}, IResult, InputLength, Or, Parser};
-
-use crate::{Expression, Variable};
+use crate::Expression;
 
 use super::ExpressionToken;
 
@@ -16,36 +14,118 @@ use super::ExpressionToken;
 /// it is read from the context. Contexts can be preserved between multiple calls by creating them yourself.
 #[derive(Clone,Debug,Default)]
 pub struct Context<'a> {
-    tags : ContextHashMap<'a,Expression>,
+    tags : Tags<'a>,
 }
 
-type ContextHashMap<'a,T> =  HashMap<&'a str,T>;
+/// Represents the possible values within a `Context`.
+/// This enum defines the different types of data that can be stored in a `Context`:
+/// - `Parsed(Expression)`: A successfully parsed expression ready for evaluation.
+/// - `Pending(&'a str)`: Raw input string that has not yet been parsed.
+#[derive(Clone, Debug)]
+pub(super) enum Value<'a> {
+    /// A parsed expression, holding the result of parsing an input string.
+    Parsed(Expression),
 
-impl<'a> Context<'a,> {
-    /// Gets reference to the tags context 
-    pub const fn tags(&self) -> &ContextHashMap<'a,Expression> {
+    // TODO: convert this pending into parsed somehow which may solve the stack overflow issue
+    /// Raw input string that needs to be parsed into an expression.
+    Pending(&'a str),
+}
+
+/// An alias for a hash map that stores variable names (`&'a str`) and their corresponding `Value` instances.
+type Tags<'a> = HashMap<&'a str,Value<'a>>;
+
+impl<'a> Context<'a> {
+    /// Replaces the current variable mappings in the context with the provided `tags`.
+    /// This method allows you to completely overwrite the existing variable mappings in the context with a new set of mappings
+    /// Arguments:
+    ///   * `tags`: A reference to a `Tags<'a>` hash map containing the new variable mappings.
+    pub fn set_tags(&mut self,tags : Tags<'a>) {
+        self.tags = tags
+    }
+
+    /// Returns a reference to the current variable mappings in the context.
+    pub const fn tags(&self) -> &Tags<'a> {
         &self.tags
     }
- 
-    /// Gets a mutable reference to the tags context
-    pub fn tags_mut(&mut self) -> &mut ContextHashMap<'a,Expression> {
+
+    /// Returns a mutable reference to the current variable mappings in the context.
+    pub fn tags_mut(&mut self) -> &mut Tags<'a> {
         &mut self.tags
+    }
+
+    /// Adds a new variable mapping to the context with the provided name and a pending (unparsed) value.
+    /// Arguments:
+    ///   * `tag`: The name of the variable to be added (`&'a str`).
+    ///   * `value`: The initial value (unparsed string) to be associated with the variable (`&'a str`).
+    pub fn add_tag_str(&mut self,tag : &'a str,value : &'a str) {
+        self.tags.insert(tag, Value::Pending(value));
+    }
+
+    /// Adds a new variable mapping to the context with the provided name and a parsed expression value.
+    /// Arguments:
+    ///   * tag: The name of the variable to be added (&'a str).
+    ///   * value: The parsed expression value to be associated with the variable (Expression).
+    pub fn add_tag_expr(&mut self,tag : &'a str,value : Expression) {
+        self.tags.insert(tag, Value::Parsed(value));
     }
 }
 
-impl Context<'_> {
-    pub(super) fn parse_tags<'a : 'b,'b>(&'b self) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> + 'b {
+
+impl<'a> Context<'a> {
+    /// Extends the current variable mappings in the context with additional mappings from an iterator.
+    pub fn extend_tags_str<I>(&mut self,iter : I) where I : Iterator<Item = <<HashMap<&'a str,&'a str> as IntoIterator>::IntoIter as Iterator>::Item>   {
+        self.tags.extend(iter.map(|(k,v)| (k,Value::Pending(v))));
+    }
+
+    /// Extends the current variable mappings in the context with additional mappings from an iterator.
+    pub fn extend_tags_expr<I>(&mut self,iter : I) where I : Iterator<Item = <<HashMap<&'a str,Expression> as IntoIterator>::IntoIter as Iterator>::Item> {
+        self.tags.extend(iter.map(|(k,v)| (k,Value::Parsed(v))));
+    }
+}
+
+impl<'ctx> Context<'ctx> {
+    pub(super) fn parse_tags<'a :'b,'b>(&'b self) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> + 'b  {
         move |input| {
             match self.tags()
                 .iter()
-                .find(|(key,_)| input.starts_with(*key)) {
+                .find(|(key,_)| input.starts_with(*key)
+            ) {
+                None => Err(nom::Err::Error(Error { input, code: ErrorKind::Tag })),
                 Some((key,value)) => {
-                    println!("found => {key} for {input} so new input is {}",&input[key.len()..]);
-                    Ok((&input[key.len()..],vec![ExpressionToken::Expression((*value).clone())]))
+                    let remaining_input =&input[key.len()..];
+                    
+                    match value {
+                        Value::Parsed(expression) => Ok((
+                            remaining_input,
+                            vec![ExpressionToken::Expression((*expression).clone())]
+                        )),
+                        Value::Pending(tag_input) => {
+                            let expression = match Expression::try_from((*tag_input,self)) {
+                                Ok(value) => value,
+                                Err(_error) => return Err(_error.map_input(|_| input))
+                            };
+
+                            Ok((
+                                remaining_input,
+                                vec![ExpressionToken::Expression(expression)]
+                            ))
+                        }
+                    }
                 },
-                None => Err(nom::Err::Error(Error { input, code: ErrorKind::Fail }))
             }
         }
+    }
+}
+
+impl From<Expression> for Value<'_> {
+    fn from(value: Expression) -> Self {
+        Self::Parsed(value)
+    }
+}
+
+impl<'a> From<&'a str> for Value<'a> {
+    fn from(value: &'a str) -> Self {
+        Self::Pending(value)
     }
 }
 
@@ -81,13 +161,13 @@ mod test {
     #[test]
     fn parse_alternatives_tags(){
         let expression = Expression::new_term(9.81);
-        let hashmap = HashMap::from([("gravity",expression.clone())]);
+
         let mut context = Context::default();
-        *context.tags_mut() = hashmap;
+        context.extend_tags_expr([("gravity",expression.clone())].into_iter());
 
         assert_eq!(
-            context.parse_tags()("gravity"),
-            Ok(("",vec![ExpressionToken::Expression(expression)]))
+            context.parse_tags()("gravity".into()),
+            Ok(("".into(),vec![ExpressionToken::Expression(expression)]))
         );
     }
 }

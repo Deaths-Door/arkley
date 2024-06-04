@@ -2,11 +2,7 @@ use std::{collections::HashMap, hash::Hash, ops::Deref};
 use itertools::Itertools;
 use num_notation::{Number, One};
 
-use crate::Variable;
-
-/// Represents a collection of variables, each associated with a numerical value.
-/// The `Variables` type is an alias for [HashMap<Variable, Number>]
-pub type Variables = HashMap<Variable,Number>;
+use crate::{Variable, Variables};
 
 /// A struct representing a mathematical term.
 ///

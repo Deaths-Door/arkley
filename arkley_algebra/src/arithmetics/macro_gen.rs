@@ -61,6 +61,7 @@ macro_rules! primitives_operations {
     };
 
     (div => $($t : ty),*) => {
+        /* TODO: enable again
         $(
             impl Div<$t> for Term {
                 type Output = Expression;
@@ -75,7 +76,7 @@ macro_rules! primitives_operations {
                     self / Term::from(other)
                 }
             }
-        )*
+        )**/
     };
 
     (ops => $($t:ty),*) => {
