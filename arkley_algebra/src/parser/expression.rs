@@ -40,10 +40,6 @@ impl<'a> TryFrom<&'a str> for Expression {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
-    use crate::Variable;
-
     use super::*;
     use nom_supreme::final_parser::final_parser;
     use test_case::test_case;
@@ -66,6 +62,7 @@ mod tests {
     #[test_case("(a^2 + b)(c - d)","(a^2 + b)(c - d)")]
     #[test_case("x / (y + z)","x/(y + z)")]
     #[test_case("1-5/8","1-5/8")]
+    #[test_case("a+y*z","a+y(z)")]
     fn parse_basic_and_complex_expressions(input : &str,expected : &str) {
         let context = Default::default();
         let parsed : Result<Expression,nom::error::Error<&str>> = final_parser(parse_expression(&context))(input);
@@ -89,23 +86,20 @@ mod tests {
         let unwrapped = parsed.unwrap().1;
         assert_eq!(&unwrapped.to_string(),"5")
     }
-
-    struct ParsingContext<'a>(HashMap<&'a str,Expression>);
-
     #[test_case("a + lightspeed", "3 + 299792458", &[("lightspeed", "299792458"),("a", "3")])]
     #[test_case("b * conversion_rate", "543x(1.23)", &[("conversion_rate", "1.23"),("b", "543x")])]
     #[test_case("(gravity)", "9.81", &[("gravity", "9.81")])]
-    
-    // TODO : enable these tests again with expression manupluation 
-    #[test_case("area * price", "(length * width)(10)", &[("price", "10"),("area", "length * width"),("length","x"),("width","y")])]
-    #[test_case("tax_rate * income", "0.25(salary + bonus)", &[("tax_rate", "0.25"),("income", "salary + bonus"),("salary","1000"),("bonus","500")])]
-    #[test_case("discount(total)", "discounted_price((x + y) * z)", &[("discount", "discounted_price"),("total", "x + y * z")])]
-    #[test_case("target / efficiency", "(goal - progress) / rate", &[("efficiency", "rate"),("target", "goal"), ("progress", "progress")])]
+    #[test_case("area * price", "(x*y)(10)", &[("price", "10"),("area", "length * width"),("length","x"),("width","y")])]
+    #[test_case("tax_rate * income", "0.25(1000 + 500)", &[("tax_rate", "0.25"),("income", "salary + bonus"),("salary","1000"),("bonus","500")])]
+    #[test_case("discount(total)", "5y(x+y*z)", &[("discount", "discounted_price"),("total", "x + y * z"),("discounted_price","5y")])]
+    #[test_case("(target - progress) / efficiency", "(100000 - 0.75) / 0.05 ", &[("efficiency", "rate"),("target", "goal"), ("progress", "0.75"),("rate","0.05"),("goal","100000")])]
     #[test_case("current_year + age", "2024 + y", &[("current_year", "2024"), ("age", "y")])]
-    #[test_case("name_length(full_name)", "get_length(first_name + last_name)", &[("name_length", "get_length"),("full_name", "first_name + last_name")])]
+    #[test_case("name_length(full_name)", "f(659711497118 + 8310497104)", &[("name_length", "get_length"),("full_name", "first_name + last_name"),("first_name","659711497118"),("last_name","8310497104"),("get_length","f")])]
     fn with_context(input : &str,output : &str,tags : &[(&str,&str)]) {
         let mut context = Context::default();
         context.extend_tags_str(tags.to_owned().into_iter());
+
+        println!("{:?}",ExpressionToken::to_rpn(ExpressionToken::parse(&context)(input).unwrap().1));
 
         assert_eq!(
             Expression::try_from((input,&context)).map(|s| s.to_string().replace(" ","")),

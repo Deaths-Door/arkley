@@ -17,7 +17,6 @@ pub(super) enum ExpressionToken {
     /// Used for context parsing like "five_x_plus_y * x" => "(5x + y) * x" => "5x^2" and Terms 
     Expression(Expression),
     Operator(ArithmeticOperation),
-    Custom(Box<dyn CustomizableExpression>),
     OpenParenthesis,
     CloseParenthesis,
 }
@@ -63,28 +62,12 @@ impl ExpressionToken {
         }
     }
 
-    fn create_tokens_for_optional_implicit_mul(mut lexpr_tokens : Vec<ExpressionToken>,rexpr_tokens : Vec<ExpressionToken>) -> Vec<ExpressionToken> {            
-        // Do not put brackets around a single token
-        if lexpr_tokens.len() != 1 {
-            lexpr_tokens.insert(0, ExpressionToken::OpenParenthesis);
-            lexpr_tokens.push(ExpressionToken::CloseParenthesis);
-        }
-
-        if !rexpr_tokens.is_empty() {
-            lexpr_tokens.push(ArithmeticOperation::Mal.into());
-
-            // No requirement to add bracktets as [Self::parse_nested_expression] already adds it
-            lexpr_tokens.extend(rexpr_tokens.into_iter());    
-        }
-
-        lexpr_tokens
-    }
-
     fn parse_with_optional_implicit_mul<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> + 'b {
         move |input| {
             let option1 = map(
                 separated_pair(
                     alt((
+                        context.run_additional_parsers(),
                         context.parse_tags(),
                         Term::map_into_tokens(),
                         Self::parse_nested_expression(context),
@@ -115,6 +98,23 @@ impl ExpressionToken {
                         
             Ok((input,tokens))
         }
+    }
+
+    fn create_tokens_for_optional_implicit_mul(mut lexpr_tokens : Vec<ExpressionToken>,rexpr_tokens : Vec<ExpressionToken>) -> Vec<ExpressionToken> {            
+        // Do not put brackets around a single token
+        if lexpr_tokens.len() != 1 {
+            lexpr_tokens.insert(0, ExpressionToken::OpenParenthesis);
+            lexpr_tokens.push(ExpressionToken::CloseParenthesis);
+        }
+
+        if !rexpr_tokens.is_empty() {
+            lexpr_tokens.push(ArithmeticOperation::Mal.into());
+
+            // No requirement to add bracktets as [Self::parse_nested_expression] already adds it
+            lexpr_tokens.extend(rexpr_tokens.into_iter());    
+        }
+
+        lexpr_tokens
     }
 
     fn parse_nested_expression<'a : 'b,'b>(context : &'b Context<'b>) -> impl FnMut(&'a str) -> IResult<&'a str,Vec<ExpressionToken>> + 'b {
@@ -176,7 +176,7 @@ impl ExpressionToken {
 
         for token in vec {
             match token {
-                ExpressionToken::Expression(_) | ExpressionToken::Custom(_) => output.push(token),
+                ExpressionToken::Expression(_) => output.push(token),
                 ExpressionToken::Operator(op1) => {
                     while let Some(&ExpressionToken::Operator(ref op2)) = operator_stack.last() {
                         match op1.precedence() <= op2.precedence() {
@@ -200,7 +200,9 @@ impl ExpressionToken {
         while let Some(op) = operator_stack.pop() {
             output.push(op);
         }
-    
+
+        debug_assert!(operator_stack.is_empty());
+
         output
     }
 
@@ -221,7 +223,6 @@ impl ExpressionToken {
         for token in rpn_tokens.into_iter() {
             match token {
                 ExpressionToken::Expression(expr) => stack.push(expr),
-                ExpressionToken::Custom(value) => stack.push(Expression::Custom(value)),
                 ExpressionToken::Operator(operator) => {
                     let right = stack.pop().expect(Self::INVALID_RPN_TOKENS_MESSAGE);
                     let left = stack.pop().expect(Self::INVALID_RPN_TOKENS_MESSAGE);
@@ -230,6 +231,8 @@ impl ExpressionToken {
                 ExpressionToken::OpenParenthesis | ExpressionToken::CloseParenthesis => unreachable!(),
             }
         }
+
+        #[cfg(test)] println!("{:?}",stack);
 
         match stack.len() {
             1 => stack.pop().unwrap(),
