@@ -1,0 +1,24 @@
+workflows:
+- changed-files:
+  - any-glob-to-any-file: '.github/workflows/**'
+
+devcontainer:
+- changed-files:
+  - any-glob-to-any-file: '.devcontainer/**'
+
+ui:
+- changed-files:
+  - any-glob-to-any-file: 'arkley_ui/**'
+
+core:
+- changed-files:
+  - any-glob-to-any-file: 'arkley_algebra/**'
+  - any-glob-to-any-file: 'arkley_unit_convertor/**'
+
+describe:
+- changed-files:
+  - any-glob-to-any-file: 'arkley_describe/**'
+
+cli:
+- changed-files:
+  - any-glob-to-any-file: 'arkley_cli/**' 
