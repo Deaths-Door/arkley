@@ -1,5 +1,3 @@
-use num_notation::{One, Zero};
-
 use crate::{Term,Expression,ArithmeticOperation};
 
 impl std::ops::Mul for Term {
@@ -14,7 +12,7 @@ impl std::ops::Mul for Term {
         };
 
         let coefficient = self.coefficient * other.coefficient;
-        Term::new_with_variable(coefficient,variables).into()
+        Term::new_with_variables(coefficient,variables).into()
     }
 }
 
@@ -24,7 +22,6 @@ impl std::ops::Mul<Term> for Expression {
     fn mul(self,other : Term) -> Self::Output {
         let expr = match self {
             Expression::Term(term) => term * other,
-            Expression::Function(func) => func * other,
             // if operation == ArithmeticOperation::Durch as 3x * (3/x) can be more simpily done as (3x/1) * (3/x) then other solution
             Expression::Binary { operation , left , right } if operation == ArithmeticOperation::Durch => {
                 let lexpr = *left * other;
@@ -39,6 +36,7 @@ impl std::ops::Mul<Term> for Expression {
                 let rexpr = *right * other;
                 Expression::new_binary(operation,lexpr,rexpr) // to avoid unnesscary .combine_terms()
             },
+            Expression::Custom(_) => Expression::new_mal(self, other),
         };
 
         expr.combine_terms()
@@ -108,199 +106,41 @@ impl std::ops::Mul for Expression {
 
                 lexpr + rexpr
             },
+            //TODO;custom variant
             (left @_,right @_) => Expression::new_mal(left, right),
         } 
-    }
-}
-
-#[cfg(feature="function")]
-use crate::Function;
-
-#[cfg(feature="function")]
-impl std::ops::Mul<Function > for Function  {
-    type Output = Expression; 
-    fn mul(self, rhs: Function ) -> Self::Output {
-        // TODO : For cases like f(x) * f(x) maybe output (f(x))^2
-        Expression::new_mal(self.into(), rhs.into())
-    }
-}
-
-#[cfg(feature="function")]
-impl std::ops::Mul<Term> for Function  {
-    type Output = Expression; 
-    fn mul(self, rhs: Term) -> Self::Output {
-        if rhs.variables.is_empty() {
-            return if rhs.coefficient.is_one() {
-                self.into()
-            }
-            else if rhs.coefficient.is_zero() {
-                0.0.into()
-            }
-            else {
-                Expression::new_mal(self.into(),rhs.into())
-            }
-        }
-
-        Expression::new_mal(self.into(),rhs.into())
-    }
-}
-
-#[cfg(feature="function")]
-impl std::ops::Mul<Function > for Expression {
-    type Output = Expression; 
-    fn mul(self, rhs: Function) -> Self::Output {
-        if let Expression::Term(value) = self  {
-            return rhs * value
-        }
-        // TODO : For cases like f(x) * f(x) maybe output (f(x))^2
-        Expression::new_mal(self.into(), rhs.into())
     }
 }
 
 #[cfg(test)]
 mod term {
     use super::*;
-
-    use num_notation::Number;
-    use crate::Variables;
+    use test_case::test_case;
     
-    #[test]
-    fn multiply_terms() {
-        // 2x
-        let term1 = Term::new_with_variable(Number::Decimal(2.0), Variables::from([('x', Number::Decimal(1.0))]));
-
-        //3x^2
-        let term2 = Term::new_with_variable(Number::Decimal(3.0), Variables::from([('x', Number::Decimal(2.0))]));
-
-        // 2x * 3x^2
-        let result = term1.clone() * term2.clone();
-
-        // 6x^3
-        let expected_term = Term::new_with_variable(Number::Decimal(6.0), Variables::from([('x', Number::Decimal(3.0))]));
-        let expected_expression = Expression::new_term(expected_term);
-
-        assert_eq!(result, expected_expression);
-    }
-
-    #[test]
-    fn multiply_terms_with_same_variables_and_different_powers() {
-        // 2.5x^2
-        let term1 = Term::new_with_variable(Number::Decimal(2.5), Variables::from([('x', Number::Decimal(2.0))]));
-
-        // 3.5x^3
-        let term2 = Term::new_with_variable(Number::Decimal(3.5), Variables::from([('x', Number::Decimal(3.0))]));
-
-        // 2.5x^2 * 3.5x^3
-        let result = term1.clone() * term2.clone();
-
-        // 2.5x^2 * 3.5x^3 = 8.75x^5
-        let expected_term = Term::new_with_variable(Number::Decimal(8.75), Variables::from([('x', Number::Decimal(5.0))]));
-        let expected_expression = Expression::new_term(expected_term);
-
-        assert_eq!(result, expected_expression);
+    #[test_case("2x","3x^2"," 6x^3")]
+    #[test_case("2.5x^2","3.5x^3","  8.75x^5")]
+    #[test_case("5x^3","2.5x^2","12.5x^5")]
+    fn multiplication_tests(input1 : &str,input2 : &str,expected: &str) {
+        assert_eq!(
+            (Term::try_from(input1).unwrap() * Term::try_from(input2).unwrap()).to_string().replace(" ",""),
+            expected.replace(" ","")
+        )
     }
 }
 
 #[cfg(test)]
 mod expr {
     use super::*;
-
-    use num_notation::Number;
-    use crate::Variables;
-    // Helper function to create a Term with a single variable.
-    fn create_term_with_variable(coeff: f64, var: char, exp: f64) -> Term {
-        let mut variables = Variables::new();
-        variables.insert(var, Number::Decimal(exp));
-        Term::new_with_variable(Number::Decimal(coeff), variables)
-    }    
-
-    use crate::parse_expression;
-
-    fn from_str(input :&str) -> Expression {
-        Expression::try_from((input,&Default::default())).unwrap()
-    }
-
-    fn check_expression_str(expression : Expression,_str : &str) {
-        assert_eq!(&expression.to_string(),_str)
-    }
-
-    #[test]
-    fn combine_terms_with_mul() {
-        let expr1 : Expression = Term::new(Number::Decimal(1.0)).into();
-        let expr2 : Expression = Expression::new_mal(
-            Expression::new_term(create_term_with_variable(3.0, 'x', 1.0)),
-            Expression::new_plus(
-                Expression::new_term(create_term_with_variable(2.0, 'x', 1.0)),
-                Expression::new_term(create_term_with_variable(2.0, 'x', 1.0)),
-            )
-        );
-
-        
-        let result = expr1 - expr2;
-
-        check_expression_str(result,"1 + 3x(4x)");
-    }
-
-    #[test]
-    fn mul_expression_by_term_addition() {
-        // Test multiplying an expression containing addition by a term
-        let expression = Expression::new_plus(
-            create_term_with_variable(2.0, 'x', 1.0).into(),
-            create_term_with_variable(3.0, 'y', 1.0).into(),
-        );
-
-        check_expression_str(expression.clone(), "2x + 3y");
-
-        // Create a term to multiply with the expression
-        let term_to_multiply = create_term_with_variable(2.0, 'z', 1.0);
-
-        // Multiply the expression by the term
-        let result = expression * term_to_multiply;
-
-        check_expression_str(result, "4xz + 6yz");
-    }
-
-    #[test]
-    fn mul_expression_by_term_subtraction() {
-        // Test multiplying an expression containing subtraction by a term
-        let expression = Expression::new_minus(
-            create_term_with_variable(5.0, 'x', 1.0).into(),
-            create_term_with_variable(3.0, 'y', 1.0).into(),
-        );
-
-        check_expression_str(expression.clone(), "5x - 3y");
-
-        // Create a term to multiply with the expression
-        let term_to_multiply = create_term_with_variable(2.0, 'z', 1.0);
-
-        // Multiply the expression by the term
-        let result = expression * term_to_multiply;
-
-        check_expression_str(result, "10xz - 6yz");
-    }
-
-    #[test]
-    fn mul_expression_by_term_nested() {
-        let term = match from_str("2w") {
-            Expression::Term(term) => term,
-            _ => panic!()
-        };
-
-        let expression = from_str("5z - 2x  - 3y");
-        let result = expression * term;
-
-        check_expression_str(result, "-4wx - 6wy + 10wz");
-    }
+    use test_case::test_case;
     
-    #[test]
-    fn mul_expression_by_term_nested_expr() {
-        let expression = from_str("5z - (2x + 3y)");
-
-        // Create a term to multiply with the expression
-        let term_to_multiply : Expression = create_term_with_variable(2.0, 'w', 1.0).into();
-
-        let result = expression * term_to_multiply;
-
-        check_expression_str(result, "-4wx - 6wy + 10wz");
+    #[test_case("2x + 3y","2z","4xz + 6yz")]
+    #[test_case("5x-3y","2z","10xz - 6yz")]
+    #[test_case("2w","5z - 2x  - 3y","-4wx - 6wy + 10wz")]
+    #[test_case("5z - (2x + 3y)","2w","-4wx - 6wy + 10wz")]
+    fn multiplication_tests(input1 : &str,input2 : &str,expected: &str) {
+        assert_eq!(
+            (Expression::try_from(input1).unwrap() * Expression::try_from(input2).unwrap()).to_string().replace(" ",""),
+            expected.replace(" ","")
+        )
     }
 }

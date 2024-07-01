@@ -22,23 +22,9 @@ mod core;
 mod arithmetics;
 
 pub use core::*;
-pub use arithmetics::*;
-
-
-/// Module containing manipulations for algebra
-pub mod manipulation;
-
-/// Module containing `quadratics` for both algebra and numerics
-pub mod quadratics;
 
 #[cfg(feature="parse")]
 mod parser;
 
 #[cfg(feature="parse")]
 pub use parser::*;
-
-#[cfg(feature="equation")]
-mod equation;
-
-#[cfg(feature="equation")]
-pub use equation::*;

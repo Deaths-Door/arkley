@@ -26,14 +26,11 @@ use crate::ArithmeticOperation;
 /// - If a special sequence '+-' or '-+' is found (with or without whitespace), it returns '-'.
 /// - If a special sequence '--' is found (with or without whitespace), it returns '+'.
 pub fn parse_operator(input : &str) -> IResult<&str,ArithmeticOperation> {
-    preceded(
-        multispace0, 
-        alt((
-            parse_add_sub,
-            map(char('*'),|_| ArithmeticOperation::Mal),
-            map(char('/'),|_| ArithmeticOperation::Durch),
-        ))
-    )(input)
+    alt((
+        parse_add_sub,
+        map(char('*'),|_| ArithmeticOperation::Mal),
+        map(char('/'),|_| ArithmeticOperation::Durch),
+    ))(input)
 }
 
 /// space .. + 
@@ -115,27 +112,12 @@ fn calculate_final_sign(_plus:usize,_minus:usize) -> ArithmeticOperation {
     }
 }
 
-impl TryFrom<char> for ArithmeticOperation {
-    // TODO : Update Error Type
-    type Error = ();
-
-    fn try_from(value: char) -> Result<Self, Self::Error> {
-        use ArithmeticOperation::*;
-        match value {
-            '+' => Ok(Plus),
-            '-' => Ok(Minus),
-            '*' => Ok(Mal),
-            '/' => Ok(Durch),
-            _ => Err(())
-        }
-    }
-}
-
-
 #[cfg(test)]
-mod calculate_final_sign_tests {
+mod tests {
+    use test_case::test_case;
     use super::*;
-
+    // NOTE : For some bizarre reason using the test-case macro is failing the tests
+    
     #[test]
     fn test_final_sign_plus_less_than_minus() {
        
@@ -154,19 +136,13 @@ mod calculate_final_sign_tests {
         assert_eq!(calculate_final_sign(3, 3),  ArithmeticOperation::try_from('-').unwrap());
         assert_eq!(calculate_final_sign(0, 0), ArithmeticOperation::try_from('+').unwrap());
     }
-}
 
-
-#[cfg(test)]
-mod parse_tests {
-    use super::*;
-
-    #[test]
-    fn test_regular_operator() {
-        assert_eq!(parse_operator("*"), Ok(("", ArithmeticOperation::try_from('*').unwrap())));
-        assert_eq!(parse_operator("/"), Ok(("", ArithmeticOperation::try_from('/').unwrap())));
-        assert_eq!(parse_operator("+"), Ok(("", ArithmeticOperation::try_from('+').unwrap())));
-        assert_eq!(parse_operator("-"), Ok(("",  ArithmeticOperation::try_from('-').unwrap())));
+    #[test_case("*",'*' ; "times")]
+    #[test_case("/",'/'; "div")]
+    #[test_case("+",'+';"plus")]
+    #[test_case("-",'-' ;"minus")]
+    fn parsing_operator(input : &str,sign : char) {
+        assert_eq!(parse_operator(input), Ok(("", ArithmeticOperation::try_from(sign).unwrap())));
     }
 
     #[test]

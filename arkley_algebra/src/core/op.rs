@@ -19,11 +19,42 @@ pub enum ArithmeticOperation {
 
     /// Represents the division operation (/).
     #[strum(serialize = "/")]
-    Durch
+    Durch,
+
+    /// Represents the exponentatal operation (^).
+    #[strum(serialize = "^")]
+    Pow,
+
+    /// Represents the nth root operation
+    #[strum(serialize = "√")]
+    Root,
 }
 
 impl std::fmt::Debug for ArithmeticOperation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{self}")
     }
+}
+
+impl TryFrom<char> for ArithmeticOperation {
+    type Error = char;
+
+    fn try_from(value: char) -> Result<Self, Self::Error> {
+        use ArithmeticOperation::*;
+        match value {
+            '+' => Ok(Plus),
+            '-' => Ok(Minus),
+            '*' => Ok(Mal),
+            '/' => Ok(Durch),
+            _ => Err(value)
+        }
+    }
+}
+
+impl ArithmeticOperation {
+    pub(crate) const SQRT_SIGN : char = '√';
+    pub(crate) const CBRT_SIGN : char = '∛';
+
+    pub(crate) const SQRT_TEXT : &'static str = "sqrt";
+    pub(crate) const CBRT_TEXT : &'static str = "cbrt";
 }
