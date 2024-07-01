@@ -60,33 +60,9 @@ impl FromIterator<<VariableBtreeMap as IntoIterator>::Item> for Variables {
 
 impl PartialOrd for Variables {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        let mut map = self.0.iter()
-            .filter_map(|(sk,sv)|{
-                match other.0.get(sk) {
-                    None => Some(Ordering::Greater),
-                    Some(ov) => sv.partial_cmp(ov)
-                }
-            })
-            // TODO; remove need of count_by and hashmap using simple int variables
-            .counts_by(|v| v);
-
-        let equal_count = map.remove(&Ordering::Equal).unwrap_or(0);
-        let greater_count = map.remove(&Ordering::Greater).unwrap_or(0);
-        let less_count = map.remove(&Ordering::Less).unwrap_or(0);
-
-        if cfg!(test) {
-            println!("{less_count};{equal_count};{greater_count}");
-        }
-
-        match greater_count {
-            0 => match equal_count {
-                0 => match less_count {
-                    0 => None,
-                    _ => Some(Ordering::Less)
-                },
-                _ => Some(Ordering::Equal)
-            },
-            _ => Some(Ordering::Greater)
+        match self.iter().count().partial_cmp(&other.iter().count()) {
+            Some(ordering) if ordering.is_eq() => self.0.partial_cmp(&other.0),
+            ordering@ _ => ordering
         }
     }
 }
@@ -101,11 +77,11 @@ mod tests {
     #[test_case("x^2","x",Ordering::Greater)]
     #[test_case("x^2","x^2",Ordering::Equal)]
     #[test_case("x^3","x^2",Ordering::Greater)]
-    #[test_case("ax^2","x^2",Ordering::Greater)]
+    #[test_case("x^2","ax^2",Ordering::Less)]
     #[test_case("xy", "yx", Ordering::Equal)] 
     #[test_case("x^2y", "xy^2", Ordering::Greater)]
-    #[test_case("x^2y", "x^3", Ordering::Less)]
-    #[test_case("axy", "a^2x", Ordering::Greater)] 
+    #[test_case("x^3", "x^2y", Ordering::Less)]
+    #[test_case("axy", "a^2x", Ordering::Greater)]  
     #[test_case("axy", "ayz", Ordering::Less)]   
     #[test_case("axyz", "axy", Ordering::Greater)]
     fn ord(v1 : &'static str,v2 : &'static str,expect : impl Into<Option<Ordering>>) -> Result<(),<Variables as TryFrom<&'static str>>::Error> { 
