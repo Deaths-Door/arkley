@@ -19,8 +19,7 @@
 )]
 
 mod core;
-// TODO:uncomment this
-//mod arithmetics;
+mod arithmetics;
 
 pub use core::*;
 

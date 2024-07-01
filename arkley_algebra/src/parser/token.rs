@@ -232,7 +232,7 @@ impl ExpressionToken {
             }
         }
 
-        #[cfg(test)] println!("{:?}",stack);
+       // #[cfg(test)] println!("{:?}",stack);
 
         match stack.len() {
             1 => stack.pop().unwrap(),

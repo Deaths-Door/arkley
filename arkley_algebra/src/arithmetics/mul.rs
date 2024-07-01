@@ -106,6 +106,7 @@ impl std::ops::Mul for Expression {
 
                 lexpr + rexpr
             },
+            //TODO;custom variant
             (left @_,right @_) => Expression::new_mal(left, right),
         } 
     }

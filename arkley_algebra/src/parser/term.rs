@@ -19,6 +19,14 @@ impl<'a> TryFrom<&'a str> for Term {
     }
 }
 
+impl<'a> TryFrom<&'a str> for Variables {
+    type Error = nom::Err<nom::error::Error<&'a str>>;
+    fn try_from(input: &'a str) -> Result<Self, Self::Error> {
+        all_consuming(parse_variables)(input).map(|(_,value)| value)
+    }
+}
+
+
 /// Parse a mathematical term from a given input string.
 ///
 /// A mathematical term can represent a part of a mathematical expression and consists of
