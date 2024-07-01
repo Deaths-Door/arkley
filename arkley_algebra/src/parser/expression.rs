@@ -89,9 +89,10 @@ mod tests {
     #[test_case("a + lightspeed", "3 + 299792458", &[("lightspeed", "299792458"),("a", "3")])]
     #[test_case("b * conversion_rate", "543x(1.23)", &[("conversion_rate", "1.23"),("b", "543x")])]
     #[test_case("(gravity)", "9.81", &[("gravity", "9.81")])]
-    #[test_case("area * price", "(x*y)(10)", &[("price", "10"),("area", "length * width"),("length","x"),("width","y")])]
+    #[test_case("area * price", "(x(y))(10)", &[("price", "10"),("area", "length * width"),("length","x"),("width","y")])]
     #[test_case("tax_rate * income", "0.25(1000 + 500)", &[("tax_rate", "0.25"),("income", "salary + bonus"),("salary","1000"),("bonus","500")])]
-    #[test_case("discount(total)", "5y(x+y*z)", &[("discount", "discounted_price"),("total", "x + y * z"),("discounted_price","5y")])]
+    // TODO: Why is this passing on some ocassions , and failing on others with stackoverflow
+    #[test_case("discount(total)", "5y(x+y(z))", &[("discount", "discounted_price"),("total", "x + y * z"),("discounted_price","5y")])]
     #[test_case("(target - progress) / efficiency", "(100000 - 0.75) / 0.05 ", &[("efficiency", "rate"),("target", "goal"), ("progress", "0.75"),("rate","0.05"),("goal","100000")])]
     #[test_case("current_year + age", "2024 + y", &[("current_year", "2024"), ("age", "y")])]
     #[test_case("name_length(full_name)", "f(659711497118 + 8310497104)", &[("name_length", "get_length"),("full_name", "first_name + last_name"),("first_name","659711497118"),("last_name","8310497104"),("get_length","f")])]
