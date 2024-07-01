@@ -143,20 +143,10 @@ impl std::fmt::Debug for Expression {
                 if operation == &Mal => {
                     match &**left {
                         // Write Nothing
-                        Self::Term(term) if term.coefficient.is_one() => (),
-                        Self::Term(term) if term.coefficient == Number::from(-1f64) => f.write_char('-')?,
-                        _ => {
-                            let s = format!("{left}");
-
-                            // This works except I have no fucking idea why , even though i wrote it
-                            match s.char_indices().find(|(_,c)| "+*-/".contains(*c)) {
-                                None => write!(f,"{s}")?,
-                                Some((pos,op)) => match op == '-' && s.chars().nth(pos + 1).map(|c| c.is_digit(10) || c.is_ascii_lowercase()).unwrap_or(false) {
-                                    true => write!(f,"{s}")?,
-                                    false => write!(f,"({s})")?,
-                                } 
-                            };
-                        }
+                        Self::Term(term) if term.is_numeric_one() => (),
+                        Self::Term(term) if term.is_numeric(-1f64) => f.write_char('-')?,
+                        Self::Term(term) => write!(f,"{left}")?,
+                        _ =>  write!(f,"({left})")?
                     };
 
                     write!(f,"({})",right)
@@ -319,5 +309,13 @@ mod test {
         let expected = "6x^3/(6x^3 + 2x)";
 
         assert_eq!(formatted, expected);
+    }
+
+    #[test]
+    fn mul_add_t() {
+        assert_eq!(
+            Expression::new_plus('a',Expression::new_mal('y','z')).to_string().replace(" ",""),
+            "a+y(z)"
+        )
     }
 }

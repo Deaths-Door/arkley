@@ -232,8 +232,6 @@ impl ExpressionToken {
             }
         }
 
-       // #[cfg(test)] println!("{:?}",stack);
-
         match stack.len() {
             1 => stack.pop().unwrap(),
             _ => panic!("{} for stack = {:?}",Self::INVALID_RPN_TOKENS_MESSAGE,stack)

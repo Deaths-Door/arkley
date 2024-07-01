@@ -64,8 +64,8 @@ impl Term {
     /// # Returns
     ///
     /// `true` if the polynomial is numeric, `false` otherwise.
-    pub fn is_numeric(&self,number : Number) -> bool {
-        self.variables.is_empty() && self.coefficient == number
+    pub fn is_numeric(&self,number : impl Into<Number>) -> bool {
+        self.variables.is_empty() && self.coefficient == number.into()
     }
 
     /// Checks if the polynomial is the numeric constant one (coefficient of 1
